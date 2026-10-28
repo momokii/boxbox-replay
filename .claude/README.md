@@ -1,8 +1,8 @@
 # .claude/README.md — Orientation for Humans and Agents
 
-> What this repository is: general placeholder for now (no purpose or stack yet).
-> Updated after the first working session. Every file here starts general by
-> design and evolves into project-specific content as facts become known.
+> BoxBox Replay: free F1 telemetry viz + race replay + LLM coach (brief v2).
+> Stack: Python 3.12, Streamlit, Plotly, pandas/pyarrow, httpx, ruff, pytest, Docker.
+> Updated at M0; evolves per milestone.
 
 ## How Context Loads (Read This First)
 

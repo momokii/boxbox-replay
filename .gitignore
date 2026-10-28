@@ -18,13 +18,14 @@ secrets/
 CLAUDE.local.md
 .claude/settings.local.json
 
-# --- Stack-specific (extend once the stack is chosen in TASK-001) ---
-# Dependencies, build output, and caches go here, e.g.:
-# node_modules/
-# dist/ build/ out/
-# .venv/ __pycache__/
-# target/
-# .next/ coverage/
+# --- Stack-specific (Python / Streamlit / Docker, set in M0) ---
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+data/cache/
+*.parquet
 
 # --- OS / editor noise ---
 .DS_Store

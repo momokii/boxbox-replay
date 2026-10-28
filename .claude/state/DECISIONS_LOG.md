@@ -32,6 +32,20 @@
 **Impact:** Verified commands replace generics once the real Docker setup exists
 ---
 
+---
+
+## Proposed (pending file-tree confirmation, 2026-10-28)
+
+---
+**Decision:** Stack + sources per brief v2 (Python 3.12 satisfies 3.11+; Streamlit/Plotly/pandas-pyarrow/httpx/ruff/pytest; OpenF1 primary, Jolpica memory, FastF1 reference-only)
+**Date:** 2026-10-28
+**Context:** First real project task; TASK-001 needs purpose + stack confirmed
+**Rationale:** Free, auto-updating data; proof shows 2026 sessions already flowing (131); stdlib-only probe respected 3 req/s, no deps installed
+**Alternatives Rejected:** FastF1 as fetcher (auth sessions fragile — reference only); live timing (paid window — out of scope)
+**Security Implications:** No-auth public APIs; LLM token stays in env (name TBD at M4); empty-telemetry sessions hidden, never faked
+**Impact:** Locks M0–M6 scope; Compose pattern likely skipped (no containers — to confirm)
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

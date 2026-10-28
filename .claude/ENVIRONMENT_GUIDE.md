@@ -34,8 +34,15 @@ docker compose -f compose.yaml -f compose.prod.yaml up -d
 ```
 
 The agent must always ask before running any Compose command that is not clearly
-development. If the project already uses different file names, document and follow
-the existing names.
+development (`--prod` asks for YES itself). No other compose files exist in this project.
+
+## Verified Commands (M0)
+
+```bash
+./scripts/setup.sh              # dev: build + up (http://localhost:8501)
+./scripts/setup.sh --build-only # CI/verify: build + compose config check
+./scripts/setup.sh --prod       # prod: asks for YES, then -f compose.yaml -f compose.prod.yaml up -d
+```
 
 ## Environment Files
 
@@ -49,5 +56,5 @@ the existing names.
 Development and production dependencies, debug endpoints, seed data, and admin tools
 must be absent or disabled in production images and configuration.
 
-> Self-update: once the real Docker setup and commands exist, replace the generic
-> examples with the verified commands for this project.
+> Self-update done (M0): commands above are verified. Staging uses the prod
+> files with `APP_ENV=staging` when a staging target exists.

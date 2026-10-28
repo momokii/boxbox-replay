@@ -23,8 +23,8 @@ Step 11: Wrap up: update state files in one step (the /wrap-up command performs 
 | Step | Action       | Command (generic)              |
 |------|--------------|--------------------------------|
 | 4    | Git state    | `git status && git log -5 --oneline && git branch --show-current` |
-| 6    | Health check | (not yet defined — see CLAUDE.md Commands table) |
-| 7    | Baseline tests | (not yet defined — see CLAUDE.md Commands table) |
+| 6    | Health check | `curl localhost:8501/_stcore/health` (dev stack up) |
+| 7    | Baseline tests | `pytest` |
 
 Notes:
 

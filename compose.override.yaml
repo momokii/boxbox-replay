@@ -1,0 +1,13 @@
+# Development overrides — loaded AUTOMATICALLY by `docker compose up`.
+# Hot reload via bind mounts; cache persists in ./data on the host.
+services:
+  app:
+    environment:
+      APP_ENV: development
+    volumes:
+      - ./data:/app/data
+      - ./app.py:/app/app.py:ro
+      - ./data_loader.py:/app/data_loader.py:ro
+      - ./analysis.py:/app/analysis.py:ro
+      - ./viz.py:/app/viz.py:ro
+      - ./coach.py:/app/coach.py:ro

@@ -1,0 +1,14 @@
+# Base definitions, environment-agnostic. No `version:` key (obsolete in Compose v2).
+services:
+  app:
+    build: .
+    image: boxbox-replay:local
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      OPENF1_BASE_URL: ${OPENF1_BASE_URL:-https://api.openf1.org/v1}
+      CACHE_DIR: /app/data/cache
+    ports:
+      - "8501:8501"

@@ -6,8 +6,8 @@
 
 ## Project Snapshot
 
-Purpose and stack not yet defined. Update after the first working session.
-Phase: initialization — `.claude/` infrastructure bootstrapped, no product code yet.
+BoxBox Replay: free F1 telemetry viz + race replay + LLM coach (Streamlit).
+Phase: M0 done (env + fetch proof). Next: M1 chooser/picker/lap table.
 
 ## Always-Loaded Context
 
@@ -39,12 +39,12 @@ Stack not yet chosen. The agent fills in real commands after TASK-001.
 
 | Purpose      | Command           | Status          |
 |--------------|-------------------|-----------------|
-| Run / dev    | (not yet defined) | pending TASK-001 |
-| Test         | (not yet defined) | pending TASK-001 |
-| Lint         | (not yet defined) | pending TASK-001 |
-| Type check   | (not yet defined) | pending TASK-001 |
-| Health check | (not yet defined) | pending TASK-001 |
-| Build        | (not yet defined) | pending TASK-001 |
+| Run / dev    | `./scripts/setup.sh` (docker dev) or `streamlit run app.py` | M0 verified |
+| Test         | `pytest` | M0 verified |
+| Lint         | `ruff check .` | M0 verified |
+| Type check   | n/a (untyped Python; ruff covers lint) | M0 |
+| Health check | `curl localhost:8501/_stcore/health` (or container HEALTHCHECK) | M0 verified |
+| Build        | `docker compose build` / `./scripts/setup.sh --build-only` | M0 verified |
 
 ## On-Demand References
 

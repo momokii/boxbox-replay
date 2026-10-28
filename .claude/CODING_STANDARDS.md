@@ -10,12 +10,13 @@
 - Explicit over implicit. No magic globals, hidden side effects, or surprising defaults.
 - Fail fast and loudly. Never hide errors; surface them with context.
 
-## Naming (General)
+## Naming (Python 3.12, this project)
 
-- Follow the ecosystem's idiom once the stack is known; record it here with examples.
-- Functions: descriptive verb-noun names (`createOrder`, `validateToken`). No single-letter names except loop indices.
-- Constants: `UPPER_SNAKE_CASE`. Booleans: prefixed `is/has/should/can` (`isActive`, `hasPermission`).
-- Files/modules: one clear purpose; name reflects contents.
+- Modules: `data_loader.py`, `analysis.py`, `viz.py`, `coach.py` (flat layout, M0).
+- Functions: `snake_case` verb-noun (`list_sessions`, `get_car_data`, `best_lap`).
+- Constants: `UPPER_SNAKE_CASE` (`BASE_URL`, `CACHE_ROOT`, `RATE_MIN_INTERVAL_S`).
+- Booleans: prefixed `is/has/should/can`.
+- Types: `from __future__ import annotations` + hints on all public functions.
 
 ## Error Handling
 
@@ -46,6 +47,5 @@
 - Never commit secrets, fixtures with real data, or generated artifacts unless intentional.
 - Branch per task; rebase or merge per team convention (decide in TASK-001).
 
-> Self-update: when the stack is confirmed, replace these with concrete
-> language/framework conventions, linter config references, and patterns observed
-> in the actual code (cite representative file paths).
+> Self-update done (M0): Python 3.12 + ruff (`pyproject.toml`: E,F,I,UP,B; line-length 100)
+> + pytest (`tests/`, mocked HTTP). Cite paths: `data_loader.py`, `tests/test_data_loader.py`.

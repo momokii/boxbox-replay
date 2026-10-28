@@ -32,6 +32,33 @@
 
 ---
 
+## Project Milestones — F1 Telemetry Viz + Race Replay + LLM Coach (brief v2)
+
+Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean before commit. Empty `car_data` sessions are hidden with reason "no telemetry" — never crash, never fake.
+
+| Field               | M0                                                          |
+|---------------------|-------------------------------------------------------------|
+| Task ID             | M0                                                          |
+| Name                | Env + fetch proof                                           |
+| Priority            | High                                                        |
+| Status              | IN PROGRESS (proof done, tree proposed)                     |
+| Complexity          | S                                                           |
+| Depends On          | User approves file tree below                               |
+| Scope               | Scaffold repo (requirements, ruff/pytest config, gitignore extend); `data_loader` list_years/gps/sessions + parquet cache shape; mocked tests; commit |
+| Acceptance Criteria | Counts/year + Suzuka 2024 quali laps printed (done); `pytest` + `ruff check` clean; M0 commit pushed only on request |
+| Security Concerns   | Public no-auth APIs only; 3 req/s respected; no secrets in repo |
+
+| Field               | M1–M6 (queued)                                              |
+|---------------------|-------------------------------------------------------------|
+| M1                  | Chooser + picker + lap table (TODO, depends M0)             |
+| M2                  | Battle speed overlay + gap chart, 2 drivers (TODO, depends M1) |
+| M3                  | Synced track-map animation (TODO, depends M2)               |
+| M4                  | Coach on corner click, grounded, needs LLM token env name (TODO, depends M3) |
+| M5                  | Performance mode: deg slope + stints + weather + radio (TODO, depends M3) |
+| M6                  | What-if pit toy model, labeled "toy model" (TODO, depends M5) |
+
+---
+
 ## Task Template (copy for every new task)
 
 | Field               | Value                                               |
