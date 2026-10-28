@@ -1,0 +1,35 @@
+# --- Secrets & environment (never commit real values) ---
+.env
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.test
+!.env.example
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# --- Claude Code local files (personal, never shared) ---
+CLAUDE.local.md
+.claude/settings.local.json
+
+# --- Stack-specific (extend once the stack is chosen in TASK-001) ---
+# Dependencies, build output, and caches go here, e.g.:
+# node_modules/
+# dist/ build/ out/
+# .venv/ __pycache__/
+# target/
+# .next/ coverage/
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*~
