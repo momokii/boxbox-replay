@@ -70,12 +70,18 @@ def corner_loss(car_data: pd.DataFrame, corner_window_m: float = 200.0) -> pd.Da
 
 
 def map_plane(loc: pd.DataFrame) -> tuple[str, str]:
-    """The two coordinate columns with the largest spread form the track plane."""
-    spread = {c: float(loc[c].std()) for c in ("x", "y", "z") if c in loc.columns}
-    if len(spread) < 2:
+    """The horizontal plane for the track map: always (x, y). Pure.
+
+    OpenF1 positions are already a top-down plane in x/y (z is elevation).
+    Choosing axes by spread used to swap them for some circuits (e.g. Monaco),
+    which put the drawn circuit and the cars in different projections.
+    """
+    if "x" in loc.columns and "y" in loc.columns:
+        return "x", "y"
+    present = [c for c in ("x", "y", "z") if c in loc.columns]
+    if len(present) < 2:
         raise ValueError("location needs at least two coordinate columns")
-    ranked = sorted(spread, key=spread.get, reverse=True)
-    return ranked[0], ranked[1]
+    return present[0], present[1]
 
 
 def clean_track_points(trace: pd.DataFrame, ax: str, ay: str) -> pd.DataFrame:
@@ -130,6 +136,68 @@ def resample_path(
     x = np.interp(grid, cum, pts[:, 0])
     y = np.interp(grid, cum, pts[:, 1])
     return pd.DataFrame({"x": x, "y": y, "frac": grid / total, "dist": grid})
+
+
+def start_angle(path: pd.DataFrame, span: float = 0.06) -> float:
+    """Angle (degrees) of the start/finish straight, for map orientation. Pure.
+
+    Track maps are far easier to read when the start straight is horizontal;
+    this returns the rotation needed, normalised to (-90, 90] so the map is
+    never upside down.
+    """
+    import numpy as np
+
+    if path.empty or len(path) < 20:
+        return 0.0
+    frac = path["frac"].to_numpy(dtype=float)
+    idx = np.where(frac <= span)[0]
+    if len(idx) < 3:
+        idx = np.arange(min(len(path) - 1, 10))
+    i, j = int(idx[0]), int(idx[-1])
+    dx = float(path["x"].iloc[j] - path["x"].iloc[i])
+    dy = float(path["y"].iloc[j] - path["y"].iloc[i])
+    if dx == 0 and dy == 0:
+        return 0.0
+    deg = np.degrees(np.arctan2(dy, dx))
+    if deg > 90:
+        deg -= 180
+    elif deg <= -90:
+        deg += 180
+    return float(deg)
+
+
+def rotate_path(path: pd.DataFrame, angle_deg: float) -> pd.DataFrame:
+    """Rotate x/y about the origin (same transform is applied to car dots)."""
+    import numpy as np
+
+    if path.empty or angle_deg == 0:
+        return path
+    a = np.radians(angle_deg)
+    cos, sin = np.cos(a), np.sin(a)
+    x = path["x"].to_numpy(dtype=float)
+    y = path["y"].to_numpy(dtype=float)
+    out = path.copy()
+    out["x"] = x * cos - y * sin
+    out["y"] = x * sin + y * cos
+    return out
+
+
+def rotate_points(points: list[dict], angle_deg: float) -> list[dict]:
+    """Rotate a list of {x, y, ...} dicts by `angle_deg` about the origin."""
+    import math
+
+    if not points or angle_deg == 0:
+        return points
+    a = math.radians(angle_deg)
+    cos, sin = math.cos(a), math.sin(a)
+    out = []
+    for p in points:
+        x, y = float(p["x"]), float(p["y"])
+        q = dict(p)
+        q["x"] = x * cos - y * sin
+        q["y"] = x * sin + y * cos
+        out.append(q)
+    return out
 
 
 def detect_corners(path: pd.DataFrame, target: int | None = None) -> pd.DataFrame:

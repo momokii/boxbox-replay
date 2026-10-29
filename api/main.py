@@ -236,19 +236,37 @@ def stints(session_key: int):
     return records(data_loader.get_stints(session_key))
 
 
-@app.get("/weather")
-def weather(session_key: int):
-    return records(data_loader.get_weather(session_key))
+def _with_session_time(df: pd.DataFrame, session_key: int) -> pd.DataFrame:
+    """Attach t (seconds from lights out) to event rows; drop pre-session rows."""
+    if df.empty or "date" not in df.columns:
+        return df
+    start, _ = data_loader.session_window(session_key)
+    laps = data_loader.list_laps(session_key)
+    markers = analysis.lap_markers(laps, start)
+    t0 = float(markers["t"].min()) if not markers.empty else 0.0
+    stamps = data_loader.to_dt(df["date"])
+    out = df.assign(t=(stamps - start).dt.total_seconds() - t0).round({"t": 1})
+    return out[out["t"] >= 0].sort_values("t").reset_index(drop=True)
 
 
 @app.get("/radio")
 def radio(session_key: int):
-    return records(data_loader.get_team_radio(session_key))
+    """All team-radio events for the session (audio only; the API has no text)."""
+    return records(_with_session_time(data_loader.get_team_radio(session_key), session_key))
 
 
 @app.get("/race-control")
 def race_control(session_key: int):
-    return records(data_loader.get_race_control(session_key))
+    """All race-control messages for the session, chronological."""
+    return records(_with_session_time(data_loader.get_race_control(session_key), session_key))
+
+
+@app.get("/weather")
+def weather(session_key: int):
+    """Full weather series (not just the latest sample)."""
+    df = _with_session_time(data_loader.get_weather(session_key), session_key)
+    cols = ["t", "air_temperature", "track_temperature", "humidity", "rainfall", "wind_speed"]
+    return records(df[[c for c in cols if c in df.columns]])
 
 
 @app.get("/session/info")
@@ -303,18 +321,38 @@ def session_geometry(session_key: int, driver_number: int | None = None) -> dict
     stamps = data_loader.to_dt(loc["date"])
     trace = loc[(stamps >= start) & (stamps < end_ts)].reset_index(drop=True)
     path = analysis.resample_path(analysis.clean_track_points(trace, ax, ay), ax, ay)
-    line = pd.DataFrame({"x": path["x"].to_numpy(), "y": path["y"].to_numpy()})
+    angle = analysis.start_angle(path)
+    rotated = analysis.rotate_path(path, -angle)
+    line = pd.DataFrame({"x": rotated["x"].to_numpy(), "y": rotated["y"].to_numpy()})
     corners = analysis.detect_corners(path)
     merged = _lap_merged_car_loc(session_key, drv, start, end_ts)
-    zones = analysis.drs_zones(merged, ax, ay) if not merged.empty else pd.DataFrame()
+    zones_df = analysis.drs_zones(merged, ax, ay) if not merged.empty else pd.DataFrame()
+    zones = (
+        analysis.rotate_points(
+            [
+                {
+                    "x0": float(z.x0),
+                    "y0": float(z.y0),
+                    "x1": float(z.x1),
+                    "y1": float(z.y1),
+                    "label": z.label,
+                }
+                for z in zones_df.itertuples()
+            ],
+            -angle,
+        )
+        if not zones_df.empty
+        else []
+    )
     return {
         "ax": ax,
         "ay": ay,
+        "angle": angle,
         "driver": drv,
         "lap": lap,
         "outline": line.values.tolist(),
-        "corners": records(corners),
-        "zones": zones.to_dict(orient="records") if not zones.empty else [],
+        "corners": analysis.rotate_points(records(corners), -angle),
+        "zones": zones,
     }
 
 

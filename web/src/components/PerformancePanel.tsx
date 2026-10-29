@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { compoundColor } from "../format";
+import { formatClock } from "../session";
 import { stintSlope } from "../perf";
 import Info from "./Info";
+import WeatherChart from "./WeatherChart";
 import type { Lap, Stint } from "../types";
 
 interface Props {
@@ -12,6 +14,7 @@ interface Props {
   towerOrder: number[];
   driverCode: (n: number) => string;
   onSeek: (t: number) => void;
+  duration: number;
 }
 
 interface Feed {
@@ -41,9 +44,15 @@ export default function PerformancePanel(p: Props) {
   if (error) return <p className="dim">Performance feeds unavailable for this session.</p>;
   if (!feed) return <p className="dim">Loading performance data…</p>;
 
-  const focus = p.highlight.length ? p.highlight : p.towerOrder.slice(0, 3);
-  const shownDrivers = scope === "focus" ? focus : [...new Set(feed.stints.map((s) => s.driver_number))];
-  const stints = feed.stints.filter((s) => shownDrivers.includes(s.driver_number));
+  const focus = p.highlight;
+  const allDrivers = [...new Set(feed.stints.map((s) => s.driver_number))];
+  const shownDrivers = scope === "focus" ? focus : allDrivers;
+  const stints = feed.stints.filter(
+    (s) =>
+      shownDrivers.includes(s.driver_number) &&
+      s.lap_start != null &&
+      (s.lap_end == null || s.lap_end >= s.lap_start),
+  );
   const maxLap = Math.max(1, ...stints.map((s) => s.lap_end ?? 0));
 
   const slopeRows = stints.map((s) => {
@@ -61,9 +70,6 @@ export default function PerformancePanel(p: Props) {
     return { stint: s, slope };
   });
 
-  const latest = (rows: Record<string, unknown>[]) =>
-    [...rows].sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(-12).reverse();
-
   return (
     <div>
       <div className="row" style={{ marginBottom: 10 }}>
@@ -71,8 +77,11 @@ export default function PerformancePanel(p: Props) {
           My drivers ({focus.length})
         </button>
         <button className={scope === "all" ? "chip on" : "chip"} onClick={() => setScope("all")}>
-          Whole field ({new Set(feed.stints.map((s) => s.driver_number)).size})
+          Whole field ({allDrivers.length})
         </button>
+        {scope === "focus" && focus.length === 0 && (
+          <span className="dim small">No drivers picked — click rows in the timing tower, or switch to Whole field.</span>
+        )}
       </div>
 
       <section className="panel">
@@ -83,6 +92,7 @@ export default function PerformancePanel(p: Props) {
           />{" "}
           · whole race
         </h3>
+        <div className="stint-list">
         {stints.length ? (
           stints.map((s, i) => {
             const start = s.lap_start ?? 1;
@@ -110,11 +120,14 @@ export default function PerformancePanel(p: Props) {
         ) : (
           <p className="dim small">No stint data for these drivers.</p>
         )}
-        <div className="stint-axis">
-          <span>lap 1</span>
-          <span>{Math.round(maxLap / 2)}</span>
-          <span>{maxLap}</span>
         </div>
+        {stints.length > 0 && (
+          <div className="stint-axis">
+            <span>lap 1</span>
+            <span>{Math.round(maxLap / 2)}</span>
+            <span>{maxLap}</span>
+          </div>
+        )}
         <p className="dim small">
           Showing {shownDrivers.length} of {new Set(feed.stints.map((s) => s.driver_number)).size} drivers
           {scope === "focus" ? " — highlight drivers in the tower to change this." : "."} Bars are the full race,
@@ -140,7 +153,7 @@ export default function PerformancePanel(p: Props) {
             </tr>
           </thead>
           <tbody>
-            {slopeRows.slice(0, 12).map(({ stint, slope }) => (
+            {slopeRows.map(({ stint, slope }) => (
               <tr key={`${stint.driver_number}-${stint.lap_start}`}>
                 <td>{p.driverCode(stint.driver_number)}</td>
                 <td>{stint.compound ?? "?"}</td>
@@ -156,51 +169,76 @@ export default function PerformancePanel(p: Props) {
 
       <section className="panel">
         <h3>
-          <Info label="Weather" tip="Latest weather sample from the session feed (air and track temperature, humidity, rain)." />
+          <Info
+            label="Weather"
+            tip="Air and track temperature for the whole session, sampled about once every 15 seconds. Legend shows the last sample."
+          />
         </h3>
-        {feed.weather.length ? (
-          <p className="mono small">
-            Air {Number(feed.weather.at(-1)?.air_temperature).toFixed(1)}°C · Track{" "}
-            {Number(feed.weather.at(-1)?.track_temperature).toFixed(1)}°C · Humidity{" "}
-            {Number(feed.weather.at(-1)?.humidity).toFixed(0)}% · Rain {Number(feed.weather.at(-1)?.rainfall).toFixed(0)}mm
-          </p>
-        ) : (
-          <p className="dim small">No weather data.</p>
-        )}
+        <WeatherChart
+          points={feed.weather.map((w) => ({
+            t: Number(w.t ?? 0),
+            air_temperature: w.air_temperature as number | null,
+            track_temperature: w.track_temperature as number | null,
+            humidity: w.humidity as number | null,
+            rainfall: w.rainfall as number | null,
+          }))}
+          duration={p.duration}
+        />
       </section>
 
       <div className="row" style={{ alignItems: "flex-start", gap: 12 }}>
         <section className="panel" style={{ flex: 1, minWidth: 260 }}>
           <h3>
-            <Info label="Team radio" tip="Recorded team-radio messages from the whole session. The API has audio only — no transcripts, so none are shown." />
+            <Info
+              label="Team radio"
+              tip="Every team-radio message OpenF1 has for this session. Audio only — the API publishes no transcripts, so none are shown. Click a time to jump the replay there."
+            />{" "}
+            · all {feed.radio.length} messages
           </h3>
-          {feed.radio.length ? (
-            latest(feed.radio).map((r, i) => (
-              <p key={i} className="dim small mono">
-                {String(r.date).slice(11, 19)} · {p.driverCode(Number(r.driver_number))} ·{" "}
-                <a href={String(r.recording_url)} target="_blank" rel="noreferrer">
-                  audio
-                </a>
-              </p>
-            ))
-          ) : (
-            <p className="dim small">No radio messages.</p>
-          )}
+          <div className="event-list">
+            {feed.radio.length ? (
+              feed.radio.map((r, i) => (
+                <button key={i} className="event-row" onClick={() => p.onSeek(Number(r.t ?? 0))}>
+                  <span className="mono dim">{formatClock(Number(r.t ?? 0))}</span>
+                  <span className="mono">{p.driverCode(Number(r.driver_number))}</span>
+                  <a
+                    href={String(r.recording_url)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    audio
+                  </a>
+                </button>
+              ))
+            ) : (
+              <p className="dim small">No radio messages for this session.</p>
+            )}
+          </div>
         </section>
         <section className="panel" style={{ flex: 1, minWidth: 260 }}>
           <h3>
-            <Info label="Race control" tip="Stewards' and race-control messages for the whole session: flags, investigations, penalties." />
+            <Info
+              label="Race control"
+              tip="Every steward and race-control message for this session: flags, investigations, penalties. Click a time to jump the replay there."
+            />{" "}
+            · all {feed.rc.length} messages
           </h3>
-          {feed.rc.length ? (
-            latest(feed.rc).map((r, i) => (
-              <p key={i} className="dim small mono">
-                {String(r.date).slice(11, 19)} · {String(r.category)}
-                {r.flag ? ` ${r.flag}` : ""} · {String(r.message).slice(0, 90)}
-              </p>
-            ))
-          ) : (
-            <p className="dim small">No race-control messages.</p>
-          )}
+          <div className="event-list">
+            {feed.rc.length ? (
+              feed.rc.map((r, i) => (
+                <button key={i} className="event-row rc" onClick={() => p.onSeek(Number(r.t ?? 0))}>
+                  <span className="mono dim">{formatClock(Number(r.t ?? 0))}</span>
+                  <span className="small">
+                    {String(r.category)}
+                    {r.flag ? ` ${r.flag}` : ""} — {String(r.message)}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="dim small">No race-control messages for this session.</p>
+            )}
+          </div>
         </section>
       </div>
     </div>

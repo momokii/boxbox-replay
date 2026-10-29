@@ -17,6 +17,7 @@ interface Props {
   replay: Map<number, ReplayDriver>;
   dots: DotMeta[];
   highlight: number[];
+  angle: number;
   selectedCorner: string | null;
   selectedDriver: number | null;
   onCorner: (label: string) => void;
@@ -25,6 +26,14 @@ interface Props {
 }
 
 const TRAIL_S = 6;
+
+function rotate(x: number, y: number, deg: number): { x: number; y: number } {
+  if (!deg) return { x, y };
+  const a = (deg * Math.PI) / 180;
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return { x: x * c - y * s, y: x * s + y * c };
+}
 
 function HoverCard(p: {
   hover: { x: number; y: number; driver: number };
@@ -86,10 +95,11 @@ export default function SessionMap(p: Props) {
     const pad = 34;
     const scale = Math.min((w - pad * 2) / Math.max(1, maxX - minX), (h - pad * 2) / Math.max(1, maxY - minY));
     const ox = pad + (w - pad * 2 - (maxX - minX) * scale) / 2 - minX * scale;
-    const oy = pad + (h - pad * 2 - (maxY - minY) * scale) / 2 - minY * scale;
+    // World y grows up, canvas y grows down: negate so the map is not mirrored.
+    const oy = pad + (h - pad * 2 - (maxY - minY) * scale) / 2 + maxY * scale;
     geom.current = { scale, ox, oy, span: Math.max(1, maxX - minX, maxY - minY) };
     const X = (x: number) => ox + x * scale;
-    const Y = (y: number) => oy + y * scale;
+    const Y = (y: number) => oy - y * scale;
 
     const t = p.playback.state.t;
 
@@ -134,8 +144,9 @@ export default function SessionMap(p: Props) {
       if (!d) continue;
       const pos = posAt(d, t);
       if (!pos) continue;
-      const sx = X(pos.x);
-      const sy = Y(pos.y);
+      const rp = rotate(pos.x, pos.y, -p.angle);
+      const sx = X(rp.x);
+      const sy = Y(rp.y);
       screen.current.set(dot.driver, { x: sx, y: sy });
       const dim = p.highlight.length > 0 && !p.highlight.includes(dot.driver);
       const trail = trailAt(d, t, TRAIL_S);

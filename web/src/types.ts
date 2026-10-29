@@ -75,6 +75,7 @@ export interface DrsZone {
 export interface Geometry {
   ax: string;
   ay: string;
+  angle?: number;
   outline: number[][];
   corners: Corner[];
   zones: DrsZone[];

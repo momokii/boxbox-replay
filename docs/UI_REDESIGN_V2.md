@@ -112,3 +112,27 @@ amber darkened to `#A86A00` for contrast on light. Data colors unchanged.
   axis, provenance line for the pit model inputs.
 - **Session window** shown in the facts panel (UTC start–end plus race time).
 - Selects use one proportional arrow instead of the browser default.
+
+
+## Pass 4 — orientation, player placement, panel clarity
+
+- **Circuit orientation** had two independent bugs: positions were drawn with
+  canvas y-down while the world is y-up (a mirror), and `map_plane` picked axes
+  by variance — for Monaco it returned (y, x) while the car dots always used
+  (x, y), so dots and outline were in different projections. The plane is now
+  fixed to (x, y), the canvas flips y, and the map is rotated so the start
+  straight is horizontal (rotation returned by the API and applied to cars,
+  corners and DRS zones alike). Numerically verified: car-to-outline distances
+  are ~0.1% of track span on Monaco, Suzuka and COTA.
+- **Player bar** is now a sibling of the map, not an overlay: measured
+  non-overlap, so no circuit section can hide behind it.
+- **Pit wall** rewritten around the question it answers: "Should X pit now or
+  stay out for the last N laps?" → two totals as bars, the verdict, the saving
+  in seconds, the three assumptions, and a provenance line of measured inputs.
+- **Weather** is a full-session air/track temperature chart, not the last sample.
+- **Degradation**: "Whole field" lists every stint (no silent 12-row cut);
+  "My drivers" is empty (with a hint) until you actually pick drivers, instead
+  of showing a rotating cast of three.
+- **Radio / race control** show every event with counts and click-to-seek.
+- **Per-driver loading**: while a driver's speed is in flight the panel shows a
+  spinner naming the drivers, and tower gaps render dimmed until timing exists.

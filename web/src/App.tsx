@@ -276,6 +276,18 @@ export default function App() {
     return rows;
   }, [drivers.data, gapTable, playT, highlight, selectedDriver]);
 
+  const gapBehind = useMemo(() => {
+    const pitDriver = highlight[0] ?? selectedDriver;
+    if (pitDriver == null) return null;
+    const mine = gapAt(gapTable, pitDriver, playT);
+    if (mine == null) return null;
+    const behind = (drivers.data ?? [])
+      .filter((d) => d.driver_number !== pitDriver)
+      .map((d) => gapAt(gapTable, d.driver_number, playT))
+      .filter((g): g is number => g != null && g > mine);
+    return behind.length ? Math.min(...behind) - mine : null;
+  }, [gapTable, highlight, selectedDriver, drivers.data, playT]);
+
   const lapMarkers = replay.data?.laps ?? [];
   const progress = lapAt(lapMarkers, playT);
   const lapIdx = Math.max(0, lapMarkers.findIndex((m) => m.t > playT) - 1);
@@ -285,6 +297,7 @@ export default function App() {
   const focusDrivers = highlight.length ? highlight : selectedDriver != null ? [selectedDriver] : [];
   const chartDrivers = focusDrivers.length ? focusDrivers : towerRows.slice(0, 5).map((r) => r.driver);
 
+  const speedLoading = chartDrivers.filter((d) => !speedByDriver.has(d));
   const series: SpeedSeries[] = chartDrivers.flatMap((d) => {
     const pts = speedByDriver.get(d);
     const meta = driverMeta.get(d);
@@ -437,6 +450,7 @@ export default function App() {
               }}
             />
             <p className="dim small">
+              {sessionLoading ? "Loading this session's timing…" : ""}
               {highlight.length
                 ? `${highlight.length} highlighted — tower, speed and gaps follow your choice.`
                 : "Click a row to follow that driver. Nothing highlighted shows the whole field."}
@@ -474,6 +488,7 @@ export default function App() {
                         corners={geo.data?.corners ?? []}
                         zones={geo.data?.zones ?? []}
                         replay={replayMap}
+                        angle={geo.data?.angle ?? 0}
                         dots={(drivers.data ?? []).map((d) => ({
                           driver: d.driver_number,
                           code: d.name_acronym,
@@ -486,25 +501,26 @@ export default function App() {
                         onDriver={(n) => setSelectedDriver((cur) => (cur === n ? null : n))}
                         hoverInfo={hoverInfo}
                       />
-                      <div className="player player-overlay">
-                        <button className="primary" onClick={() => playback.toggle()}>
-                          {playing ? "Pause" : "Play"}
-                        </button>
-                        <div className="seg" role="group" aria-label="Speed">
-                          {[1, 2, 4, 8].map((s) => (
-                            <button key={s} aria-pressed={speed === s} onClick={() => playback.setSpeed(s)}>
-                              {s}×
-                            </button>
-                          ))}
-                        </div>
-                        <label className="dim small row">
-                          <input type="checkbox" checked={calm} onChange={(e) => playback.setCalm(e.target.checked)} />
-                          Calm
-                        </label>
-                        <span className="mono small dim" style={{ marginLeft: "auto" }}>
-                          {formatClock(playT)} / {formatClock(dur)}
-                        </span>
+                    </div>
+
+                    <div className="player">
+                      <button className="primary" onClick={() => playback.toggle()}>
+                        {playing ? "Pause" : "Play"}
+                      </button>
+                      <div className="seg" role="group" aria-label="Speed">
+                        {[1, 2, 4, 8].map((s) => (
+                          <button key={s} aria-pressed={speed === s} onClick={() => playback.setSpeed(s)}>
+                            {s}×
+                          </button>
+                        ))}
                       </div>
+                      <label className="dim small row">
+                        <input type="checkbox" checked={calm} onChange={(e) => playback.setCalm(e.target.checked)} />
+                        Calm
+                      </label>
+                      <span className="mono small dim" style={{ marginLeft: "auto" }}>
+                        {formatClock(playT)} / {formatClock(dur)}
+                      </span>
                     </div>
 
                     <Timeline playback={playback} markers={lapMarkers} onSeek={(t) => playback.setT(t)} />
@@ -526,6 +542,13 @@ export default function App() {
 
                     <div className="panel">
                       <h3>Speed telemetry</h3>
+                      {speedLoading.length > 0 && (
+                        <p className="dim small loading-inline">
+                          <span className="spinner" aria-hidden="true" />
+                          Loading telemetry for{" "}
+                          {speedLoading.map((d) => driverMeta.get(d)?.code ?? `#${d}`).join(", ")}…
+                        </p>
+                      )}
                       {series.length ? (
                         <SpeedChart
                           playback={playback}
@@ -579,15 +602,17 @@ export default function App() {
                 towerOrder={towerRows.map((r) => r.driver)}
                 driverCode={(n) => driverMeta.get(n)?.code ?? `#${n}`}
                 onSeek={(t) => playback.setT(t)}
+                duration={dur}
               />
             )}
             {view === "pit" && sessionKey && (
               <PitPanel
                 sessionKey={sessionKey}
                 laps={allLaps}
-                intervals={gaps.data?.points?.map((g) => ({ date: String(g.t), driver_number: g.driver_number, gap_to_leader: g.gap_to_leader })) ?? []}
                 driver={highlight[0] ?? selectedDriver ?? towerRows[0]?.driver ?? 0}
                 driverCode={(n) => driverMeta.get(n)?.code ?? `#${n}`}
+                gapBehind={gapBehind}
+                onSeek={(t) => playback.setT(t)}
               />
             )}
           </section>

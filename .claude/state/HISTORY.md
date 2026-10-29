@@ -190,3 +190,14 @@ fractions (Suzuka 18, COTA 22). Added loading cards with session context,
 driver cards (full name/team/tyre age/last-best lap + acronym explainer),
 richer map hover, performance/pit/battle context labels, jargon tooltips,
 proportional select arrows, session UTC window in facts. 50 pytest + 27 vitest.
+
+## 2026-10-29 — U5 orientation + panel clarity
+
+Fixed Monaco-style misalignment: canvas y flip (map was mirrored) and a plane
+mismatch (geometry picked (y,x) by variance while cars used (x,y)); plane is
+now fixed, and the map rotates to a horizontal start straight, applied
+consistently to cars/corners/DRS. Player bar measured non-overlapping. Pit wall
+rewritten around its question with assumptions + provenance. Weather is now a
+whole-session chart; degradation "whole field" lists everything; radio/RC show
+all events with counts and click-to-seek; per-driver telemetry loading states.
+50 pytest, 27 vitest, verified on Monaco with numeric alignment checks.

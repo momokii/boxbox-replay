@@ -28,7 +28,7 @@ export default function Tower(p: Props) {
         >
           <span className="tower-chip" style={{ background: r.color }} />
           <span className="tower-code">{r.code}</span>
-          <span className="tower-gap">{formatGap(r.gap)}</span>
+          <span className={r.gap == null ? "tower-gap pending" : "tower-gap"}>{formatGap(r.gap)}</span>
         </button>
       ))}
     </div>

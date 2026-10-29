@@ -1,51 +1,50 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api";
 import { formatLapTime } from "../format";
 import { recentPace, stintSlope } from "../perf";
 import Info from "./Info";
-import type { IntervalPoint, Lap } from "../types";
+import type { Lap } from "../types";
 
 interface Props {
   sessionKey: number;
   laps: Lap[];
-  intervals: IntervalPoint[];
   driver: number;
   driverCode: (n: number) => string;
+  gapBehind: number | null;
+  onSeek: (t: number) => void;
 }
 
+interface Call {
+  stay_total_s: number;
+  pit_total_s: number;
+  recommendation: string;
+  traffic_on_exit: boolean;
+}
+
+/**
+ * Pit-strategy what-if. The interface states the question, the three inputs,
+ * the two totals and the assumptions — in that order.
+ */
 export default function PitPanel(p: Props) {
   const [lapsLeft, setLapsLeft] = useState(10);
   const [pitLoss, setPitLoss] = useState(22);
-  const [call, setCall] = useState<{
-    stay_total_s: number;
-    pit_total_s: number;
-    recommendation: string;
-    traffic_on_exit: boolean;
-  } | null>(null);
+  const [call, setCall] = useState<Call | null>(null);
   const [error, setError] = useState(false);
 
-  const mine = useMemo(() => p.laps.filter((l) => l.driver_number === p.driver).sort((a, b) => a.lap_number - b.lap_number), [p.laps, p.driver]);
+  const mine = p.laps
+    .filter((l) => l.driver_number === p.driver)
+    .sort((a, b) => a.lap_number - b.lap_number);
   const base = recentPace(mine) ?? 0;
-  const fresh = useMemo(() => {
+  const fresh = (() => {
     const t = mine.map((l) => l.lap_duration).filter((v): v is number => v != null);
     return t.length ? Math.min(...t) : 0;
-  }, [mine]);
+  })();
   let deg = 0;
   try {
     deg = Math.max(0, stintSlope(mine));
   } catch {
     deg = 0;
   }
-  const gapBehind = useMemo(() => {
-    if (!p.intervals.length) return null;
-    const latest = [...p.intervals].sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
-    const byDriver = new Map<number, number>();
-    for (const r of latest) if (r.gap_to_leader != null) byDriver.set(r.driver_number, r.gap_to_leader);
-    const mine_ = byDriver.get(p.driver);
-    if (mine_ == null) return null;
-    const behind = [...byDriver.values()].filter((g) => g > mine_);
-    return behind.length ? Math.min(...behind) - mine_ : null;
-  }, [p.intervals, p.driver]);
 
   useEffect(() => {
     if (!base || !fresh) return;
@@ -58,67 +57,103 @@ export default function PitPanel(p: Props) {
         deg_slope_s_per_lap: deg,
         laps_remaining: lapsLeft,
         pit_loss_s: pitLoss,
-        gap_behind_s: gapBehind,
+        gap_behind_s: p.gapBehind,
       })
       .then((c) => live && setCall(c))
       .catch(() => live && setError(true));
     return () => {
       live = false;
     };
-  }, [p.sessionKey, base, fresh, deg, lapsLeft, pitLoss, gapBehind]);
+  }, [p.sessionKey, base, fresh, deg, lapsLeft, pitLoss, p.gapBehind]);
 
-  if (!mine.length) return <p className="dim">Pick a driver with timed laps first.</p>;
+  if (!mine.length) {
+    return <p className="dim">Pick a driver in the timing tower (click a row) to run the pit model.</p>;
+  }
+
+  const diff = call ? Math.abs(call.stay_total_s - call.pit_total_s) : 0;
+  const maxTotal = call ? Math.max(call.stay_total_s, call.pit_total_s) : 1;
 
   return (
     <div>
-      <p className="dim small">
-        <strong>What this is:</strong> a deliberately simple what-if. It compares staying out against pitting
-        now using your car's measured pace and tyre wear, a fixed pit-loss estimate, and the gap behind.
-        It ignores rival strategy, safety cars and traffic beyond that one check.
+      <p className="pit-question">
+        Should <strong>{p.driverCode(p.driver)}</strong> pit now, or stay out for the last{" "}
+        <strong>{lapsLeft}</strong> laps?
       </p>
-      <div className="row">
-        <span className="small">
-          <Info label="Driver" tip="Whose measured pace and tyre wear the model uses. Pick another driver in the tower to change it." />
-          {" "}
-          <strong className="mono">{p.driverCode(p.driver)}</strong>
-        </span>
-        <label className="dim small">
-          <Info label="Laps left" tip="How many laps are still to run. Defaults to 10 — change it to your scenario." />
-          {" "}
-          <input type="number" min={1} value={lapsLeft} onChange={(e) => setLapsLeft(Number(e.target.value))} style={{ width: "70px" }} />
-        </label>
-        <label className="dim small">
-          <Info label="Pit loss" tip="Time lost in the pit lane compared with staying on track. About 20-25 s on most circuits." />
-          {" "}
-          <input type="range" min={15} max={30} step={0.5} value={pitLoss} onChange={(e) => setPitLoss(Number(e.target.value))} />
-          <span className="mono">{pitLoss.toFixed(1)}</span>
-        </label>
+
+      <div className="pit-inputs">
+        <div className="pit-field">
+          <Info
+            label="Laps left"
+            tip="How many laps remain in the race. The model only sums these laps, so it is a snapshot, not a plan."
+          />
+          <input
+            type="number"
+            min={1}
+            max={60}
+            value={lapsLeft}
+            onChange={(e) => setLapsLeft(Math.max(1, Number(e.target.value)))}
+          />
+        </div>
+        <div className="pit-field">
+          <Info
+            label="Pit loss"
+            tip="Time lost driving through the pit lane at this circuit. 20-25 s is typical; drag it to see how sensitive the answer is."
+          />
+          <input
+            type="range"
+            min={15}
+            max={30}
+            step={0.5}
+            value={pitLoss}
+            onChange={(e) => setPitLoss(Number(e.target.value))}
+          />
+          <span className="mono">{pitLoss.toFixed(1)}s</span>
+        </div>
       </div>
-      {error && <p className="dim">Pit model unavailable.</p>}
+
+      {error && <p className="dim">The model could not run for this driver.</p>}
+
       {call && (
         <>
-          <dl className="facts">
-            <div>
-              <dt><Info label="Stay out" tip="Total time over the remaining laps on the current tyres, including the measured wear." /></dt>
-              <dd>{call.stay_total_s.toFixed(1)}s total</dd>
+          <div className="pit-bars">
+            <div className="pit-bar-row">
+              <span className="pit-bar-label">Stay out</span>
+              <div className="pit-bar-track">
+                <span className="pit-bar stay" style={{ width: `${(call.stay_total_s / maxTotal) * 100}%` }} />
+              </div>
+              <span className="mono">{call.stay_total_s.toFixed(1)}s</span>
             </div>
-            <div>
-              <dt><Info label="Pit now" tip="Pit loss plus the remaining laps on fresh tyres." /></dt>
-              <dd>{call.pit_total_s.toFixed(1)}s total</dd>
+            <div className="pit-bar-row">
+              <span className="pit-bar-label">Pit now</span>
+              <div className="pit-bar-track">
+                <span className="pit-bar pit" style={{ width: `${(call.pit_total_s / maxTotal) * 100}%` }} />
+              </div>
+              <span className="mono">{call.pit_total_s.toFixed(1)}s</span>
             </div>
-            <div>
-              <dt><Info label="Traffic on exit" tip="Whether the car behind is closer than the pit loss, meaning you would rejoin behind them." /></dt>
-              <dd>{call.traffic_on_exit ? "yes" : "clear"}</dd>
-            </div>
-          </dl>
+          </div>
+
           <p className="pit-answer">{call.recommendation}</p>
-          <p className="dim small">
-            Lower total wins. Difference: {Math.abs(call.pit_total_s - call.stay_total_s).toFixed(1)}s.
+          <p className="small">
+            {call.recommendation === "STAY OUT"
+              ? `Staying out saves ${diff.toFixed(1)}s over the next ${lapsLeft} laps.`
+              : `Pitting saves ${diff.toFixed(1)}s over the next ${lapsLeft} laps.`}
           </p>
+          {call.traffic_on_exit && (
+            <p className="small warn">Traffic on exit: the car behind is closer than the pit loss, so you would rejoin behind it.</p>
+          )}
         </>
       )}
+
+      <h3 style={{ marginTop: 18 }}>What this model assumes</h3>
+      <ul className="pit-assumptions">
+        <li>Tyre wear stays linear at the rate measured on this driver's laps ({deg.toFixed(3)}s per lap).</li>
+        <li>Every rival keeps their current pace; no safety cars, no overtakes, no weather change.</li>
+        <li>Pit loss is a fixed number you choose ({pitLoss.toFixed(1)}s), not a measured pit stop.</li>
+      </ul>
+
       <p className="dim small mono">
-        From measured data: pace now {formatLapTime(base)} · best lap {formatLapTime(fresh)} · wear +{deg.toFixed(3)}s/lap
+        Inputs are measured: current pace {formatLapTime(base)} · best lap {formatLapTime(fresh)} · average wear{" "}
+        {deg.toFixed(3)}s/lap over {mine.filter((l) => l.lap_duration != null).length} timed laps.
       </p>
     </div>
   );
