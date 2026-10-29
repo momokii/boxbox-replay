@@ -1,5 +1,5 @@
 ## Project Phase
-M7 + TASK-002 done and committed. Backlog clear; next: user-directed work.
+M7 + TASK-002 done. DEPLOYED (prod stack, healthy) at http://<host>:8501.
 
 ## Completed
 - [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
@@ -12,7 +12,8 @@ M7 + TASK-002 done and committed. Backlog clear; next: user-directed work.
 - [x] M4: coach on corner click (corner loss vs ref + opencode LLM + radio card)
 - [x] M5: performance mode (deg slope + stint timeline + weather + radio + race control)
 - [x] M6: what-if pit toy model (linear deg + traffic check, labeled toy)
-- [x] M7: sector colors, DRS zones, mobile CSS, reduce-motion, smoke-tested
+- [x] Docs: root README.md + docs/DEPLOYMENT.md reflect the built system
+- [x] Prod deploy verified via localhost + Tailnet IP
 
 ## Blocked
 None
@@ -26,5 +27,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-29: all work committed, tree clean
+2026-10-29: deployed to prod stack, reachable via Tailnet; docs written
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

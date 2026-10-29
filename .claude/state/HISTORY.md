@@ -88,3 +88,10 @@ string dates in intervals. All fixed + regression-tested. 41 tests, ruff clean.
 `.github/workflows/ci.yml` (pytest, ruff, gitleaks, pip-audit, advisory Trivy).
 Verified: pip-audit clean, gitleaks 15 commits no leaks, pins intact,
 SECURITY_STANDARDS §12 marked implemented.
+
+## 2026-10-29 — Full sweep clean + prod deploy + docs
+
+Verification (ruff, 41 tests, both smoke paths, gitleaks): zero new bugs.
+Deployed prod stack (`boxbox-replay:stable`, healthy), reachable at
+`http://<host>:8501` via localhost AND Tailnet IP. Wrote root
+`README.md` + `docs/DEPLOYMENT.md` (dev/prod ops, Tailnet access).
