@@ -58,6 +58,21 @@ export const api = {
     chal: { driver: number; lap: number };
     corner: string;
   }) => post<CornerLoss>("/corner-loss", body),
+  pitCall: (body: {
+    base_pace_s: number;
+    fresh_pace_s: number;
+    deg_slope_s_per_lap: number;
+    laps_remaining: number;
+    pit_loss_s: number;
+    gap_behind_s: number | null;
+  }) =>
+    post<{
+      stay_total_s: number;
+      pit_total_s: number;
+      recommendation: string;
+      traffic_on_exit: boolean;
+      toy_model: boolean;
+    }>("/pit-call", body),
   coachAsk: (body: {
     driver: string;
     lap: number;

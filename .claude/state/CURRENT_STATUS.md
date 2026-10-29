@@ -1,5 +1,5 @@
 ## Project Phase
-REVAMP (option A). R1 done and committed. Next: R2 feature panels.
+REVAMP (option A). R2 done and committed. Next: R3 coach on-trigger.
 
 ## Completed
 - [x] M0–M7 Streamlit app (superseded; removal planned at R4)
@@ -9,6 +9,7 @@ REVAMP (option A). R1 done and committed. Next: R2 feature panels.
 
 ## In Progress
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
+- [x] R2: feature panels (battle, performance, pit toy) as secondary views
 
 ## Blocked
 None
@@ -22,5 +23,5 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-10-29: R1 committed (full-field canvas replay live)
+2026-10-29: R2 committed (panels live, JSON hardening fixed)
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

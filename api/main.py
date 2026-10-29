@@ -6,6 +6,7 @@ Empty datasets serialize as [] (the UI renders empty states, never crashes).
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -18,16 +19,53 @@ app = FastAPI(title="BoxBox Replay API")
 
 
 def records(df: pd.DataFrame) -> list[dict]:
-    """DataFrame -> JSON-safe records (NaN -> None, timestamps -> ISO str)."""
+    """DataFrame -> JSON-safe records (NaN -> None, timestamps -> ISO str).
+
+    Also normalizes numpy scalars and array cells (segment traces arrive
+    as ndarrays), which FastAPI's encoder would otherwise reject.
+    """
     if df.empty:
         return []
-    out = df.where(pd.notna(df), None)
+    out = df.astype(object).mask(df.isna(), None)
     for col in out.columns:
+        if out[col].dtype == object:
+            out[col] = pd.Series(
+                [_jsonable(v) for v in out[col].tolist()], dtype=object, index=out.index
+            )
         if pd.api.types.is_datetime64_any_dtype(out[col]) or (
             len(out) and isinstance(out[col].iloc[0], pd.Timestamp)
         ):
-            out[col] = out[col].map(lambda v: None if v is None else str(v))
+            out[col] = pd.Series(
+                [None if v is None else str(v) for v in out[col].tolist()],
+                dtype=object,
+                index=out.index,
+            )
     return out.to_dict(orient="records")
+
+
+def _jsonable(v):
+    if v is None:
+        return None
+    try:
+        if pd.isna(v):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(v, np.ndarray):
+        return [_jsonable(x) for x in v.tolist()]
+    if isinstance(v, (list, tuple)):
+        return [_jsonable(x) for x in v]
+    if isinstance(v, np.integer):
+        return int(v)
+    if isinstance(v, np.floating):
+        return None if np.isnan(v) else float(v)
+    if isinstance(v, np.bool_):
+        return bool(v)
+    if isinstance(v, pd.Timestamp):
+        return str(v)
+    if isinstance(v, (str, int, float, bool)):
+        return v
+    return str(v)
 
 
 @app.get("/healthz")
@@ -250,6 +288,27 @@ class CoachRequest(BaseModel):
     corner: str
     loss_s: float | None = None
     lap_delta_s: float | None = None
+
+
+class PitCallRequest(BaseModel):
+    base_pace_s: float
+    fresh_pace_s: float
+    deg_slope_s_per_lap: float = 0.0
+    laps_remaining: int = 10
+    pit_loss_s: float = 22.0
+    gap_behind_s: float | None = None
+
+
+@app.post("/pit-call")
+def pit_call(req: PitCallRequest) -> dict:
+    return analysis.pit_toy_model(
+        req.base_pace_s,
+        req.fresh_pace_s,
+        req.deg_slope_s_per_lap,
+        req.laps_remaining,
+        req.pit_loss_s,
+        req.gap_behind_s,
+    )
 
 
 @app.post("/coach/ask")

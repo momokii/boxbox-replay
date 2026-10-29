@@ -11,6 +11,8 @@ export interface TraceSeries {
 interface Props {
   playback: Playback;
   series: TraceSeries[];
+  /** undefined = follow playback; null = hidden; number = static value. */
+  cursor?: number | null;
 }
 
 const AMBER = "#FFB224";
@@ -68,13 +70,16 @@ export default function SpeedStrip(p: Props) {
       ctx.stroke();
     }
 
-    const px = X(p.playback.state.t);
-    ctx.strokeStyle = AMBER;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px, padT);
-    ctx.lineTo(px, h - padB);
-    ctx.stroke();
+    const cursorT = p.cursor === undefined ? p.playback.state.t : p.cursor;
+    if (cursorT != null) {
+      const px = X(cursorT);
+      ctx.strokeStyle = AMBER;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px, padT);
+      ctx.lineTo(px, h - padB);
+      ctx.stroke();
+    }
   });
 
   return (

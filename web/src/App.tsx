@@ -3,6 +3,10 @@ import { api } from "./api";
 import Tower from "./components/Tower";
 import TrackMap from "./components/TrackMap";
 import SpeedStrip, { type TraceSeries } from "./components/SpeedStrip";
+import GapChart from "./components/GapChart";
+import BattlePanel from "./components/BattlePanel";
+import PerformancePanel from "./components/PerformancePanel";
+import PitPanel from "./components/PitPanel";
 import { formatLapTime } from "./format";
 import { gapsAt, windowDuration } from "./playback";
 import { createPlayback } from "./playbackStore";
@@ -47,6 +51,7 @@ export default function App() {
   const [highlight, setHighlight] = useState<number[]>([]);
   const [selected, setSelected] = useState<{ driver: number; lap: number } | null>(null);
   const [selectedCorner, setSelectedCorner] = useState<string | null>(null);
+  const [view, setView] = useState<"replay" | "battle" | "performance" | "pit">("replay");
   const year = yearSel ?? years.data?.[years.data.length - 1] ?? null;
 
   const resetSession = () => {
@@ -344,6 +349,22 @@ export default function App() {
           </section>
 
           <section className="stage">
+            <div className="row" role="tablist" aria-label="Views">
+              {(["replay", "battle", "performance", "pit"] as const).map((v) => (
+                <button
+                  key={v}
+                  role="tab"
+                  aria-selected={view === v}
+                  onClick={() => setView(v)}
+                  className={view === v ? "primary" : ""}
+                  style={{ textTransform: "capitalize" }}
+                >
+                  {v === "pit" ? "Pit wall" : v}
+                </button>
+              ))}
+            </div>
+            {view === "replay" && (
+              <>
             <div className="row">
               <button className="primary" onClick={() => playback.toggle()}>
                 {playing ? "Pause" : "Play"}
@@ -393,6 +414,35 @@ export default function App() {
             )}
             <h2>Speed</h2>
             <SpeedStrip playback={playback} series={stripSeries} />
+            <h2>Gap to leader</h2>
+            <GapChart
+              intervals={intervals.data ?? []}
+              drivers={towerRows.map((r) => r.driver)}
+              labels={new Map(towerRows.map((r) => [r.driver, `#${r.driver} ${r.code}`]))}
+              colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
+            />
+              </>
+            )}
+            {view === "battle" && sessionKey && (
+              <BattlePanel
+                playback={playback}
+                sessionKey={sessionKey}
+                drivers={drivers.data ?? []}
+                laps={allLaps}
+                refProp={ref}
+              />
+            )}
+            {view === "performance" && sessionKey && (
+              <PerformancePanel sessionKey={sessionKey} laps={allLaps} />
+            )}
+            {view === "pit" && sessionKey && (
+              <PitPanel
+                sessionKey={sessionKey}
+                laps={allLaps}
+                intervals={intervals.data ?? []}
+                driver={highlight[0] ?? ref?.driver ?? towerRows[0]?.driver ?? 0}
+              />
+            )}
           </section>
 
           <section className="engineer">

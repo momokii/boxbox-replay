@@ -111,3 +111,12 @@ telemetry), timing tower with live gaps + highlight toggles, Play/Pause +
 1x/2x/4x + scrub + Space, reduce-motion, synced canvas speed strip. No driver
 cap — highlight is optional. Verified: 14 vitest, tsc build, rAF playback
 store, live geometry/lap-window endpoints, both services healthy via proxy.
+
+## 2026-10-29 — R2 feature panels
+
+Battle (head-to-head overlay + signed delta), Performance (deg slopes, stint
+timeline, weather, radio audio links, race control), Pit toy (server-side model,
+traffic check, bannered toy), tabbed as secondary views; GapChart restored in
+replay. Hardened records() JSON: NaN->None (map dtype-inference trap),
+ndarray cells, strict-dumps regression tests. All 6 race feeds verified live
+through the nginx proxy. 49 pytest + 17 vitest green, tsc build clean.

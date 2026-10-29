@@ -3,6 +3,7 @@
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from fastapi.testclient import TestClient
 
@@ -110,3 +111,28 @@ def test_coach_ask_fallback(monkeypatch):
     with TestClient(m.app) as client:
         body = client.post("/coach/ask", json=payload).json()
         assert body["answer"] is None and body["llm"] is False and body["confidence"] == "MED"
+
+
+def test_pit_call_delegates_to_model():
+    import json
+
+    nan_df = _frame([{"driver_number": 1, "lap_duration": float("nan")}])
+    rows = m.records(nan_df)
+    assert rows[0]["lap_duration"] is None
+    json.dumps(rows, allow_nan=False)  # must be strictly JSON-serializable
+    arr_df = pd.DataFrame({"seg": [None]})
+    arr_df.at[0, "seg"] = np.array([1.0, 2.0])
+    rows = m.records(arr_df)
+    assert rows[0]["seg"] == [1.0, 2.0]
+    json.dumps(rows, allow_nan=False)
+    payload = {
+        "base_pace_s": 90.0,
+        "fresh_pace_s": 89.0,
+        "deg_slope_s_per_lap": 0.2,
+        "laps_remaining": 30,
+        "pit_loss_s": 22.0,
+        "gap_behind_s": 60.0,
+    }
+    with TestClient(m.app) as client:
+        body = client.post("/pit-call", json=payload).json()
+        assert body["recommendation"] == "PIT NOW" and body["toy_model"] is True
