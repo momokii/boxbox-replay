@@ -9,6 +9,8 @@ import pandas as pd
 import streamlit as st
 
 import data_loader
+import viz
+from analysis import NOISE_THRESHOLD, best_lap
 from data_loader import clamp_selection, format_lap_time
 
 st.set_page_config(page_title="BoxBox Replay", layout="wide")
@@ -44,6 +46,21 @@ def _drivers(session_key: int) -> pd.DataFrame:
 @st.cache_data
 def _laps(session_key: int) -> pd.DataFrame:
     return data_loader.list_laps(session_key)
+
+
+@st.cache_data
+def _intervals(session_key: int) -> pd.DataFrame:
+    return data_loader.get_intervals(session_key)
+
+
+@st.cache_data
+def _lap_car(session_key: int, driver_number: int, lap_number: int) -> pd.DataFrame:
+    return data_loader.lap_car_data(session_key, driver_number, lap_number)
+
+
+@st.cache_data
+def _team_colors(session_key: int) -> dict[int, str]:
+    return data_loader.team_colors(session_key)
 
 
 years = _years()
@@ -140,3 +157,73 @@ if "selected_lap" in st.session_state:
         f"Loaded lap: {sel['driver']} lap {sel['lap']} - "
         f"{sel['time']} (map + traces arrive in M2/M3)"
     )
+
+# --- M2: battle — speed overlay + gap chart ---
+
+st.subheader("Battle")
+
+session_int = int(session_key)
+all_laps = _laps(session_int)
+
+sel = st.session_state.get("selected_lap")
+if sel and sel.get("session_key") == session_int:
+    ref_driver_label, ref_lap = sel["driver"], int(sel["lap"])
+elif picked:
+    try:
+        ref_row = best_lap(all_laps)
+        ref_driver_label, ref_lap = _driver_label(int(ref_row["driver_number"])), int(
+            ref_row["lap_number"]
+        )
+    except ValueError:
+        ref_driver_label, ref_lap = picked[0], 1
+else:
+    st.warning("Pick a session with lap data to start the battle view.")
+    st.stop()
+
+ref_num = int(ref_driver_label.split()[0][1:])
+chal_default = picked[1] if len(picked) > 1 else picked[0] if picked else ref_driver_label
+col_a, col_b = st.columns(2)
+with col_a:
+    st.markdown(f"**Reference:** {ref_driver_label} lap {ref_lap}")
+with col_b:
+    chal_driver_label = st.selectbox(
+        "Challenger", driver_opts, index=driver_opts.index(chal_default)
+    )
+    chal_lap = st.number_input("Challenger lap", min_value=1, value=ref_lap, step=1)
+chal_num = int(chal_driver_label.split()[0][1:])
+
+
+def _trace_df(df: pd.DataFrame) -> pd.DataFrame:
+    stamps = pd.to_datetime(df["date"], utc=True)
+    return pd.DataFrame({"t": (stamps - stamps.iloc[0]).dt.total_seconds(), "speed": df["speed"]})
+
+
+ref_car = _lap_car(session_int, ref_num, ref_lap)
+chal_car = _lap_car(session_int, chal_num, int(chal_lap))
+if ref_car.empty or chal_car.empty:
+    st.warning("Telemetry missing for one of these laps (session may be telemetry-gated).")
+else:
+    colors = _team_colors(session_int)
+    series = {ref_driver_label: _trace_df(ref_car), chal_driver_label: _trace_df(chal_car)}
+    color_by_label = {
+        ref_driver_label: colors.get(ref_num, "#8A94A6"),
+        chal_driver_label: colors.get(chal_num, "#8A94A6"),
+    }
+    st.plotly_chart(viz.speed_trace(series, color_by_label), use_container_width=True)
+    ref_t = all_laps.query("driver_number == @ref_num and lap_number == @ref_lap")
+    chal_t = all_laps.query("driver_number == @chal_num and lap_number == @chal_lap")
+    if not ref_t.empty and not chal_t.empty:
+        delta = float(chal_t.iloc[0]["lap_duration"]) - float(ref_t.iloc[0]["lap_duration"])
+        verdict = "noise - nothing to learn" if abs(delta) < NOISE_THRESHOLD else "real"
+        st.markdown(f"**Delta:** `{delta:+.3f}s` ({verdict})")
+
+st.subheader("Gap to leader")
+intervals = _intervals(session_int)
+if intervals.empty:
+    st.warning("No interval data for this session.")
+else:
+    gap_labels = {int(n): _driver_label(int(n)) for n in intervals["driver_number"].unique()}
+    if picked:
+        keep = {int(p.split()[0][1:]) for p in picked}
+        intervals = intervals[intervals["driver_number"].isin(keep)]
+    st.plotly_chart(viz.gap_chart(intervals, gap_labels), use_container_width=True)

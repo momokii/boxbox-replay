@@ -145,3 +145,63 @@ def test_format_lap_time_three_decimals():
 def test_clamp_selection_keeps_order_max_three():
     assert data_loader.clamp_selection(["a", "b", "c", "d"]) == ["a", "b", "c"]
     assert data_loader.clamp_selection(["a"]) == ["a"]
+
+
+# --- M2: battle data ---
+
+
+def test_team_colors_prefix_and_fallback(monkeypatch, isolated_cache):
+    monkeypatch.setattr(
+        data_loader,
+        "_fetch",
+        lambda endpoint, params=None: [
+            {"driver_number": 1, "team_colour": "3671C6"},
+            {"driver_number": 2, "team_colour": ""},
+        ],
+    )
+    assert data_loader.team_colors(1) == {1: "#3671C6", 2: "#8A94A6"}
+
+
+def _laps_df():
+    import pandas as pd
+
+    return pd.DataFrame(
+        {
+            "driver_number": [1, 1, 1],
+            "lap_number": [8, 9, 10],
+            "date_start": [
+                "2024-04-06T06:00:00+00:00",
+                "2024-04-06T06:01:30+00:00",
+                "2024-04-06T06:03:00+00:00",
+            ],
+        }
+    )
+
+
+def test_lap_car_data_windows_by_lap(monkeypatch, isolated_cache):
+    import pandas as pd
+
+    car = pd.DataFrame(
+        {"date": ["2024-04-06T06:00:10+00:00", "2024-04-06T06:01:40+00:00"], "speed": [200, 250]}
+    )
+
+    def fake_fetch(endpoint, params=None):
+        return _laps_df().to_dict("records") if endpoint == "laps" else car.to_dict("records")
+
+    monkeypatch.setattr(data_loader, "_fetch", fake_fetch)
+    lap8 = data_loader.lap_car_data(1, 1, 8)
+    assert lap8["speed"].tolist() == [200]  # only rows before lap 9 starts
+    assert data_loader.lap_car_data(1, 1, 99).empty  # unknown lap -> empty, no crash
+
+
+def test_get_intervals_cached(monkeypatch, isolated_cache):
+    calls = {"n": 0}
+
+    def fake_fetch(endpoint, params=None):
+        calls["n"] += 1
+        return [{"driver_number": 1, "gap_to_leader": 0.0}]
+
+    monkeypatch.setattr(data_loader, "_fetch", fake_fetch)
+    assert len(data_loader.get_intervals(7)) == 1
+    assert len(data_loader.get_intervals(7)) == 1
+    assert calls["n"] == 1

@@ -198,3 +198,48 @@ def format_lap_time(seconds: float | None) -> str:
 def clamp_selection(items: list, limit: int = 3) -> list:
     """Keep at most `limit` selections, preserving order (driver picker: max 3)."""
     return list(items)[:limit]
+
+
+# --- M2: battle data ---
+
+
+def get_intervals(session_key: int) -> pd.DataFrame:
+    """~4s gap snapshots (gap_to_leader). Cached per session."""
+    return _cached(
+        "intervals", {"session_key": session_key}, _session_cache(session_key, "intervals.parquet")
+    )
+
+
+def team_colors(session_key: int) -> dict[int, str]:
+    """driver_number -> '#RRGGBB' team colour (identity on lines/dots/labels only)."""
+    drivers = list_drivers(session_key)
+    if drivers.empty:
+        return {}
+    colors = {}
+    for r in drivers.itertuples():
+        raw = str(getattr(r, "team_colour", "") or "").lstrip("#")
+        colors[int(r.driver_number)] = f"#{raw}" if len(raw) == 6 else "#8A94A6"
+    return colors
+
+
+def lap_car_data(session_key: int, driver_number: int, lap_number: int) -> pd.DataFrame:
+    """Telemetry rows inside one lap: [lap.date_start, next_lap.date_start).
+
+    OpenF1 car_data carries no lap_number, so the window comes from /laps.
+    Empty-safe: missing laps or missing telemetry -> empty DataFrame.
+    """
+    laps = list_laps(session_key, driver_number=driver_number)
+    laps = laps.dropna(subset=["date_start"]).sort_values("lap_number")
+    row = laps[laps["lap_number"] == lap_number]
+    if row.empty:
+        return pd.DataFrame()
+    start = pd.Timestamp(row.iloc[0]["date_start"])
+    later = laps[laps["lap_number"] > lap_number]["date_start"].min()
+    car = get_car_data(session_key, driver_number=driver_number)
+    if car.empty:
+        return car
+    stamps = pd.to_datetime(car["date"], utc=True)
+    mask = stamps >= start
+    if pd.notna(later):
+        mask &= stamps < pd.Timestamp(later)
+    return car[mask].reset_index(drop=True)

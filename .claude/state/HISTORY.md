@@ -31,3 +31,10 @@ Year -> GP -> session -> drivers (max 3) -> lap table with click-to-load into
 (single-driver `car_data` probe, cached). Dark Pit-Wall base via
 `.streamlit/config.toml`. Verified: 12 tests pass, ruff clean, container boots
 healthy with the new UI and no log errors.
+
+## 2026-10-28 — M2 battle overlay + gap chart
+
+`analysis.best_lap`/`lap_deltas` live (0.05s noise flag), `viz.speed_trace` +
+`viz.gap_chart` (Pit-Wall theme, amber playhead), battle section compares the
+loaded lap vs a challenger lap with signed delta. Verified: 19 tests pass,
+ruff clean, healthy boot, no log errors.
