@@ -62,3 +62,13 @@ Verified: 32 tests pass, ruff clean, healthy boot, no log errors.
 color blocks), weather metrics, team-radio events with audio links (no
 transcripts exist in the API — none invented), race-control flags, all scoped
 to the replay window. Verified: 34 tests pass, ruff clean, healthy boot.
+
+## 2026-10-28 — M6 what-if pit toy model
+
+`analysis.pit_toy_model` (stay vs pit on linear deg, traffic flag, always
+labeled toy) with pit-wall UI (laps remaining, pit-loss slider, grounded in
+live pace/deg/gaps). Caught live: API dropped `meeting_name` from /sessions
+(fixed via /meetings join + stale-cache refresh) and `+1 LAP` gap strings
+(coerced to NaN). §8 acceptance on Suzuka 2024 Race: 908 laps, 20 drivers,
+41k telemetry rows, full feeds. Verified: 37 tests pass, ruff clean, healthy
+boot, prod config renders.

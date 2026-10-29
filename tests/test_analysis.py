@@ -82,6 +82,19 @@ def test_tyre_slope_linear_deg_and_floor():
         analysis.tyre_slope(laps.iloc[:1])
 
 
+def test_pit_toy_stay_vs_pit_and_traffic():
+    stay = analysis.pit_toy_model(90.0, 89.0, 0.2, 10)
+    assert stay["recommendation"] == "STAY OUT" and stay["toy_model"] is True
+    long = analysis.pit_toy_model(90.0, 89.0, 0.2, 30)
+    assert long["recommendation"] == "PIT NOW"
+    traffic = analysis.pit_toy_model(90.0, 89.0, 0.2, 30, gap_behind_s=5.0)
+    assert traffic["traffic_on_exit"] is True
+    clear = analysis.pit_toy_model(90.0, 89.0, 0.2, 30, gap_behind_s=60.0)
+    assert clear["traffic_on_exit"] is False
+    with pytest.raises(ValueError):
+        analysis.pit_toy_model(90.0, 89.0, 0.2, 0)
+
+
 def _straight_trace(x1: float, seconds: float, n: int = 11) -> pd.DataFrame:
     import numpy as np
 

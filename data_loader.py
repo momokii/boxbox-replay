@@ -91,8 +91,34 @@ def list_years() -> list[int]:
 
 
 def list_sessions(year: int) -> pd.DataFrame:
-    """All sessions for a year (cached at data/cache/<year>/_sessions.parquet)."""
-    return _cached("sessions", {"year": year}, _cache_path(str(year), "_sessions.parquet"))
+    """All sessions for a year, enriched with meeting_name from /meetings.
+
+    Cached at data/cache/<year>/_sessions.parquet. Stale caches from before
+    the meeting_name join are detected and refreshed.
+    """
+    cache_file = _cache_path(str(year), "_sessions.parquet")
+    if cache_file.exists():
+        cached = pd.read_parquet(cache_file)
+        if "meeting_name" in cached.columns:
+            return cached
+        cache_file.unlink()
+    sessions = pd.DataFrame(_fetch("sessions", {"year": year}))
+    if sessions.empty:
+        sessions.to_parquet(cache_file, index=False)
+        return sessions
+    meetings = get_meetings(year)[["meeting_key", "meeting_name"]].drop_duplicates()
+    sessions = sessions.drop(columns=["meeting_name"], errors="ignore")
+    merged = sessions.merge(meetings, on="meeting_key", how="left")
+    if merged["meeting_name"].isna().any():
+        fallback = "Grand Prix " + merged["location"].fillna("Unknown")
+        merged["meeting_name"] = merged["meeting_name"].fillna(fallback)
+    merged.to_parquet(cache_file, index=False)
+    return merged
+
+
+def get_meetings(year: int) -> pd.DataFrame:
+    """Grands Prix (meeting_key, meeting_name, location...) for a year. Cached."""
+    return _cached("meetings", {"year": year}, _cache_path(str(year), "_meetings.parquet"))
 
 
 def list_gps(year: int) -> list[str]:
@@ -273,10 +299,20 @@ def downsample_5hz(df: pd.DataFrame, time_col: str = "date") -> pd.DataFrame:
 
 
 def get_intervals(session_key: int) -> pd.DataFrame:
-    """~4s gap snapshots (gap_to_leader). Cached per session."""
-    return _cached(
-        "intervals", {"session_key": session_key}, _session_cache(session_key, "intervals.parquet")
-    )
+    """~4s gap snapshots. Cached per session.
+
+    Lapped cars report gaps like '+1 LAP' — coerced to NaN here so the
+    parquet cache stays typed (viz drops NaN gaps already).
+    """
+    cache_file = _session_cache(session_key, "intervals.parquet")
+    if cache_file.exists():
+        return pd.read_parquet(cache_file)
+    df = pd.DataFrame(_fetch("intervals", {"session_key": session_key}))
+    for col in ("gap_to_leader", "gap_to_ahead", "interval"):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    df.to_parquet(cache_file, index=False)
+    return df
 
 
 def team_colors(session_key: int) -> dict[int, str]:

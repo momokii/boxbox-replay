@@ -1,5 +1,5 @@
 ## Project Phase
-M5 done and committed. Next: M6 what-if pit toy model.
+M6 done and committed. All milestones M0–M6 complete.
 
 ## Completed
 - [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
@@ -11,6 +11,7 @@ M5 done and committed. Next: M6 what-if pit toy model.
 - [x] M3: synced track-map animation
 - [x] M4: coach on corner click (corner loss vs ref + opencode LLM + radio card)
 - [x] M5: performance mode (deg slope + stint timeline + weather + radio + race control)
+- [x] M6: what-if pit toy model (linear deg + traffic check, labeled toy)
 
 ## Blocked
 None
@@ -24,5 +25,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-28: M5 committed
+2026-10-28: M6 committed — all milestones done
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

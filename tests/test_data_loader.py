@@ -18,12 +18,14 @@ def test_cache_miss_fetches_then_hit_avoids_network(isolated_cache, monkeypatch)
 
     def fake_fetch(endpoint, params=None):
         calls["n"] += 1
-        return [{"session_key": 9492, "meeting_name": "Japanese Grand Prix"}]
+        if endpoint == "meetings":
+            return [{"meeting_key": 11, "meeting_name": "Japanese Grand Prix"}]
+        return [{"session_key": 9492, "meeting_key": 11}]
 
     monkeypatch.setattr(data_loader, "_fetch", fake_fetch)
     first = data_loader.list_sessions(2024)
     second = data_loader.list_sessions(2024)
-    assert calls["n"] == 1  # second call served from parquet
+    assert calls["n"] == 2  # sessions + meetings, then all parquet
     assert len(first) == 1 and len(second) == 1
     assert list(isolated_cache.rglob("*.parquet"))  # cache file written
 
@@ -105,7 +107,23 @@ SESSIONS_2024 = [
 
 
 def _mock_sessions(monkeypatch, isolated_cache):
-    monkeypatch.setattr(data_loader, "_fetch", lambda endpoint, params=None: SESSIONS_2024)
+    def fake_fetch(endpoint, params=None):
+        if endpoint == "meetings":
+            return [
+                {"meeting_key": 10, "meeting_name": "Bahrain Grand Prix"},
+                {"meeting_key": 11, "meeting_name": "Japanese Grand Prix"},
+            ]
+        return SESSIONS_2024
+
+    monkeypatch.setattr(data_loader, "_fetch", fake_fetch)
+
+
+def test_list_sessions_joins_meeting_names(isolated_cache, monkeypatch):
+    _mock_sessions(monkeypatch, isolated_cache)
+    df = data_loader.list_sessions(2024)
+    assert set(df["meeting_name"].unique()) == {"Bahrain Grand Prix", "Japanese Grand Prix"}
+    again = data_loader.list_sessions(2024)  # cache hit keeps the join
+    assert set(again["meeting_name"].unique()) == set(df["meeting_name"].unique())
 
 
 def test_list_meetings_groups_and_orders(isolated_cache, monkeypatch):
@@ -220,6 +238,20 @@ def test_get_intervals_cached(monkeypatch, isolated_cache):
     assert len(data_loader.get_intervals(7)) == 1
     assert len(data_loader.get_intervals(7)) == 1
     assert calls["n"] == 1
+
+
+def test_get_intervals_coerces_lap_strings(monkeypatch, isolated_cache):
+    monkeypatch.setattr(
+        data_loader,
+        "_fetch",
+        lambda endpoint, params=None: [
+            {"driver_number": 1, "gap_to_leader": "+1 LAP"},
+            {"driver_number": 2, "gap_to_leader": 3.5},
+        ],
+    )
+    df = data_loader.get_intervals(8)
+    assert pd.isna(df["gap_to_leader"].iloc[0])
+    assert df["gap_to_leader"].iloc[1] == 3.5
 
 
 def test_downsample_5hz_keeps_first_per_bin():

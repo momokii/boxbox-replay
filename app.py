@@ -566,3 +566,43 @@ with rc_col:
         for r in in_win.itertuples():
             flag = f" {r.flag}" if getattr(r, "flag", None) else ""
             st.caption(f"{str(r.date)[11:19]} — {r.category}{flag}: {r.message}")
+
+# --- M6: what-if pit wall (TOY MODEL — not strategy advice) ---
+
+st.subheader("What-if pit wall")
+st.warning("TOY MODEL — linear deg, constant rivals, static pit loss. Not strategy advice.")
+
+toy_nums = [int(p.split()[0][1:]) for p in picked] or [replay_num]
+toy_num = toy_nums[0]
+toy_laps = all_laps.query("driver_number == @toy_num").sort_values("lap_number")
+timed = toy_laps.dropna(subset=["lap_duration"])
+if len(timed) < 4:
+    st.caption("Not enough timed laps for the toy model.")
+else:
+    base_pace = float(timed.tail(3)["lap_duration"].median())
+    fresh_pace = float(analysis.best_lap(toy_laps)["lap_duration"])
+    try:
+        deg = max(0.0, analysis.tyre_slope(timed))
+    except ValueError:
+        deg = 0.0
+    latest_iv = intervals.sort_values("date").groupby("driver_number").tail(1)
+    gaps = latest_iv.set_index("driver_number")["gap_to_leader"].dropna()
+    gap_behind = None
+    if toy_num in gaps.index:
+        behind = gaps[gaps > gaps[toy_num]]
+        gap_behind = float((behind - gaps[toy_num]).min()) if not behind.empty else None
+    toy_a, toy_b = st.columns(2)
+    with toy_a:
+        laps_left = st.number_input("Laps remaining", min_value=1, value=10, step=1)
+    with toy_b:
+        pit_loss = st.slider("Pit loss (s)", 15.0, 30.0, 22.0, 0.5)
+    call = analysis.pit_toy_model(base_pace, fresh_pace, deg, int(laps_left), pit_loss, gap_behind)
+    call_a, call_b, call_c = st.columns(3)
+    call_a.metric("Stay out", f"{call['stay_total_s']:.1f}s")
+    call_b.metric("Pit now", f"{call['pit_total_s']:.1f}s")
+    call_c.metric("Traffic on exit", "YES" if call["traffic_on_exit"] else "clear")
+    st.markdown(f"## {call['recommendation']}")
+    st.caption(
+        f"Pace now {base_pace:.3f}s, fresh {fresh_pace:.3f}s, deg +{deg:.3f}s/lap. "
+        "Toy assumptions only."
+    )

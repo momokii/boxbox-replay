@@ -55,7 +55,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | M3                  | Synced track-map animation + timing tower + play/pause/1x/2x/4x + scrub (DONE) |
 | M4                  | Coach on corner click, grounded via opencode run (DONE)         |
 | M5                  | Performance mode: deg slope + stints + weather + radio (DONE) |
-| M6                  | What-if pit toy model, labeled "toy model" (TODO, depends M5) |
+| M6                  | What-if pit toy model, labeled "toy model" (DONE)          |
 
 ---
 

@@ -180,3 +180,38 @@ def tyre_slope(laps: pd.DataFrame) -> float:
     y = timed["lap_duration"].to_numpy(dtype=float)
     slope = float(((x - x.mean()) * (y - y.mean())).sum() / ((x - x.mean()) ** 2).sum())
     return slope
+
+
+# --- M6: what-if pit toy model (explicitly NOT strategy advice) ---
+
+
+def pit_toy_model(
+    base_pace_s: float,
+    fresh_pace_s: float,
+    deg_slope_s_per_lap: float,
+    laps_remaining: int,
+    pit_loss_s: float = 22.0,
+    gap_behind_s: float | None = None,
+) -> dict:
+    """Toy pit call: linear deg, constant rival pace, static pit loss.
+
+    STAY OUT (current pace + slope*i) vs PIT NOW (pit_loss + fresh pace
+    + slope restarted). Traffic check: pitting when gap_behind < pit_loss
+    emerges behind — flagged, not modeled. Pure.
+    """
+    if laps_remaining < 1:
+        raise ValueError("laps_remaining must be >= 1")
+    deg = max(0.0, float(deg_slope_s_per_lap))
+    stay_total = sum(base_pace_s + deg * i for i in range(laps_remaining))
+    pit_total = float(pit_loss_s) + sum(fresh_pace_s + deg * i for i in range(laps_remaining))
+    traffic = gap_behind_s is not None and gap_behind_s < float(pit_loss_s)
+    recommend = "STAY OUT"
+    if pit_total + (5.0 if traffic else 0.0) < stay_total:
+        recommend = "PIT NOW"
+    return {
+        "stay_total_s": stay_total,
+        "pit_total_s": pit_total,
+        "recommendation": recommend,
+        "traffic_on_exit": bool(traffic),
+        "toy_model": True,
+    }
