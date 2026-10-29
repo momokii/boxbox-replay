@@ -11,7 +11,7 @@ from __future__ import annotations
 import pandas as pd
 import plotly.graph_objects as go
 
-__all__ = ["speed_trace", "gap_chart", "PITWALL_TEMPLATE"]
+__all__ = ["speed_trace", "gap_chart", "track_map", "PITWALL_TEMPLATE"]
 
 PITWALL_TEMPLATE = {
     "layout": {
@@ -84,3 +84,72 @@ def gap_chart(intervals: pd.DataFrame, labels: dict[int, str]) -> go.Figure:
         )
     fig.update_yaxes(title_text="gap to leader (s)", autorange="reversed")
     return _apply_theme(fig, "Gap to leader")
+
+
+def track_map(
+    outline: pd.DataFrame,
+    dots: list[dict],
+    corners: pd.DataFrame | None = None,
+) -> go.Figure:
+    """Dark circuit outline + driver dots (team color, white stroke) + trails.
+
+    outline: (x, y) reference line. dots: list of dicts with keys
+    label/color/x/y/tail (tail = (tx, ty) trail points). corners: T-labels.
+    """
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=outline["x"],
+            y=outline["y"],
+            mode="lines",
+            name="track",
+            line={"color": "#3A4556", "width": 3},
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
+    if corners is not None and not corners.empty:
+        fig.add_trace(
+            go.Scatter(
+                x=corners["x"],
+                y=corners["y"],
+                mode="markers+text",
+                name="corners",
+                marker={"color": AMBER, "size": 8, "symbol": "diamond"},
+                text=corners["label"],
+                textposition="top center",
+                textfont={"color": AMBER, "size": 10},
+                hovertemplate="%{text}<extra></extra>",
+            )
+        )
+    for dot in dots:
+        tx, ty = dot["tail"]
+        fig.add_trace(
+            go.Scatter(
+                x=tx,
+                y=ty,
+                mode="lines",
+                name=f"{dot['label']} trail",
+                line={"color": dot["color"], "width": 4},
+                opacity=0.3,
+                hoverinfo="skip",
+                showlegend=False,
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[dot["x"]],
+                y=[dot["y"]],
+                mode="markers+text",
+                name=dot["label"],
+                marker={"color": dot["color"], "size": 16,
+                         "line": {"color": "#FFFFFF", "width": 2}},
+                text=[dot["label"]],
+                textposition="middle center",
+                textfont={"color": "#0B0E13", "size": 8},
+                hovertemplate=f"{dot['label']} {dot.get('extra', '')}<extra></extra>",
+            )
+        )
+    fig.update_xaxes(visible=False)
+    fig.update_yaxes(visible=False, scaleanchor="x", scaleratio=1)
+    return _apply_theme(fig, "Track map")

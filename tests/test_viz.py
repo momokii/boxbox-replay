@@ -26,3 +26,24 @@ def test_gap_chart_drops_bad_gaps():
     )
     fig = viz.gap_chart(df, {1: "VER", 2: "LEC"})
     assert {t.name for t in fig.data} == {"VER", "LEC"}
+
+
+def test_track_map_outline_dots_and_corners():
+    import pandas as pd
+
+    outline = pd.DataFrame({"x": [0.0, 1.0, 1.0, 0.0], "y": [0.0, 0.0, 1.0, 1.0]})
+    dots = [
+        {
+            "label": "VER",
+            "color": "#3671C6",
+            "x": 0.5,
+            "y": 0.0,
+            "speed": 300.0,
+            "tail": ([0.3, 0.4], [0.0, 0.0]),
+        }
+    ]
+    corners = pd.DataFrame({"label": ["T1"], "x": [1.0], "y": [0.0], "idx": [1]})
+    fig = viz.track_map(outline, dots, corners)
+    names = [t.name for t in fig.data]
+    assert names == ["track", "corners", "VER trail", "VER"]
+    assert fig.data[3].marker.line.color == "#FFFFFF"

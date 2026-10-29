@@ -38,3 +38,12 @@ healthy with the new UI and no log errors.
 `viz.gap_chart` (Pit-Wall theme, amber playhead), battle section compares the
 loaded lap vs a challenger lap with signed delta. Verified: 19 tests pass,
 ruff clean, healthy boot, no log errors.
+
+## 2026-10-28 — M3 synced track-map animation
+
+Replay window from the loaded/best lap: animated dots (team color, white
+stroke) with 5s trails, auto-detected corners (heading-change peaks, T1..Tn),
+timing tower with live gaps, Play/Pause + 1x/2x/4x + scrub + Space shortcut,
+hover shows speed/gear/throttle, synced amber playhead on the speed strip,
+RACE ENGINEER placeholder card. Verified: 24 tests pass, ruff clean,
+healthy boot, no log errors.

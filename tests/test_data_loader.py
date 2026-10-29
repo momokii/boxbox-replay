@@ -205,3 +205,21 @@ def test_get_intervals_cached(monkeypatch, isolated_cache):
     assert len(data_loader.get_intervals(7)) == 1
     assert len(data_loader.get_intervals(7)) == 1
     assert calls["n"] == 1
+
+
+def test_downsample_5hz_keeps_first_per_bin():
+    import pandas as pd
+
+    df = pd.DataFrame(
+        {
+            "date": [
+                "2024-01-01T00:00:00.000+00:00",
+                "2024-01-01T00:00:00.100+00:00",
+                "2024-01-01T00:00:00.200+00:00",
+            ],
+            "v": [1, 2, 3],
+        }
+    )
+    out = data_loader.downsample_5hz(df)
+    assert out["v"].tolist() == [1, 3]
+    assert data_loader.downsample_5hz(pd.DataFrame()).empty

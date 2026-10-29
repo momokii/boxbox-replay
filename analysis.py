@@ -50,6 +50,58 @@ def corner_loss(car_data: pd.DataFrame, corner_window_m: float = 200.0) -> pd.Da
     raise NotImplementedError("M4: implement corner_loss with tests")
 
 
+# --- M3: map geometry (pure; ordering comes from the telemetry timestamps) ---
+
+
+def map_plane(loc: pd.DataFrame) -> tuple[str, str]:
+    """The two coordinate columns with the largest spread form the track plane."""
+    spread = {c: float(loc[c].std()) for c in ("x", "y", "z") if c in loc.columns}
+    if len(spread) < 2:
+        raise ValueError("location needs at least two coordinate columns")
+    ranked = sorted(spread, key=spread.get, reverse=True)
+    return ranked[0], ranked[1]
+
+
+def detect_corners(
+    line: pd.DataFrame, angle_deg: float = 25.0, min_gap: int = 8
+) -> pd.DataFrame:
+    """Find corners on an ordered (x, y) reference line via heading change.
+
+    Returns one row per corner: label (T1..Tn), x, y, idx. Pure and tested.
+    """
+    import math
+
+    import numpy as np
+
+    pts = line[["x", "y"]].to_numpy(dtype=float)
+    if len(pts) < min_gap * 2:
+        return pd.DataFrame(columns=["label", "x", "y", "idx"])
+    seg = np.diff(pts, axis=0)
+    heading = np.arctan2(seg[:, 1], seg[:, 0])
+    turn = (np.diff(heading) + math.pi) % (2 * math.pi) - math.pi
+    smooth = pd.Series(np.abs(turn)).rolling(5, center=True, min_periods=1).mean().to_numpy()
+    thresh = math.radians(angle_deg)
+    peaks: list[int] = []
+    i = 0
+    while i < len(smooth):
+        if smooth[i] >= thresh:
+            j = i
+            while j + 1 < len(smooth) and smooth[j + 1] >= thresh:
+                j += 1
+            peak = (i + j) // 2
+            if not peaks or peak - peaks[-1] >= min_gap:
+                peaks.append(peak)
+            i = j + 1
+        else:
+            i += 1
+    return pd.DataFrame(
+        {"label": [f"T{n + 1}" for n in range(len(peaks))],
+         "x": [float(pts[p + 1][0]) for p in peaks],
+         "y": [float(pts[p + 1][1]) for p in peaks],
+         "idx": peaks}
+    )
+
+
 def tyre_slope(laps: pd.DataFrame) -> float:
     """Linear degradation slope (s/lap) for a stint. (M5)"""
     raise NotImplementedError("M5: implement tyre_slope with tests")

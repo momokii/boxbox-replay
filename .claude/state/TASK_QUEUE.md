@@ -52,7 +52,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 |---------------------|-------------------------------------------------------------|
 | M1                  | Chooser + picker + lap table (DONE — hides empty sessions w/ reason, max 3 drivers, click-lap loads) |
 | M2                  | Battle speed overlay + lap-time delta + gap-to-leader (DONE) |
-| M3                  | Synced track-map animation (TODO, depends M2)               |
+| M3                  | Synced track-map animation + timing tower + play/pause/1x/2x/4x + scrub (DONE) |
 | M4                  | Coach on corner click, grounded, needs LLM token env name (TODO, depends M3) |
 | M5                  | Performance mode: deg slope + stints + weather + radio (TODO, depends M3) |
 | M6                  | What-if pit toy model, labeled "toy model" (TODO, depends M5) |

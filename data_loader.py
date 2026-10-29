@@ -135,6 +135,16 @@ def get_positions(session_key: int) -> pd.DataFrame:
     )
 
 
+def get_location(session_key: int, driver_number: int) -> pd.DataFrame:
+    """Track coordinates (x, y, z) + date for one driver. Cached per driver."""
+    tag = f"location_{driver_number}.parquet"
+    return _cached(
+        "location",
+        {"session_key": session_key, "driver_number": driver_number},
+        _session_cache(session_key, tag),
+    )
+
+
 # --- M1: picker helpers ---
 
 
@@ -198,6 +208,19 @@ def format_lap_time(seconds: float | None) -> str:
 def clamp_selection(items: list, limit: int = 3) -> list:
     """Keep at most `limit` selections, preserving order (driver picker: max 3)."""
     return list(items)[:limit]
+
+
+# --- M3: replay helpers ---
+
+
+def downsample_5hz(df: pd.DataFrame, time_col: str = "date") -> pd.DataFrame:
+    """Thin telemetry to 5 Hz for the map (first row per 200 ms bin). Pure."""
+    if df.empty:
+        return df
+    stamps = pd.to_datetime(df[time_col], utc=True)
+    bins = ((stamps - stamps.min()) // pd.Timedelta("200ms")).to_numpy()
+    keep = pd.Series(bins).drop_duplicates(keep="first").index
+    return df.loc[keep].reset_index(drop=True)
 
 
 # --- M2: battle data ---

@@ -1,5 +1,5 @@
 ## Project Phase
-M2 done and committed. Next: M3 synced track-map animation.
+M3 done and committed. Next: M4 coach on corner click.
 
 ## Completed
 - [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
@@ -8,7 +8,7 @@ M2 done and committed. Next: M3 synced track-map animation.
 
 ## In Progress
 - [x] M1: chooser + picker + lap table
-- [x] M2: battle speed overlay + gap chart
+- [x] M3: synced track-map animation
 
 ## Blocked
 None
@@ -22,5 +22,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-28: M2 committed
+2026-10-28: M3 committed
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
