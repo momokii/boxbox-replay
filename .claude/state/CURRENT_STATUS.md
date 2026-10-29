@@ -1,5 +1,5 @@
 ## Project Phase
-M4 done and committed. Next: M5 performance mode (deg slope + stints + weather + radio).
+M5 done and committed. Next: M6 what-if pit toy model.
 
 ## Completed
 - [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
@@ -10,6 +10,7 @@ M4 done and committed. Next: M5 performance mode (deg slope + stints + weather +
 - [x] M1: chooser + picker + lap table
 - [x] M3: synced track-map animation
 - [x] M4: coach on corner click (corner loss vs ref + opencode LLM + radio card)
+- [x] M5: performance mode (deg slope + stint timeline + weather + radio + race control)
 
 ## Blocked
 None
@@ -23,5 +24,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-28: M4 committed
+2026-10-28: M5 committed
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

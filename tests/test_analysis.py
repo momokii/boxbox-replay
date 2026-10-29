@@ -6,7 +6,7 @@ import pytest
 import analysis
 
 
-@pytest.mark.parametrize("fn", [analysis.corner_loss, analysis.tyre_slope])
+@pytest.mark.parametrize("fn", [analysis.corner_loss])
 def test_remaining_stubs_fail_loudly(fn):
     with pytest.raises(NotImplementedError):
         fn(pd.DataFrame())
@@ -73,6 +73,13 @@ def test_detect_corners_finds_turns_in_order():
 
 def test_detect_corners_empty_on_short_line():
     assert analysis.detect_corners(pd.DataFrame({"x": [0.0, 1.0], "y": [0.0, 0.0]})).empty
+
+
+def test_tyre_slope_linear_deg_and_floor():
+    laps = pd.DataFrame({"lap_number": [1, 2, 3, 4], "lap_duration": [90.0, 90.2, 90.4, 90.6]})
+    assert analysis.tyre_slope(laps) == pytest.approx(0.2)
+    with pytest.raises(ValueError):
+        analysis.tyre_slope(laps.iloc[:1])
 
 
 def _straight_trace(x1: float, seconds: float, n: int = 11) -> pd.DataFrame:

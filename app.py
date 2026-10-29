@@ -11,6 +11,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+import analysis
 import coach
 import data_loader
 import viz
@@ -81,6 +82,26 @@ def _car(session_key: int, driver_number: int) -> pd.DataFrame:
 def _coach_answer(cache_key: str, prompt: str) -> str | None:
     _ = cache_key  # part of the key so reruns and playback never re-fire the LLM
     return coach.ask_llm(prompt)
+
+
+@st.cache_data
+def _stints(session_key: int) -> pd.DataFrame:
+    return data_loader.get_stints(session_key)
+
+
+@st.cache_data
+def _weather(session_key: int) -> pd.DataFrame:
+    return data_loader.get_weather(session_key)
+
+
+@st.cache_data
+def _radio(session_key: int) -> pd.DataFrame:
+    return data_loader.get_team_radio(session_key)
+
+
+@st.cache_data
+def _race_control(session_key: int) -> pd.DataFrame:
+    return data_loader.get_race_control(session_key)
 
 
 years = _years()
@@ -482,3 +503,66 @@ if st.session_state["playing"]:
         step = 0.5 * float(st.session_state["speed"])
         st.session_state["play_t"] = min(float(win_dur), play_t + step)
         st.rerun()
+
+# --- M5: performance mode — deg slope + stints + weather + radio ---
+
+st.subheader("Performance")
+
+stints = _stints(session_int)
+if not stints.empty and picked:
+    keep_nums = {int(p.split()[0][1:]) for p in picked}
+    stints = stints[stints["driver_number"].isin(keep_nums)]
+if stints.empty:
+    st.caption("No stint data for this session.")
+else:
+    stint_labels = {int(n): _driver_label(int(n)) for n in stints["driver_number"].unique()}
+    st.plotly_chart(viz.stint_timeline(stints, stint_labels), use_container_width=True)
+    slope_lines = []
+    for (num, grp) in stints.groupby("driver_number"):
+        for s in grp.itertuples():
+            seg = all_laps.query(
+                "driver_number == @num and lap_number >= @s.lap_start and lap_number <= @s.lap_end"
+            )
+            try:
+                slope = analysis.tyre_slope(seg)
+                slope_lines.append(f"{_driver_label(int(num))} {s.compound}: `{slope:+.3f}s/lap`")
+            except ValueError:
+                slope_lines.append(f"{_driver_label(int(num))} {s.compound}: too few laps")
+    st.markdown("Degradation slope — " + " · ".join(slope_lines))
+
+weather = _weather(session_int)
+if not weather.empty:
+    w = weather.sort_values("date").iloc[-1]
+    met_a, met_b, met_c, met_d = st.columns(4)
+    met_a.metric("Air", f"{w['air_temperature']:.1f}°C")
+    met_b.metric("Track", f"{w['track_temperature']:.1f}°C")
+    met_c.metric("Humidity", f"{w['humidity']:.0f}%")
+    met_d.metric("Rain", f"{w['rainfall']:.0f}mm")
+
+radio = _radio(session_int)
+rc = _race_control(session_int)
+radio_col, rc_col = st.columns(2)
+with radio_col:
+    st.markdown("**Team radio** (replay window)")
+    if radio.empty:
+        st.caption("No radio events.")
+    else:
+        rstamps = pd.to_datetime(radio["date"], utc=True)
+        in_win = radio[(rstamps >= win_start) & (rstamps < win_end_ts)].sort_values("date")
+        if in_win.empty:
+            st.caption("None in this window.")
+        for r in in_win.itertuples():
+            driver = _driver_label(int(r.driver_number))
+            st.caption(f"{str(r.date)[11:19]} — {driver} — [audio]({r.recording_url})")
+with rc_col:
+    st.markdown("**Race control** (replay window)")
+    if rc.empty:
+        st.caption("No race-control messages.")
+    else:
+        cstamps = pd.to_datetime(rc["date"], utc=True)
+        in_win = rc[(cstamps >= win_start) & (cstamps < win_end_ts)].sort_values("date")
+        if in_win.empty:
+            st.caption("None in this window.")
+        for r in in_win.itertuples():
+            flag = f" {r.flag}" if getattr(r, "flag", None) else ""
+            st.caption(f"{str(r.date)[11:19]} — {r.category}{flag}: {r.message}")

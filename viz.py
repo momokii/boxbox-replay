@@ -11,7 +11,7 @@ from __future__ import annotations
 import pandas as pd
 import plotly.graph_objects as go
 
-__all__ = ["speed_trace", "gap_chart", "track_map", "PITWALL_TEMPLATE"]
+__all__ = ["speed_trace", "gap_chart", "track_map", "stint_timeline", "PITWALL_TEMPLATE"]
 
 PITWALL_TEMPLATE = {
     "layout": {
@@ -153,3 +153,38 @@ def track_map(
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False, scaleanchor="x", scaleratio=1)
     return _apply_theme(fig, "Track map")
+
+
+COMPOUND_COLORS = {
+    "SOFT": "#E80020",
+    "MEDIUM": "#FFD12E",
+    "HARD": "#F5F5F5",
+    "INTERMEDIATE": "#43B02A",
+    "WET": "#2E6BFF",
+}
+
+
+def stint_timeline(stints: pd.DataFrame, labels: dict[int, str]) -> go.Figure:
+    """Tyre stint blocks per driver: x = laps, compound color blocks."""
+    fig = go.Figure()
+    ordered = stints.sort_values(["driver_number", "lap_start"])
+    for driver, group in ordered.groupby("driver_number"):
+        label = labels.get(int(driver), f"#{int(driver)}")
+        for s in group.itertuples():
+            color = COMPOUND_COLORS.get(str(s.compound).upper(), "#8A94A6")
+            fig.add_trace(
+                go.Bar(
+                    x=[int(s.lap_end) - int(s.lap_start) + 1],
+                    y=[label],
+                    base=[int(s.lap_start)],
+                    orientation="h",
+                    marker_color=color,
+                    name=f"{label} {s.compound}",
+                    hovertemplate=(
+                        f"{label} {s.compound} laps {s.lap_start}-{s.lap_end}<extra></extra>"
+                    ),
+                    showlegend=False,
+                )
+            )
+    fig.update_xaxes(title_text="lap")
+    return _apply_theme(fig, "Tyre stints")

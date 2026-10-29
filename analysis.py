@@ -169,5 +169,14 @@ def corner_losses(
 
 
 def tyre_slope(laps: pd.DataFrame) -> float:
-    """Linear degradation slope (s/lap) for a stint. (M5)"""
-    raise NotImplementedError("M5: implement tyre_slope with tests")
+    """Linear degradation slope (s/lap) via least squares on lap vs duration.
+
+    Raises ValueError with fewer than 2 timed laps. Pure.
+    """
+    timed = _timed(laps).sort_values("lap_number")
+    if len(timed) < 2:
+        raise ValueError("need at least 2 timed laps for a slope")
+    x = timed["lap_number"].to_numpy(dtype=float)
+    y = timed["lap_duration"].to_numpy(dtype=float)
+    slope = float(((x - x.mean()) * (y - y.mean())).sum() / ((x - x.mean()) ** 2).sum())
+    return slope

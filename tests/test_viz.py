@@ -16,6 +16,21 @@ def test_speed_trace_overlays_and_playhead():
     assert fig.layout.paper_bgcolor == "#161B24"
 
 
+def test_stint_timeline_blocks_and_compound_colors():
+    stints = pd.DataFrame(
+        {
+            "driver_number": [1, 1],
+            "lap_start": [1, 10],
+            "lap_end": [9, 18],
+            "compound": ["SOFT", "MEDIUM"],
+        }
+    )
+    fig = viz.stint_timeline(stints, {1: "VER"})
+    assert len(fig.data) == 2
+    assert fig.data[0].marker.color == viz.COMPOUND_COLORS["SOFT"]
+    assert fig.data[1].base[0] == 10
+
+
 def test_gap_chart_drops_bad_gaps():
     df = pd.DataFrame(
         {

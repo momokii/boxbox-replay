@@ -221,6 +221,41 @@ def lap_window(driver_laps: pd.DataFrame, lap_number: int):
     return start, pd.Timestamp(later) if pd.notna(later) else None
 
 
+# --- M5: performance feeds ---
+
+
+def get_stints(session_key: int) -> pd.DataFrame:
+    """Tyre stints (compound, lap_start/end, age). Cached per session."""
+    return _cached(
+        "stints", {"session_key": session_key}, _session_cache(session_key, "stints.parquet")
+    )
+
+
+def get_weather(session_key: int) -> pd.DataFrame:
+    """Weather snapshots (air/track temp, rainfall, wind...). Cached per session."""
+    return _cached(
+        "weather", {"session_key": session_key}, _session_cache(session_key, "weather.parquet")
+    )
+
+
+def get_team_radio(session_key: int) -> pd.DataFrame:
+    """Radio events (driver, date, recording_url). No transcripts in the API."""
+    return _cached(
+        "team_radio",
+        {"session_key": session_key},
+        _session_cache(session_key, "team_radio.parquet"),
+    )
+
+
+def get_race_control(session_key: int) -> pd.DataFrame:
+    """Race-control messages (flags, category, sector). Cached per session."""
+    return _cached(
+        "race_control",
+        {"session_key": session_key},
+        _session_cache(session_key, "race_control.parquet"),
+    )
+
+
 # --- M3: replay helpers ---
 
 

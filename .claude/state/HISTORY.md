@@ -55,3 +55,10 @@ healthy boot, no log errors.
 radio-transcript card, LLM answers cached per corner+lap). Corner click on the
 map (plus selectbox fallback) fires the coach for challenger-vs-reference.
 Verified: 32 tests pass, ruff clean, healthy boot, no log errors.
+
+## 2026-10-28 — M5 performance mode
+
+`analysis.tyre_slope` (least squares s/lap), `viz.stint_timeline` (compound
+color blocks), weather metrics, team-radio events with audio links (no
+transcripts exist in the API — none invented), race-control flags, all scoped
+to the replay window. Verified: 34 tests pass, ruff clean, healthy boot.

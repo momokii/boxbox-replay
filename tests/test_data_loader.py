@@ -238,3 +238,19 @@ def test_downsample_5hz_keeps_first_per_bin():
     out = data_loader.downsample_5hz(df)
     assert out["v"].tolist() == [1, 3]
     assert data_loader.downsample_5hz(pd.DataFrame()).empty
+
+
+def test_m5_feeds_cached(monkeypatch, isolated_cache):
+    seen: list[str] = []
+
+    def fake_fetch(endpoint, params=None):
+        seen.append(endpoint)
+        return [{"session_key": 5}]
+
+    monkeypatch.setattr(data_loader, "_fetch", fake_fetch)
+    assert len(data_loader.get_stints(5)) == 1
+    assert len(data_loader.get_stints(5)) == 1
+    assert len(data_loader.get_weather(5)) == 1
+    assert len(data_loader.get_team_radio(5)) == 1
+    assert len(data_loader.get_race_control(5)) == 1
+    assert sorted(set(seen)) == ["race_control", "stints", "team_radio", "weather"]
