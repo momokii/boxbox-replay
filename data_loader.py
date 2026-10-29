@@ -260,14 +260,29 @@ def clamp_selection(items: list, limit: int = 3) -> list:
 
 
 def lap_window(driver_laps: pd.DataFrame, lap_number: int):
-    """(window_start, window_end) timestamps for one lap; end None when unknown."""
+    """(window_start, window_end) timestamps for exactly one lap.
+
+    Bounded by the measured lap duration first (a lap is never longer than a
+    bit over its own time), then by the next lap's start. Older code fell back
+    to +150 s, which silently swallowed a whole extra lap and corrupted any
+    geometry derived from it.
+    """
     laps = driver_laps.dropna(subset=["date_start"]).sort_values("lap_number")
     row = laps[laps["lap_number"] == lap_number]
     if row.empty:
         return None, None
     start = pd.Timestamp(row.iloc[0]["date_start"])
+    duration = row.iloc[0].get("lap_duration")
+    end = pd.NaT
+    if duration is not None and pd.notna(duration) and float(duration) > 0:
+        end = start + pd.Timedelta(seconds=float(duration) * 1.02)
     later = laps[laps["lap_number"] > lap_number]["date_start"].min()
-    return start, pd.Timestamp(later) if pd.notna(later) else None
+    if pd.notna(later):
+        later_ts = pd.Timestamp(later)
+        end = later_ts if pd.isna(end) else min(end, later_ts)
+    if pd.isna(end):
+        end = start + pd.Timedelta(seconds=150)
+    return start, end
 
 
 # --- M5: performance feeds ---

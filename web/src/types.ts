@@ -17,6 +17,8 @@ export interface Driver {
   name_acronym: string;
   team_name: string;
   team_colour: string;
+  full_name?: string | null;
+  country_code?: string | null;
 }
 
 export interface Lap {
@@ -146,4 +148,13 @@ export interface SessionGaps {
 export interface SpeedPoint {
   t: number;
   v: number;
+}
+
+export interface DriverInfo {
+  driver_number: number;
+  name_acronym: string;
+  full_name: string | null;
+  team_name: string | null;
+  team_colour: string | null;
+  country_code: string | null;
 }

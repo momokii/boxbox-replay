@@ -21,15 +21,35 @@ interface Props {
   selectedDriver: number | null;
   onCorner: (label: string) => void;
   onDriver: (driver: number) => void;
-  speedAt: (driver: number) => number | null;
+  hoverInfo: (driver: number) => { pos: number | null; gap: number | null; tyre: string | null; speed: number | null };
 }
 
 const TRAIL_S = 6;
 
+function HoverCard(p: {
+  hover: { x: number; y: number; driver: number };
+  dots: DotMeta[];
+  info: { pos: number | null; gap: number | null; tyre: string | null; speed: number | null };
+}) {
+  const meta = p.dots.find((d) => d.driver === p.hover.driver);
+  return (
+    <div className="driver-hover" style={{ left: p.hover.x, top: p.hover.y }}>
+      <strong style={{ color: meta?.color }}>
+        #{p.hover.driver} {meta?.code ?? ""}
+      </strong>
+      <div>
+        P{p.info.pos ?? "—"} · gap {p.info.gap == null ? "—" : `+${p.info.gap.toFixed(3)}`}
+      </div>
+      <div>{p.info.tyre ?? "tyre unknown"}</div>
+      <div>{p.info.speed == null ? "speed loading…" : `${p.info.speed} km/h`}</div>
+    </div>
+  );
+}
+
 export default function SessionMap(p: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
+  const [hover, setHover] = useState<{ x: number; y: number; driver: number } | null>(null);
   useSyncExternalStore(p.playback.subscribe, () => p.playback.state.rev);
   const geom = useRef({ scale: 1, ox: 0, oy: 0, span: 1 });
   const screen = useRef(new Map<number, { x: number; y: number }>());
@@ -195,34 +215,14 @@ export default function SessionMap(p: Props) {
       if (canvasRef.current) canvasRef.current.style.cursor = "default";
       return;
     }
-    const meta = p.dots.find((d) => d.driver === hit.driver);
-    const v = p.speedAt(hit.driver);
-    const text = `${meta?.code ?? hit.driver}${v != null ? ` · ${v} km/h` : ""}`;
-    setHover({ x: x + 14, y: y + 14, text });
+    setHover({ x: x + 14, y: y + 14, driver: hit.driver });
     if (canvasRef.current) canvasRef.current.style.cursor = "pointer";
   };
 
   return (
     <div ref={wrapRef} style={{ position: "relative", lineHeight: 0 }}>
       <canvas ref={canvasRef} onClick={onClick} onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
-      {hover && (
-        <div
-          style={{
-            position: "absolute",
-            left: hover.x,
-            top: hover.y,
-            background: "var(--bg)",
-            border: "1px solid var(--line)",
-            padding: "3px 8px",
-            fontSize: "0.75rem",
-            lineHeight: 1.3,
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {hover.text}
-        </div>
-      )}
+      {hover && <HoverCard hover={hover} dots={p.dots} info={p.hoverInfo(hover.driver)} />}
     </div>
   );
 }

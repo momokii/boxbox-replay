@@ -47,6 +47,8 @@ why this stack replaced the original Streamlit prototype.
   race-control flags.
 - **Pit wall** (tab): what-if model (stay vs pit on linear deg + traffic check),
   bannered **TOY MODEL**, grounded in live pace/deg/gaps.
+- **Driver card**: click a car or tower row for full name, team, gap, tyre age,
+  last/best lap — with the timing abbreviation explained for newcomers.
 - **Race engineer** (side panel): click a corner, press **Ask engineer** —
   measured corner loss vs a reference lap, LLM answer in team-radio style with
   [HIGH/MED/LOW] and a "based on lap X vs ref Y" citation. Cached per query;

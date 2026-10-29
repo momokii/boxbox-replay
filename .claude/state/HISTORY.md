@@ -180,3 +180,13 @@ lap-time fallback + visible source label, per-lap speed telemetry for chosen
 drivers, day/night tokens, sticky header with session clock. New API endpoints
 /session/{info,geometry,replay,speed,gaps} with tests for lap markers and gap
 derivation. Verified night+day+2026+mobile screenshots, zero page errors.
+
+## 2026-10-29 — U4 context pass (loading, corners, driver card, battle)
+
+Fixed: unbounded lap windows (a lap measured 57 km, polluting outlines/DRS/
+corners), stale data shown while switching sessions, player bar covering the
+track. Corner detection rewritten on arc-length-resampled paths in lap
+fractions (Suzuka 18, COTA 22). Added loading cards with session context,
+driver cards (full name/team/tyre age/last-best lap + acronym explainer),
+richer map hover, performance/pit/battle context labels, jargon tooltips,
+proportional select arrows, session UTC window in facts. 50 pytest + 27 vitest.

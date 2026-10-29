@@ -65,10 +65,27 @@ def _stadium() -> pd.DataFrame:
 
 
 def test_detect_corners_finds_turns_in_order():
-    corners = analysis.detect_corners(_stadium())
-    assert len(corners) >= 2  # two 180-degree ends, split into entry/apex/exit peaks
+    path = analysis.resample_path(_stadium(), "x", "y")
+    corners = analysis.detect_corners(path)
+    assert len(corners) >= 2  # a stadium has two rounded ends
     assert corners["label"].tolist() == [f"T{i + 1}" for i in range(len(corners))]
-    assert corners["idx"].is_monotonic_increasing
+    assert corners["frac"].is_monotonic_increasing
+    assert corners["frac"].between(0, 1).all()
+
+
+def test_resample_path_is_uniform_and_scale_free():
+    path = analysis.resample_path(_stadium(), "x", "y", points=200)
+    assert len(path) == 200
+    assert path["frac"].iloc[0] == 0.0 and path["frac"].iloc[-1] == pytest.approx(1.0)
+    steps = path["dist"].diff().dropna()
+    assert steps.max() - steps.min() < 1e-6  # uniform spacing
+
+
+def test_clean_track_points_drops_jumps():
+    df = pd.DataFrame({"x": [0, 10, 20, 9000, 30, 40], "y": [0, 0, 0, 0, 0, 0]})
+    cleaned = analysis.clean_track_points(df, "x", "y")
+    assert 9000 not in cleaned["x"].tolist()
+    assert len(cleaned) == 5
 
 
 def test_detect_corners_empty_on_short_line():
@@ -177,18 +194,27 @@ def _straight_trace(x1: float, seconds: float, n: int = 11) -> pd.DataFrame:
 
 
 def test_corner_losses_slower_driver_loses_time():
-    outline = pd.DataFrame({"x": [0.0, 500.0, 1000.0], "y": [0.0, 0.0, 0.0]})
-    corners = pd.DataFrame({"label": ["T1"], "x": [500.0], "y": [0.0], "idx": [1]})
-    out = analysis.corner_losses(
-        outline, corners, _straight_trace(1000, 10.0), _straight_trace(1000, 8.0), "x", "y"
+    outline = pd.DataFrame({"x": [0.0, 1000.0], "y": [0.0, 0.0]})
+    corners = pd.DataFrame(
+        {"label": ["T1"], "x": [500.0], "y": [0.0], "frac": [0.5], "dist": [500.0]}
     )
-    assert out.iloc[0]["loss_s"] == pytest.approx(0.8)  # 400 m window: 4.0 s vs 3.2 s
-    assert bool(out.iloc[0]["flagged"]) is True
+    # +-0.035 of a 1000-unit lap covers 60 sampled units here: 0.6 s vs 0.48 s.
+    out = analysis.corner_losses(
+        outline,
+        corners,
+        _straight_trace(1000, 10.0, n=101),
+        _straight_trace(1000, 8.0, n=101),
+        "x",
+        "y",
+    )
+    assert out.iloc[0]["loss_s"] == pytest.approx(0.12, abs=0.02)
 
 
 def test_corner_losses_empty_window_is_nan_not_invented():
-    outline = pd.DataFrame({"x": [0.0, 500.0, 1000.0], "y": [0.0, 0.0, 0.0]})
-    corners = pd.DataFrame({"label": ["T1"], "x": [500.0], "y": [0.0], "idx": [1]})
+    outline = pd.DataFrame({"x": [0.0, 1000.0], "y": [0.0, 0.0]})
+    corners = pd.DataFrame(
+        {"label": ["T1"], "x": [500.0], "y": [0.0], "frac": [0.5], "dist": [500.0]}
+    )
     out = analysis.corner_losses(
         outline, corners, pd.DataFrame(), _straight_trace(1000, 8.0), "x", "y"
     )

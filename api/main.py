@@ -197,9 +197,9 @@ def geometry(session_key: int, driver_number: int, lap: int) -> dict:
     end_ts = end if end is not None else start + pd.Timedelta(seconds=150)
     stamps = data_loader.to_dt(loc["date"])
     trace = loc[(stamps >= start) & (stamps < end_ts)].reset_index(drop=True)
-    outline = trace.iloc[::5].reset_index(drop=True)
-    line = pd.DataFrame({"x": outline[ax].to_numpy(), "y": outline[ay].to_numpy()})
-    corners = analysis.detect_corners(line)
+    path = analysis.resample_path(analysis.clean_track_points(trace, ax, ay), ax, ay)
+    line = pd.DataFrame({"x": path["x"].to_numpy(), "y": path["y"].to_numpy()})
+    corners = analysis.detect_corners(path)
     merged = _lap_merged_car_loc(session_key, driver_number, start, end_ts)
     zones = analysis.drs_zones(merged, ax, ay) if not merged.empty else pd.DataFrame()
     return {
@@ -302,9 +302,9 @@ def session_geometry(session_key: int, driver_number: int | None = None) -> dict
     end_ts = end if end is not None else start + pd.Timedelta(seconds=150)
     stamps = data_loader.to_dt(loc["date"])
     trace = loc[(stamps >= start) & (stamps < end_ts)].reset_index(drop=True)
-    outline = trace.iloc[::4].reset_index(drop=True)
-    line = pd.DataFrame({"x": outline[ax].to_numpy(), "y": outline[ay].to_numpy()})
-    corners = analysis.detect_corners(line)
+    path = analysis.resample_path(analysis.clean_track_points(trace, ax, ay), ax, ay)
+    line = pd.DataFrame({"x": path["x"].to_numpy(), "y": path["y"].to_numpy()})
+    corners = analysis.detect_corners(path)
     merged = _lap_merged_car_loc(session_key, drv, start, end_ts)
     zones = analysis.drs_zones(merged, ax, ay) if not merged.empty else pd.DataFrame()
     return {
@@ -436,14 +436,13 @@ def corner_loss(req: CornerLossRequest):
     if loc.empty:
         raise HTTPException(404, "no location data")
     ax, ay = analysis.map_plane(loc)
-    outline_src = loc.iloc[::15].reset_index(drop=True)
-    line = pd.DataFrame({"x": outline_src[ax].to_numpy(), "y": outline_src[ay].to_numpy()})
-    corners = analysis.detect_corners(line)
+    ref_trace = _slice_loc(req.session_key, req.ref.driver, r_start, r_end_ts)
+    path = analysis.resample_path(analysis.clean_track_points(ref_trace, ax, ay), ax, ay)
+    corners = analysis.detect_corners(path)
     if corners.empty or req.corner not in corners["label"].tolist():
         raise HTTPException(404, "corner not found")
     c_trace = _slice_loc(req.session_key, req.chal.driver, c_start, c_end_ts)
-    r_trace = _slice_loc(req.session_key, req.ref.driver, r_start, r_end_ts)
-    out = analysis.corner_losses(line, corners, c_trace, r_trace, ax, ay)
+    out = analysis.corner_losses(path, corners, c_trace, ref_trace, ax, ay)
     row = out[out["label"] == req.corner]
     if row.empty:
         raise HTTPException(404, "no overlapping telemetry")

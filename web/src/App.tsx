@@ -9,6 +9,8 @@ import SessionMap from "./components/SessionMap";
 import SpeedChart, { type SpeedSeries } from "./components/SpeedChart";
 import Timeline from "./components/Timeline";
 import Tower from "./components/Tower";
+import DriverCard from "./components/DriverCard";
+import Info from "./components/Info";
 import { formatClock } from "./session";
 import { formatLapTime, teamColor } from "./format";
 import { buildGapTable, gapAt, indexAt, lapAt, type GapTable } from "./session";
@@ -35,6 +37,9 @@ function useAsync<T>(key: string, fn: () => Promise<T>): { data: T | null; error
   ref.current = fn;
   useEffect(() => {
     let live = true;
+    // Clearing on key change is deliberate: showing the previous session's
+    // data while a new one loads is exactly the "no context" bug we fixed.
+    setData(null);
     setError(null);
     ref
       .current()
@@ -154,13 +159,18 @@ export default function App() {
   const gaps = useAsync(`gaps:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionGaps(sessionKey) : Promise.resolve(null as unknown as SessionGaps),
   );
+  const sessionLoading =
+    sessionKey != null && replay.error == null && (replay.data == null || geo.data == null);
   const drivers = useAsync(`drivers:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.drivers(sessionKey) : Promise.resolve([]),
   );
   const laps = useAsync(`laps:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.laps(sessionKey) : Promise.resolve([]),
   );
-  const allLaps = laps.data ?? [];
+  const stints = useAsync(`stints:${sessionKey ?? "none"}`, () =>
+    sessionKey ? api.stints(sessionKey) : Promise.resolve([]),
+  );
+  const allLaps = useMemo(() => laps.data ?? [], [laps.data]);
 
   const playbackRef = useRef(createPlayback());
   const playback = playbackRef.current;
@@ -223,6 +233,24 @@ export default function App() {
     };
   }, [sessionKey, highlight, selectedDriver, speedByDriver]);
 
+  const tyreFor = (driver: number, lap: number): string | null => {
+    const row = (stints.data ?? [])
+      .filter((s) => s.driver_number === driver)
+      .find((s) => lap >= (s.lap_start ?? 1) && lap <= (s.lap_end ?? Number.MAX_SAFE_INTEGER));
+    if (!row) return null;
+    const age = row.lap_start != null ? Math.max(1, lap - row.lap_start + 1) : null;
+    return `${row.compound ?? "?"}${age ? ` · ${age} laps` : ""}`;
+  };
+  const hoverInfo = (driver: number) => {
+    const row = towerRows.find((r) => r.driver === driver);
+    return {
+      pos: row ? towerRows.indexOf(row) + 1 : null,
+      gap: row?.gap ?? null,
+      tyre: tyreFor(driver, Math.max(1, progress.lap)),
+      speed: speedAt(driver),
+    };
+  };
+
   const speedAt = (driver: number): number | null => {
     const pts = speedByDriver.get(driver);
     if (!pts?.length) return null;
@@ -263,9 +291,13 @@ export default function App() {
     return pts?.length ? [{ driver: d, label: `#${d} ${meta?.code ?? ""}`.trim(), color: meta?.color ?? "#8A94A6", points: pts }] : [];
   });
 
-  const ref = selectedDriver != null
-    ? { driver: selectedDriver, lap: Math.max(1, progress.lap) }
-    : bestLap(allLaps);
+  const ref = useMemo(
+    () =>
+      selectedDriver != null
+        ? { driver: selectedDriver, lap: Math.max(1, progress.lap) }
+        : bestLap(allLaps),
+    [selectedDriver, progress.lap, allLaps],
+  );
   const rivalLap = useMemo(() => {
     if (!ref) return null;
     let best: { driver: number; lap: number; t: number } | null = null;
@@ -399,7 +431,10 @@ export default function App() {
             <h2>Timing tower</h2>
             <Tower
               rows={towerRows}
-              onToggle={(n) => setHighlight((h) => (h.includes(n) ? h.filter((x) => x !== n) : [...h, n]))}
+              onToggle={(n) => {
+                setHighlight((h) => (h.includes(n) ? h.filter((x) => x !== n) : [...h, n]));
+                setSelectedDriver((cur) => (cur === n ? null : n));
+              }}
             />
             <p className="dim small">
               {highlight.length
@@ -419,13 +454,18 @@ export default function App() {
 
             {view === "replay" && (
               <>
-                {loading && (
-                  <div className="empty">
-                    Loading race data — first visit for a session takes a minute, then it stays cached.
+                {sessionLoading && (
+                  <div className="loading-card">
+                    <p className="loading-title">Loading {gpName} · {sessName}</p>
+                    <p className="dim small">
+                      Building the replay from telemetry. The first visit to a session takes about a
+                      minute; afterwards it is instant.
+                    </p>
+                    <div className="loading-bar"><span /></div>
                   </div>
                 )}
                 {replay.error && <div className="empty">This session has no replay data. Try another one.</div>}
-                {replay.data && (
+                {replay.data && geo.data && (
                   <>
                     <div className="map-frame">
                       <SessionMap
@@ -444,7 +484,7 @@ export default function App() {
                         selectedDriver={selectedDriver}
                         onCorner={setSelectedCorner}
                         onDriver={(n) => setSelectedDriver((cur) => (cur === n ? null : n))}
-                        speedAt={speedAt}
+                        hoverInfo={hoverInfo}
                       />
                       <div className="player player-overlay">
                         <button className="primary" onClick={() => playback.toggle()}>
@@ -522,7 +562,14 @@ export default function App() {
             )}
 
             {view === "battle" && sessionKey && (
-              <BattlePanel playback={playback} sessionKey={sessionKey} drivers={drivers.data ?? []} laps={allLaps} refProp={ref} />
+              <BattlePanel
+                playback={{ state: { t: playT, dur, rev: playback.state.rev } }}
+                sessionKey={sessionKey}
+                table={gapTable}
+                drivers={drivers.data ?? []}
+                laps={allLaps}
+                onSeek={(t) => playback.setT(t)}
+              />
             )}
             {view === "performance" && (
               <PerformancePanel
@@ -530,57 +577,107 @@ export default function App() {
                 laps={allLaps}
                 highlight={highlight}
                 towerOrder={towerRows.map((r) => r.driver)}
+                driverCode={(n) => driverMeta.get(n)?.code ?? `#${n}`}
+                onSeek={(t) => playback.setT(t)}
               />
             )}
             {view === "pit" && sessionKey && (
               <PitPanel
                 sessionKey={sessionKey}
                 laps={allLaps}
-                intervals={[]}
+                intervals={gaps.data?.points?.map((g) => ({ date: String(g.t), driver_number: g.driver_number, gap_to_leader: g.gap_to_leader })) ?? []}
                 driver={highlight[0] ?? selectedDriver ?? towerRows[0]?.driver ?? 0}
+                driverCode={(n) => driverMeta.get(n)?.code ?? `#${n}`}
               />
             )}
           </section>
 
           <section className="engineer">
             <h2>Race engineer</h2>
-            {selectedCorner ? (
-              <CoachPanel
-                sessionKey={sessionKey}
-                selfLap={ref}
-                rivalLap={rivalLap}
-                corner={selectedCorner}
-                driverName={(n) => {
-                  const d = (drivers.data ?? []).find((x) => x.driver_number === n);
-                  return d ? `#${n} ${d.name_acronym}` : `#${n}`;
-                }}
+            {selectedDriver != null ? (
+              <DriverCard
+                driver={(drivers.data ?? []).find((d) => d.driver_number === selectedDriver)!}
+                position={towerRows.findIndex((r) => r.driver === selectedDriver) + 1 || null}
+                gap={gapAt(gapTable, selectedDriver, playT)}
+                lap={Math.max(1, progress.lap)}
+                stint={
+                  (stints.data ?? []).find(
+                    (s) =>
+                      s.driver_number === selectedDriver &&
+                      Math.max(1, progress.lap) >= (s.lap_start ?? 1) &&
+                      Math.max(1, progress.lap) <= (s.lap_end ?? Number.MAX_SAFE_INTEGER),
+                  ) ?? null
+                }
+                laps={allLaps}
+                bestLap={
+                  (stints.data ?? []).length
+                    ? allLaps
+                        .filter((l) => l.driver_number === selectedDriver && l.lap_duration != null)
+                        .sort((a, b) => (a.lap_duration as number) - (b.lap_duration as number))[0] ?? null
+                    : null
+                }
+                onClear={() => setSelectedDriver(null)}
               />
             ) : (
               <>
                 <p className="session-title">{sessName} · {gpName}</p>
-                <p className="dim small">{info.data?.date_start.slice(0, 10)}</p>
+                <p className="dim small">
+                  {info.data?.date_start.slice(0, 10)}
+                  {info.data ? ` · ${info.data.date_start.slice(11, 16)}–${info.data.date_end.slice(11, 16)} UTC` : ""}
+                </p>
                 <dl className="facts">
                   <div>
-                    <dt>Distance</dt>
+                    <dt>
+                      <Info
+                        label="Distance"
+                        tip="Race distance in laps. The replay clock starts at lights out and runs to the chequered flag."
+                      />
+                    </dt>
                     <dd>{info.data?.total_laps ?? "—"} laps</dd>
                   </div>
                   <div>
-                    <dt>Drivers</dt>
+                    <dt><Info label="Drivers" tip="Cars classified in this session." /></dt>
                     <dd>{info.data?.drivers ?? "—"}</dd>
                   </div>
                   <div>
-                    <dt>Race time</dt>
+                    <dt>
+                      <Info
+                        label="Race time"
+                        tip="Elapsed time of the race itself (lights out to flag), not the scheduled session window."
+                      />
+                    </dt>
                     <dd>{info.data ? formatClock(info.data.duration_s) : "—"}</dd>
                   </div>
                   <div>
-                    <dt>Gaps</dt>
-                    <dd>{gaps.data?.source === "lap_times" ? "from lap times" : gaps.data?.source === "intervals" ? "live timing" : "—"}</dd>
+                    <dt>
+                      <Info
+                        label="Gaps"
+                        tip="Where the tower's gaps come from: live timing intervals when the session has them, otherwise computed from measured lap times. '—' means neither exists."
+                      />
+                    </dt>
+                    <dd>
+                      {gaps.data?.source === "lap_times"
+                        ? "from lap times"
+                        : gaps.data?.source === "intervals"
+                          ? "live timing"
+                          : "—"}
+                    </dd>
                   </div>
                 </dl>
+                {selectedCorner && (
+                  <CoachPanel
+                    sessionKey={sessionKey}
+                    selfLap={ref}
+                    rivalLap={rivalLap}
+                    corner={selectedCorner}
+                    driverName={(n) => {
+                      const d = (drivers.data ?? []).find((x) => x.driver_number === n);
+                      return d ? `#${n} ${d.name_acronym}` : `#${n}`;
+                    }}
+                  />
+                )}
                 <p className="dim small">
-                  {selectedDriver != null
-                    ? `Following #${selectedDriver}. Click a corner to ask the engineer about it.`
-                    : "Click a car or a corner on the map to dig in."}
+                  Click a car on the map for that driver's card, or a corner marker to ask the engineer.
                 </p>
               </>
             )}

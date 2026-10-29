@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { formatLapTime } from "../format";
 import { recentPace, stintSlope } from "../perf";
+import Info from "./Info";
 import type { IntervalPoint, Lap } from "../types";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
   laps: Lap[];
   intervals: IntervalPoint[];
   driver: number;
+  driverCode: (n: number) => string;
 }
 
 export default function PitPanel(p: Props) {
@@ -69,22 +71,25 @@ export default function PitPanel(p: Props) {
 
   return (
     <div>
-      <p className="dim">
-        <strong>TOY MODEL</strong> — linear deg, constant rivals, static pit loss. Not strategy advice.
+      <p className="dim small">
+        <strong>What this is:</strong> a deliberately simple what-if. It compares staying out against pitting
+        now using your car's measured pace and tyre wear, a fixed pit-loss estimate, and the gap behind.
+        It ignores rival strategy, safety cars and traffic beyond that one check.
       </p>
       <div className="row">
-        <label className="dim">
-          Driver{" "}
-          <strong className="mono" style={{ color: "var(--ink)" }}>
-            #{p.driver}
-          </strong>
-        </label>
-        <label className="dim">
-          Laps left{" "}
+        <span className="small">
+          <Info label="Driver" tip="Whose measured pace and tyre wear the model uses. Pick another driver in the tower to change it." />
+          {" "}
+          <strong className="mono">{p.driverCode(p.driver)}</strong>
+        </span>
+        <label className="dim small">
+          <Info label="Laps left" tip="How many laps are still to run. Defaults to 10 — change it to your scenario." />
+          {" "}
           <input type="number" min={1} value={lapsLeft} onChange={(e) => setLapsLeft(Number(e.target.value))} style={{ width: "70px" }} />
         </label>
-        <label className="dim">
-          Pit loss (s){" "}
+        <label className="dim small">
+          <Info label="Pit loss" tip="Time lost in the pit lane compared with staying on track. About 20-25 s on most circuits." />
+          {" "}
           <input type="range" min={15} max={30} step={0.5} value={pitLoss} onChange={(e) => setPitLoss(Number(e.target.value))} />
           <span className="mono">{pitLoss.toFixed(1)}</span>
         </label>
@@ -92,16 +97,28 @@ export default function PitPanel(p: Props) {
       {error && <p className="dim">Pit model unavailable.</p>}
       {call && (
         <>
-          <div className="row mono">
-            <span>Stay out: {call.stay_total_s.toFixed(1)}s</span>
-            <span>Pit now: {call.pit_total_s.toFixed(1)}s</span>
-            <span>Traffic on exit: {call.traffic_on_exit ? "YES" : "clear"}</span>
-          </div>
-          <h2>{call.recommendation}</h2>
+          <dl className="facts">
+            <div>
+              <dt><Info label="Stay out" tip="Total time over the remaining laps on the current tyres, including the measured wear." /></dt>
+              <dd>{call.stay_total_s.toFixed(1)}s total</dd>
+            </div>
+            <div>
+              <dt><Info label="Pit now" tip="Pit loss plus the remaining laps on fresh tyres." /></dt>
+              <dd>{call.pit_total_s.toFixed(1)}s total</dd>
+            </div>
+            <div>
+              <dt><Info label="Traffic on exit" tip="Whether the car behind is closer than the pit loss, meaning you would rejoin behind them." /></dt>
+              <dd>{call.traffic_on_exit ? "yes" : "clear"}</dd>
+            </div>
+          </dl>
+          <p className="pit-answer">{call.recommendation}</p>
+          <p className="dim small">
+            Lower total wins. Difference: {Math.abs(call.pit_total_s - call.stay_total_s).toFixed(1)}s.
+          </p>
         </>
       )}
-      <p className="dim mono">
-        Pace now {formatLapTime(base)} · fresh {formatLapTime(fresh)} · deg +{deg.toFixed(3)}s/lap
+      <p className="dim small mono">
+        From measured data: pace now {formatLapTime(base)} · best lap {formatLapTime(fresh)} · wear +{deg.toFixed(3)}s/lap
       </p>
     </div>
   );

@@ -106,3 +106,17 @@ export const api = {
     lap_delta_s: number | null;
   }) => post<CoachReply>("/coach/ask", body),
 };
+
+export const tyreAtLap = (
+  stints: import("./types").Stint[],
+  driver: number,
+  lap: number,
+): { compound: string | null; start: number; end: number | null } | null => {
+  const mine = stints.filter((s) => s.driver_number === driver);
+  for (const s of mine) {
+    const start = s.lap_start ?? 1;
+    const end = s.lap_end ?? Number.MAX_SAFE_INTEGER;
+    if (lap >= start && lap <= end) return { compound: s.compound, start, end: s.lap_end };
+  }
+  return null;
+};

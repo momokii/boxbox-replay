@@ -82,3 +82,33 @@ amber darkened to `#A86A00` for contrast on light. Data colors unchanged.
 - Day/night: one token set each, toggle persisted, canvas re-reads CSS vars.
 - Fixed: "1108 laps" → "Distance 53 laps"; "2:00:00 session" → "Race time
   1:26:08"; tower/added copy in sentence case; driver counts real.
+
+
+## Pass 3 — fixes from user review
+
+- **Loading with context**: switching year/GP/session clears the previous
+  session's data and shows "Loading <GP> · <session>" instead of stale frames.
+- **Lap windows** were unbounded (a 5.8 km lap measured 57 km, ≈10 laps) — they
+  are now clamped by the measured lap duration, which also fixed outlines, DRS
+  and corner geometry.
+- **Corners**: detection rewritten to work on an arc-length-resampled path in
+  fractions of lap length (source coordinates are not metres, and thresholding
+  by sample index made results unstable). Suzuka: 18, COTA: 22 — matching the
+  real circuit corner counts, labelled T1..Tn with a note that they are detected
+  from telemetry, not official FIA numbering.
+- **Player bar** moved below the map so it can never cover the circuit
+  (Singapore-style layouts were the risk).
+- **Tooltips**: every jargon term in the facts/panels has a dotted-underline
+  explainer (gap, stint, degradation, pit loss, traffic on exit, radio, race
+  control), keyboard-focusable.
+- **Driver card**: click a car or tower row → full name, team, country, timing
+  abbreviation explained, position, gap, tyre compound + age, last/best lap,
+  laps run.
+- **Map hover** shows position, gap, tyre and speed (not just speed).
+- **Battle** rebuilt: two drivers, relative gap across the whole session, lap
+  pace deltas you can click to seek, head-to-head stats.
+- **Performance/Pit wall context**: scope toggle (my drivers vs whole field),
+  driver codes instead of numbers, "whole race" vs replay-moment labels, stint
+  axis, provenance line for the pit model inputs.
+- **Session window** shown in the facts panel (UTC start–end plus race time).
+- Selects use one proportional arrow instead of the browser default.

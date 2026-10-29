@@ -78,44 +78,131 @@ def map_plane(loc: pd.DataFrame) -> tuple[str, str]:
     return ranked[0], ranked[1]
 
 
-def detect_corners(
-    line: pd.DataFrame, angle_deg: float = 25.0, min_gap: int = 8
-) -> pd.DataFrame:
-    """Find corners on an ordered (x, y) reference line via heading change.
+def clean_track_points(trace: pd.DataFrame, ax: str, ay: str) -> pd.DataFrame:
+    """Drop position glitches using a unit-agnostic step test.
 
-    Returns one row per corner: label (T1..Tn), x, y, idx. Pure and tested.
+    OpenF1 /location coordinates are not metres (they are roughly 10x), so the
+    test is relative: a sample survives unless it jumps more than 6x the median
+    frame-to-frame step — something no car does. Pure.
     """
-    import math
-
     import numpy as np
 
-    pts = line[["x", "y"]].to_numpy(dtype=float)
-    if len(pts) < min_gap * 2:
-        return pd.DataFrame(columns=["label", "x", "y", "idx"])
-    seg = np.diff(pts, axis=0)
-    heading = np.arctan2(seg[:, 1], seg[:, 0])
-    turn = (np.diff(heading) + math.pi) % (2 * math.pi) - math.pi
-    smooth = pd.Series(np.abs(turn)).rolling(5, center=True, min_periods=1).mean().to_numpy()
-    thresh = math.radians(angle_deg)
-    peaks: list[int] = []
-    i = 0
-    while i < len(smooth):
-        if smooth[i] >= thresh:
-            j = i
-            while j + 1 < len(smooth) and smooth[j + 1] >= thresh:
-                j += 1
-            peak = (i + j) // 2
-            if not peaks or peak - peaks[-1] >= min_gap:
-                peaks.append(peak)
-            i = j + 1
-        else:
-            i += 1
+    if trace.empty or ax not in trace.columns or ay not in trace.columns:
+        return trace
+    df = trace.reset_index(drop=True)
+    if len(df) < 4:
+        return df
+    pts = df[[ax, ay]].to_numpy(dtype=float)
+    steps = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+    finite = steps[np.isfinite(steps)]
+    if not len(finite):
+        return df
+    limit = float(np.median(finite)) * 6.0
+    keep = [0]
+    for i in range(1, len(df)):
+        if float(np.linalg.norm(pts[i] - pts[keep[-1]])) <= limit:
+            keep.append(i)
+    return df.iloc[keep].reset_index(drop=True)
+
+
+def resample_path(
+    trace: pd.DataFrame, ax: str, ay: str, points: int = 1500
+) -> pd.DataFrame:
+    """Resample an ordered trace uniformly by arc length. Pure.
+
+    Returns x, y, frac (0..1 around the lap) and dist (raw coordinate units).
+    Everything downstream works in `frac`, so it is independent of the source
+    coordinate scale and of the telemetry sample rate.
+    """
+    import numpy as np
+
+    if trace.empty or ax not in trace.columns or ay not in trace.columns:
+        return pd.DataFrame(columns=["x", "y", "frac", "dist"])
+    pts = trace[[ax, ay]].to_numpy(dtype=float)
+    if len(pts) < 3:
+        return pd.DataFrame(columns=["x", "y", "frac", "dist"])
+    seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+    cum = np.concatenate([[0.0], np.cumsum(seg)])
+    total = float(cum[-1])
+    if not np.isfinite(total) or total <= 0:
+        return pd.DataFrame(columns=["x", "y", "frac", "dist"])
+    grid = np.linspace(0.0, total, max(50, points))
+    x = np.interp(grid, cum, pts[:, 0])
+    y = np.interp(grid, cum, pts[:, 1])
+    return pd.DataFrame({"x": x, "y": y, "frac": grid / total, "dist": grid})
+
+
+def detect_corners(path: pd.DataFrame, target: int | None = None) -> pd.DataFrame:
+    """Find corner apexes on a uniform path via heading change. Pure.
+
+    Works in fractions of lap length, so the same thresholds fit a 4 km circuit
+    and a 7 km one. `target` defaults to a plausible corner count for the
+    circuit; labels are sequential (T1..Tn) — detected curvature, not official
+    FIA numbering.
+    """
+    import numpy as np
+
+    empty = pd.DataFrame(columns=["label", "x", "y", "frac", "dist"])
+    if path.empty or len(path) < 24:
+        return empty
+    pts = path[["x", "y"]].to_numpy(dtype=float)
+    frac = path["frac"].to_numpy(dtype=float)
+    dist = path["dist"].to_numpy(dtype=float)
+
+    heading = np.arctan2(np.diff(pts[:, 1]), np.diff(pts[:, 0]))
+    win = max(3, int(round(len(pts) * 0.006)))
+    turn = np.zeros(len(pts))
+    for i in range(len(pts)):
+        a = max(0, i - win)
+        b = min(len(heading), i + win)
+        if b - a >= 2:
+            dh = (heading[b - 1] - heading[a] + np.pi) % (2 * np.pi) - np.pi
+            turn[i] = abs(np.degrees(dh))
+
+    goal = target if target is not None else 18  # typical F1 circuit corner count
+    min_sep = 0.012  # ~70 m on a 5.8 km lap, as a fraction
+    best: list[int] = []
+    for thresh in (26, 24, 22, 20, 18, 16, 14, 12, 10):
+        peaks: list[int] = []
+        for i in range(1, len(turn) - 1):
+            if turn[i] < thresh:
+                continue
+            if turn[i] < turn[i - 1] or turn[i] < turn[i + 1]:
+                continue
+            if peaks and frac[i] - frac[peaks[-1]] < min_sep:
+                if turn[i] > turn[peaks[-1]]:
+                    peaks[-1] = i
+                continue
+            peaks.append(i)
+        best = peaks
+        if len(peaks) >= goal:
+            break
+    if len(best) > goal:
+        keep = sorted(sorted(best, key=lambda i: turn[i], reverse=True)[:goal])
+        best = keep
+    if not best:
+        return empty
     return pd.DataFrame(
-        {"label": [f"T{n + 1}" for n in range(len(peaks))],
-         "x": [float(pts[p + 1][0]) for p in peaks],
-         "y": [float(pts[p + 1][1]) for p in peaks],
-         "idx": peaks}
+        {
+            "label": [f"T{n + 1}" for n in range(len(best))],
+            "x": [float(pts[i][0]) for i in best],
+            "y": [float(pts[i][1]) for i in best],
+            "frac": [float(frac[i]) for i in best],
+            "dist": [float(dist[i]) for i in best],
+        }
     )
+
+
+def _path_total(df: pd.DataFrame, ax: str, ay: str) -> float:
+    """Total length of an ordered path in source coordinate units."""
+    import numpy as np
+
+    if df.empty or ax not in df.columns or ay not in df.columns:
+        return 0.0
+    pts = df[[ax, ay]].to_numpy(dtype=float)
+    if len(pts) < 2:
+        return 0.0
+    return float(np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
 
 
 def _cumdist(trace: pd.DataFrame, ax: str, ay: str) -> pd.Series:
@@ -146,7 +233,7 @@ def corner_losses(
     trace_ref: pd.DataFrame,
     ax: str,
     ay: str,
-    window_m: float = 200.0,
+    window_frac: float = 0.035,
 ) -> pd.DataFrame:
     """Seconds lost per corner (self vs ref) inside +/-window_m of each apex.
 
@@ -154,14 +241,14 @@ def corner_losses(
     Empty window in either trace -> NaN loss (never invented). Pure.
     """
     out = []
-    out_dist = _cumdist(outline, "x", "y")
+    total = _path_total(outline, ax, ay)
     for c in corners.itertuples():
-        idx = int(c.idx)
-        apex = float(out_dist.iloc[idx]) if 0 <= idx < len(out_dist) else None
+        apex = float(c.frac) * total if total > 0 and hasattr(c, "frac") else None
+        window_units = window_frac * total
         loss: float | None = None
         if apex is not None:
-            t_self = _window_seconds(trace_self, ax, ay, apex, window_m)
-            t_ref = _window_seconds(trace_ref, ax, ay, apex, window_m)
+            t_self = _window_seconds(trace_self, ax, ay, apex, window_units)
+            t_ref = _window_seconds(trace_ref, ax, ay, apex, window_units)
             if t_self is not None and t_ref is not None:
                 loss = t_self - t_ref
         out.append(
