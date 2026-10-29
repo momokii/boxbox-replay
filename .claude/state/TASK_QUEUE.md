@@ -41,7 +41,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | Task ID             | M0                                                          |
 | Name                | Env + fetch proof                                           |
 | Priority            | High                                                        |
-| Status              | IN PROGRESS (proof done, tree proposed)                     |
+| Status              | DONE (committed 6ebe3c0; proof: 2023:118, 2024:123, 2025:123, 2026:131; Suzuka quali 223 rows) |
 | Complexity          | S                                                           |
 | Depends On          | User approves file tree below                               |
 | Scope               | Scaffold repo (requirements, ruff/pytest config, gitignore extend); `data_loader` list_years/gps/sessions + parquet cache shape; mocked tests; commit |
