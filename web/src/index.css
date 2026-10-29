@@ -99,6 +99,37 @@ h3 {
   white-space: nowrap;
 }
 
+.topbar .clock {
+  margin-left: auto;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.tabbar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-2);
+}
+
+.tabbar button {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--dim);
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+.tabbar button[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
 .pickers {
   display: flex;
   flex-wrap: wrap;
@@ -292,7 +323,10 @@ button[role="tab"][aria-selected="true"] {
 }
 
 .tower-code {
-  font-family: ui-monospace, monospace;
+  font-family: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
   min-width: 44px;
 }
 

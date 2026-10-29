@@ -1,5 +1,28 @@
 # UI Redesign Plan (frontend-design skill process)
 
+## Pass 2 — the actual redesign (the first pass was polish, not design)
+
+Honest review: Pass 1 kept the templated dashboard grid and merely tidied
+it. Per the skill, the fix is structural, not cosmetic:
+
+- **Hero first**: the app opens on three empty dropdowns and a void. It must
+  open *inside a race* — auto-pick the latest full session on first load so
+  the map (the one memorable thing) is the first thing seen.
+- **Boldness in one place**: amber is currently on tabs, buttons, playheads,
+  corners and DRS. After: amber = play signal + playhead only (one action).
+  Tabs become quiet text; corner diamonds go white, amber only when selected
+  (= action feedback). DRS ticks stay amber — the brief pins them and the
+  brief always wins.
+- **Type as identity**: Barlow Condensed carries the timing-vernacular
+  moments (session bar clock, tower codes, big lap readout); Barlow carries
+  UI text; system mono carries deltas/tables only.
+- **Engineer earns its space**: the right rail shows session facts when idle
+  (GP, circuit, date, lap/driver counts) and the coach card when a corner is
+  picked — never a void, never decoration.
+- **Structure is information**: tower rows stay code + gap (order is
+  position); the lap table keeps its sticky header and sector colors; chips
+  stay for highlight; copy stays sentence-case and directive.
+
 ## Grounding
 
 Subject: an F1 pit-wall timing monitor for one fan rewatching a Grand Prix.

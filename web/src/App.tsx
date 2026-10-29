@@ -88,6 +88,67 @@ export default function App() {
   const sessions = useAsync(`sessions:${year ?? "none"}:${meetingKey ?? "none"}`, () =>
     year && meetingKey ? api.sessions(year, meetingKey) : Promise.resolve([]),
   );
+
+  // First run opens inside a race: auto-pick the latest season, its most
+  // recent Grand Prix, then the Race session. Deep links win; one shot.
+  // (The session step lives below, next to the status hook it waits on.)
+  const autoPicked = useRef(false);
+  const hasParams = params.year != null || params.meeting != null || params.session != null;
+  useEffect(() => {
+    if (autoPicked.current || hasParams || yearSel || !years.data?.length) return;
+    setYearSel(years.data[years.data.length - 1]);
+  }, [years.data, yearSel, hasParams]);
+
+  // Hunt newest-first for a session with real telemetry (Race preferred).
+  // Bounded: stops at the first usable session, scans at most 8 meetings.
+  // This sets BOTH meeting and session; the pickers simply reflect the result.
+  useEffect(() => {
+    if (autoPicked.current || hasParams || !year) return;
+    const ms = meetings.data ?? [];
+    if (!ms.length) return;
+    if (sessionKey) return;
+    let live = true;
+    (async () => {
+      const ordered = [...ms].reverse().slice(0, 8);
+      for (const m of ordered) {
+        const sess = await api.sessions(year, m.meeting_key).catch(() => []);
+        if (!live || !sess.length) continue;
+        const raceFirst = [
+          ...sess.filter((s) => s.session_name.startsWith("Race")),
+          ...sess.filter((s) => !s.session_name.startsWith("Race")),
+        ];
+        const probe = await api
+          .sessionStatus(raceFirst.slice(0, 3).map((s) => s.session_key))
+          .catch(() => ({} as Record<string, string>));
+        if (!live) return;
+        const good = raceFirst.find((s) => (probe[String(s.session_key)] ?? "x") === "");
+        if (good) {
+          autoPicked.current = true;
+          setMeetingKey(m.meeting_key);
+          setSessionKey(good.session_key);
+          return;
+        }
+        if (raceFirst.length > 3) {
+          const rest = await api
+            .sessionStatus(raceFirst.slice(3).map((s) => s.session_key))
+            .catch(() => ({} as Record<string, string>));
+          if (!live) return;
+          const goodRest = raceFirst
+            .slice(3)
+            .find((s) => (rest[String(s.session_key)] ?? "x") === "");
+          if (goodRest) {
+            autoPicked.current = true;
+            setMeetingKey(m.meeting_key);
+            setSessionKey(goodRest.session_key);
+            return;
+          }
+        }
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [meetings.data, year, sessionKey, hasParams]);
   const sessionKeys = useMemo(
     () => (sessions.data ?? []).map((s) => s.session_key),
     [sessions.data],
@@ -96,6 +157,7 @@ export default function App() {
     sessionKeys.length ? api.sessionStatus(sessionKeys) : Promise.resolve({}),
   );
   const reasons: Record<string, string> = status.data ?? {};
+
 
   const drivers = useAsync(`drivers:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.drivers(sessionKey) : Promise.resolve([]),
@@ -281,6 +343,12 @@ export default function App() {
   const driverLabel = (d: Driver) => `#${d.driver_number} ${d.name_acronym}`;
   const gpName = meetings.data?.find((m: Meeting) => m.meeting_key === meetingKey)?.meeting_name ?? "";
   const sessName = sessions.data?.find((s: SessionInfo) => s.session_key === sessionKey)?.session_name ?? "";
+  const sessionBlocked = sessionKey ? reasons[String(sessionKey)] || null : null;
+  const allBlocked =
+    !sessionKey &&
+    (sessions.data ?? []).length > 0 &&
+    status.data != null &&
+    (sessions.data ?? []).every((s) => (status.data as Record<string, string>)[String(s.session_key)]);
   const gapDrivers = useMemo(() => {
     if (highlight.length) return highlight;
     return towerRows.slice(0, 5).map((r) => r.driver);
@@ -293,6 +361,11 @@ export default function App() {
         <span className="sub">
           {gpName} {sessName && `· ${sessName}`} {ref && `· lap ${ref.lap} replay`}
         </span>
+        {sessionKey ? (
+          <span className="clock mono" aria-label="Replay clock">
+            {playT.toFixed(1)}<span className="dim" style={{ fontSize: "0.9rem" }}> / {dur.toFixed(0)}s</span>
+          </span>
+        ) : null}
       </header>
 
       <div className="pickers">
@@ -358,16 +431,28 @@ export default function App() {
         </label>
       </div>
 
-      {!sessionKey && (
+      {!sessionKey && !allBlocked && (
         <main className="layout">
           <div className="empty" style={{ gridColumn: "1 / -1" }}>
             Pick a season, Grand Prix and session to start the full-field replay.
           </div>
         </main>
       )}
+      {!sessionKey && allBlocked && (
+        <main className="layout">
+          <div className="empty" style={{ gridColumn: "1 / -1" }}>
+            No sessions with telemetry in this Grand Prix — try another one.
+          </div>
+        </main>
+      )}
 
       {sessionKey && (
         <main className="layout">
+          {sessionBlocked && (
+            <div className="empty" style={{ gridColumn: "1 / -1" }}>
+              This session has no telemetry ({sessionBlocked}) — pick another session or Grand Prix.
+            </div>
+          )}
           <section className="rail" aria-label="Timing tower">
             <h2>Timing tower</h2>
             <Tower
@@ -380,14 +465,13 @@ export default function App() {
           </section>
 
           <section className="stage">
-            <div className="row" role="tablist" aria-label="Views" style={{ marginBottom: "8px" }}>
+            <div className="row tabbar" role="tablist" aria-label="Views" style={{ marginBottom: "8px" }}>
               {(["replay", "battle", "performance", "pit"] as const).map((v) => (
                 <button
                   key={v}
                   role="tab"
                   aria-selected={view === v}
                   onClick={() => setView(v)}
-                  style={{ textTransform: "capitalize" }}
                 >
                   {v === "pit" ? "Pit wall" : v}
                 </button>
@@ -509,18 +593,32 @@ export default function App() {
           <section className="engineer">
             <h2>Race engineer</h2>
             {sessionKey ? (
-              <CoachPanel
-                sessionKey={sessionKey}
-                selfLap={ref}
-                rivalLap={rivalLap}
-                corner={selectedCorner}
-                driverName={(n) => {
-                  const d = (drivers.data ?? []).find((x) => x.driver_number === n);
-                  return d ? `#${n} ${d.name_acronym}` : `#${n}`;
-                }}
-              />
+              selectedCorner ? (
+                <CoachPanel
+                  sessionKey={sessionKey}
+                  selfLap={ref}
+                  rivalLap={rivalLap}
+                  corner={selectedCorner}
+                  driverName={(n) => {
+                    const d = (drivers.data ?? []).find((x) => x.driver_number === n);
+                    return d ? `#${n} ${d.name_acronym}` : `#${n}`;
+                  }}
+                />
+              ) : (
+                <>
+                  <p className="mono" style={{ fontSize: "1.1rem", margin: "0 0 4px" }}>{gpName}</p>
+                  <p className="dim" style={{ margin: "0 0 12px" }}>
+                    {sessName}
+                    {sessions.data?.find((s) => s.session_key === sessionKey)?.date_start.slice(0, 10) ?? ""}
+                  </p>
+                  <p className="mono">
+                    {allLaps.length} laps · {(drivers.data ?? []).length} drivers
+                  </p>
+                  <p className="dim">Pick a corner on the map to ask what happened there.</p>
+                </>
+              )
             ) : (
-              <p className="dim">Pick a session first.</p>
+              <p className="dim">Pick a season, Grand Prix and session to start the replay.</p>
             )}
             {selected && (
               <p>
