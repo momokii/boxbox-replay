@@ -133,3 +133,68 @@ def get_positions(session_key: int) -> pd.DataFrame:
     return _cached(
         "position", {"session_key": session_key}, _session_cache(session_key, "position.parquet")
     )
+
+
+# --- M1: picker helpers ---
+
+
+def list_meetings(year: int) -> pd.DataFrame:
+    """One row per Grand Prix meeting: key, name, location, session count."""
+    df = list_sessions(year)
+    if df.empty:
+        return df
+    grouped = (
+        df.groupby(["meeting_key", "meeting_name"], dropna=False)
+        .agg(
+            sessions=("session_key", "nunique"),
+            location=("location", "first"),
+            date_start=("date_start", "min"),
+        )
+        .reset_index()
+        .sort_values("date_start")
+    )
+    return grouped
+
+
+def sessions_for_meeting(year: int, meeting_key: int) -> pd.DataFrame:
+    """Sessions of one meeting, chronological."""
+    df = list_sessions(year)
+    if df.empty:
+        return df
+    return df[df["meeting_key"] == meeting_key].sort_values("date_start")
+
+
+def session_has_telemetry(session_key: int) -> tuple[bool, str]:
+    """Probe whether a session has usable telemetry.
+
+    Returns (True, "") or (False, reason). Probe is one driver's car_data
+    (representative sample, cached) — full-grid fetch would be ~20x the bytes.
+    """
+    drivers = list_drivers(session_key)
+    if drivers.empty or "driver_number" not in drivers.columns:
+        return False, "no drivers"
+    first = int(drivers["driver_number"].iloc[0])
+    car = get_car_data(session_key, driver_number=first)
+    if car.empty:
+        return False, "no telemetry"
+    return True, ""
+
+
+def format_lap_time(seconds: float | None) -> str:
+    """Pit-wall format: M:SS.mmm, always 3 decimals; unmeasurable -> em dash."""
+    if seconds is None:
+        return "—"
+    try:
+        total = float(seconds)
+    except (TypeError, ValueError):
+        return "—"
+    if total != total:  # NaN check without importing math
+        return "—"
+    minutes = int(total // 60)
+    rest = total - minutes * 60
+    return f"{minutes}:{rest:06.3f}"
+
+
+def clamp_selection(items: list, limit: int = 3) -> list:
+    """Keep at most `limit` selections, preserving order (driver picker: max 3)."""
+    return list(items)[:limit]

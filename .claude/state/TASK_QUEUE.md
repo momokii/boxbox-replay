@@ -50,8 +50,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 
 | Field               | M1–M6 (queued)                                              |
 |---------------------|-------------------------------------------------------------|
-| M1                  | Chooser + picker + lap table (TODO, depends M0)             |
-| M2                  | Battle speed overlay + gap chart, 2 drivers (TODO, depends M1) |
+| M1                  | Chooser + picker + lap table (DONE — hides empty sessions w/ reason, max 3 drivers, click-lap loads) |
+| M2                  | Battle speed overlay + gap chart, 2 drivers (IN PROGRESS next, depends M1) |
 | M3                  | Synced track-map animation (TODO, depends M2)               |
 | M4                  | Coach on corner click, grounded, needs LLM token env name (TODO, depends M3) |
 | M5                  | Performance mode: deg slope + stints + weather + radio (TODO, depends M3) |

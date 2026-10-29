@@ -23,3 +23,11 @@ ruff 0.17.3), plus Docker deployment (`Dockerfile` non-root + healthcheck,
 ruff clean, real counts 2023:118/2024:123/2025:123/2026:131, Suzuka 2024 quali
 223 rows (fastest VER 1:28.197), container boots healthy and shuts down clean,
 prod config renders. Two test/line-length bugs found and fixed before commit.
+
+## 2026-10-28 — M1 chooser + picker + lap table
+
+Year -> GP -> session -> drivers (max 3) -> lap table with click-to-load into
+`session_state.selected_lap`; telemetry-empty sessions hidden with reason shown
+(single-driver `car_data` probe, cached). Dark Pit-Wall base via
+`.streamlit/config.toml`. Verified: 12 tests pass, ruff clean, container boots
+healthy with the new UI and no log errors.

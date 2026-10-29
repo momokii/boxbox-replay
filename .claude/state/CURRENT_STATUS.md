@@ -1,5 +1,5 @@
 ## Project Phase
-M0 done and committed. Next: M1 chooser + picker + lap table.
+M1 done and committed. Next: M2 battle speed overlay + gap chart (2 drivers).
 
 ## Completed
 - [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
@@ -7,7 +7,8 @@ M0 done and committed. Next: M1 chooser + picker + lap table.
 - [x] Docker deployment proven: image builds, dev stack boots healthy (`/_stcore/health` → ok), clean down, prod config renders
 
 ## In Progress
-- [ ] M1: chooser + picker + lap table (hides empty-telemetry sessions)
+- [x] M1: chooser + picker + lap table
+- [ ] M2: battle speed overlay + gap chart (`analysis.best_lap`/`lap_deltas`)
 
 ## Blocked
 None
@@ -21,5 +22,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-28: M0 committed (6ebe3c0)
+2026-10-28: M1 committed
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

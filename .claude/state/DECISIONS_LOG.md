@@ -46,6 +46,20 @@
 **Impact:** Locks M0–M6 scope; Compose pattern likely skipped (no containers — to confirm)
 ---
 
+---
+
+## Decided during M1 (2026-10-28)
+
+---
+**Decision:** Telemetry probe = one driver's car_data per session; hidden sessions listed with reason in an expander
+**Date:** 2026-10-28
+**Context:** Picker must hide telemetry-empty sessions without downloading full-grid car_data (~20x bytes)
+**Rationale:** Single-driver probe is representative and cached; expander keeps the hide reason visible per brief rule
+**Alternatives Rejected:** Full-grid probe (bandwidth-heavy); silent omission (brief requires the reason shown)
+**Security Implications:** None — same public endpoint, fewer requests (rate-limit friendly)
+**Impact:** `session_has_telemetry()` in `data_loader.py`; M1 picker depends on it
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

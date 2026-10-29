@@ -15,6 +15,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py data_loader.py analysis.py viz.py coach.py ./
+COPY .streamlit ./.streamlit/
 
 USER app
 
