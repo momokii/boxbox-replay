@@ -65,7 +65,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | R0                  | FastAPI backend + React shell: pickers, lap table, compose api+web (DONE) |
 | R1                  | All-driver canvas replay: map, tower, playback, synced trace (DONE) |
 | R2                  | Feature panels: battle, performance, pit toy (DONE) |
-| R3                  | Coach on-trigger: corner button, async ask, radio card (TODO) |
+| R3                  | Coach on-trigger: corner button, async ask, radio card (DONE) |
 | R4                  | Polish + cutover: sectors, mobile, Tailnet deploy, remove Streamlit (TODO) |
 
 ---

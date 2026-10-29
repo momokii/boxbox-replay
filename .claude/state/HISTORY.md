@@ -120,3 +120,10 @@ traffic check, bannered toy), tabbed as secondary views; GapChart restored in
 replay. Hardened records() JSON: NaN->None (map dtype-inference trap),
 ndarray cells, strict-dumps regression tests. All 6 race feeds verified live
 through the nginx proxy. 49 pytest + 17 vitest green, tsc build clean.
+
+## 2026-10-29 — R3 coach on-trigger
+
+Engineer column: corner click -> explicit "Ask engineer" button -> measured
+corner loss -> async LLM answer with [confidence] + basis, cached per key,
+numbers-only fallback when the LLM is unreachable. Verified live: T1 loss
++0.280s flagged MED on Suzuka 2024 Race; coach/ask fallback path in container.

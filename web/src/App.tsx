@@ -4,6 +4,7 @@ import Tower from "./components/Tower";
 import TrackMap from "./components/TrackMap";
 import SpeedStrip, { type TraceSeries } from "./components/SpeedStrip";
 import GapChart from "./components/GapChart";
+import CoachPanel from "./components/CoachPanel";
 import BattlePanel from "./components/BattlePanel";
 import PerformancePanel from "./components/PerformancePanel";
 import PitPanel from "./components/PitPanel";
@@ -261,6 +262,16 @@ export default function App() {
   const sessName =
     sessions.data?.find((s: SessionInfo) => s.session_key === sessionKey)?.session_name ?? "";
 
+  const rivalLap = useMemo(() => {
+    if (!ref) return null;
+    let best: { driver: number; lap: number; t: number } | null = null;
+    for (const l of allLaps) {
+      if (l.lap_duration == null || l.driver_number === ref.driver) continue;
+      if (!best || l.lap_duration < best.t) best = { driver: l.driver_number, lap: l.lap_number, t: l.lap_duration };
+    }
+    return best ? { driver: best.driver, lap: best.lap } : null;
+  }, [allLaps, ref]);
+
   return (
     <>
       <header className="topbar">
@@ -447,12 +458,19 @@ export default function App() {
 
           <section className="engineer">
             <h2>Race engineer</h2>
-            {selectedCorner ? (
-              <p>
-                Corner <strong>{selectedCorner}</strong> selected — coach fires on demand in R3.
-              </p>
+            {sessionKey ? (
+              <CoachPanel
+                sessionKey={sessionKey}
+                selfLap={ref}
+                rivalLap={rivalLap}
+                corner={selectedCorner}
+                driverName={(n) => {
+                  const d = (drivers.data ?? []).find((x) => x.driver_number === n);
+                  return d ? `#${n} ${d.name_acronym}` : `#${n}`;
+                }}
+              />
             ) : (
-              <p className="dim">Click a corner diamond on the map.</p>
+              <p className="dim">Pick a session first.</p>
             )}
             {selected && (
               <p>
