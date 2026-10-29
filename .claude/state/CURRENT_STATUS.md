@@ -1,5 +1,5 @@
 ## Project Phase
-M7 done and committed. Next: TASK-002 security guardrails.
+M7 + TASK-002 done and committed. Backlog clear; next: user-directed work.
 
 ## Completed
 - [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
@@ -26,5 +26,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-29: M7 committed; TASK-002 guardrails next
+2026-10-29: all work committed, tree clean
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
