@@ -47,3 +47,11 @@ timing tower with live gaps, Play/Pause + 1x/2x/4x + scrub + Space shortcut,
 hover shows speed/gear/throttle, synced amber playhead on the speed strip,
 RACE ENGINEER placeholder card. Verified: 24 tests pass, ruff clean,
 healthy boot, no log errors.
+
+## 2026-10-28 — M4 coach on corner click
+
+`analysis.corner_losses` (±200 m apex windows, NaN when empty), `coach.py`
+(grounded prompt, `opencode run` backend verified live, [HIGH/MED/LOW],
+radio-transcript card, LLM answers cached per corner+lap). Corner click on the
+map (plus selectbox fallback) fires the coach for challenger-vs-reference.
+Verified: 32 tests pass, ruff clean, healthy boot, no log errors.

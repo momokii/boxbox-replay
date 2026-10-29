@@ -1,5 +1,5 @@
 ## Project Phase
-M3 done and committed. Next: M4 coach on corner click.
+M4 done and committed. Next: M5 performance mode (deg slope + stints + weather + radio).
 
 ## Completed
 - [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
@@ -9,12 +9,13 @@ M3 done and committed. Next: M4 coach on corner click.
 ## In Progress
 - [x] M1: chooser + picker + lap table
 - [x] M3: synced track-map animation
+- [x] M4: coach on corner click (corner loss vs ref + opencode LLM + radio card)
 
 ## Blocked
 None
 
 ## Open Questions
-- Env var name for existing opencode-go LLM token (needed at M4, not now)
+- Opencode `run` verified as the LLM backend; `BOXBOX_MODEL` overrides the model
 - Staging target does not exist yet; prod files cover staging via `APP_ENV=staging`
 
 ## Security Notes
@@ -22,5 +23,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-28: M3 committed
+2026-10-28: M4 committed
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

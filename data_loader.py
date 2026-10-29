@@ -210,6 +210,17 @@ def clamp_selection(items: list, limit: int = 3) -> list:
     return list(items)[:limit]
 
 
+def lap_window(driver_laps: pd.DataFrame, lap_number: int):
+    """(window_start, window_end) timestamps for one lap; end None when unknown."""
+    laps = driver_laps.dropna(subset=["date_start"]).sort_values("lap_number")
+    row = laps[laps["lap_number"] == lap_number]
+    if row.empty:
+        return None, None
+    start = pd.Timestamp(row.iloc[0]["date_start"])
+    later = laps[laps["lap_number"] > lap_number]["date_start"].min()
+    return start, pd.Timestamp(later) if pd.notna(later) else None
+
+
 # --- M3: replay helpers ---
 
 

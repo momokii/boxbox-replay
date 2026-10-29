@@ -9,7 +9,17 @@ from __future__ import annotations
 
 import pandas as pd
 
-__all__ = ["best_lap", "lap_deltas", "corner_loss", "tyre_slope", "NOISE_THRESHOLD"]
+__all__ = [
+    "best_lap",
+    "lap_deltas",
+    "corner_loss",
+    "corner_losses",
+    "tyre_slope",
+    "detect_corners",
+    "map_plane",
+    "NOISE_THRESHOLD",
+    "CORNER_LOSS_THRESHOLD",
+]
 
 #: Deltas below this (seconds) are noise — the coach must say so, not explain it.
 NOISE_THRESHOLD = 0.05
@@ -46,8 +56,8 @@ def lap_deltas(laps: pd.DataFrame, ref_lap_number: int) -> pd.DataFrame:
 
 
 def corner_loss(car_data: pd.DataFrame, corner_window_m: float = 200.0) -> pd.DataFrame:
-    """Time lost per corner vs reference; flags losses > 0.15s. (M4 with map geometry)"""
-    raise NotImplementedError("M4: implement corner_loss with tests")
+    """Time lost per corner vs reference; flags losses > 0.15s. (M4: see corner_losses)"""
+    raise NotImplementedError("M4: use corner_losses with map geometry")
 
 
 # --- M3: map geometry (pure; ordering comes from the telemetry timestamps) ---
@@ -100,6 +110,62 @@ def detect_corners(
          "y": [float(pts[p + 1][1]) for p in peaks],
          "idx": peaks}
     )
+
+
+def _cumdist(trace: pd.DataFrame, ax: str, ay: str) -> pd.Series:
+    """Cumulative metres along an ordered (ax, ay) trace."""
+    import numpy as np
+
+    pts = trace[[ax, ay]].to_numpy(dtype=float)
+    steps = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+    return pd.Series(np.concatenate([[0.0], np.cumsum(steps)]), index=trace.index)
+
+
+def _window_seconds(trace: pd.DataFrame, ax: str, ay: str, apex: float, window_m: float):
+    """Seconds spent inside [apex-window_m, apex+window_m]; None when empty."""
+    if trace.empty:
+        return None
+    d = _cumdist(trace, ax, ay)
+    inside = trace[(d >= apex - window_m) & (d <= apex + window_m)]
+    if inside.empty:
+        return None
+    stamps = pd.to_datetime(trace["date"], utc=True)
+    return (stamps.loc[inside.index].max() - stamps.loc[inside.index].min()).total_seconds()
+
+
+def corner_losses(
+    outline: pd.DataFrame,
+    corners: pd.DataFrame,
+    trace_self: pd.DataFrame,
+    trace_ref: pd.DataFrame,
+    ax: str,
+    ay: str,
+    window_m: float = 200.0,
+) -> pd.DataFrame:
+    """Seconds lost per corner (self vs ref) inside +/-window_m of each apex.
+
+    Apex distance comes from the outline via the corner's outline idx.
+    Empty window in either trace -> NaN loss (never invented). Pure.
+    """
+    out = []
+    out_dist = _cumdist(outline, "x", "y")
+    for c in corners.itertuples():
+        idx = int(c.idx)
+        apex = float(out_dist.iloc[idx]) if 0 <= idx < len(out_dist) else None
+        loss: float | None = None
+        if apex is not None:
+            t_self = _window_seconds(trace_self, ax, ay, apex, window_m)
+            t_ref = _window_seconds(trace_ref, ax, ay, apex, window_m)
+            if t_self is not None and t_ref is not None:
+                loss = t_self - t_ref
+        out.append(
+            {
+                "label": c.label,
+                "loss_s": loss,
+                "flagged": bool(loss is not None and loss > CORNER_LOSS_THRESHOLD),
+            }
+        )
+    return pd.DataFrame(out)
 
 
 def tyre_slope(laps: pd.DataFrame) -> float:

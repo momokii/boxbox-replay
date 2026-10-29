@@ -75,6 +75,35 @@ def test_detect_corners_empty_on_short_line():
     assert analysis.detect_corners(pd.DataFrame({"x": [0.0, 1.0], "y": [0.0, 0.0]})).empty
 
 
+def _straight_trace(x1: float, seconds: float, n: int = 11) -> pd.DataFrame:
+    import numpy as np
+
+    stamps = pd.date_range("2024-01-01", periods=n, freq=f"{seconds / (n - 1):.3f}s")
+    return pd.DataFrame(
+        {"date": stamps.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")}
+    ).assign(x=np.linspace(0, x1, n), y=0.0)
+
+
+def test_corner_losses_slower_driver_loses_time():
+    outline = pd.DataFrame({"x": [0.0, 500.0, 1000.0], "y": [0.0, 0.0, 0.0]})
+    corners = pd.DataFrame({"label": ["T1"], "x": [500.0], "y": [0.0], "idx": [1]})
+    out = analysis.corner_losses(
+        outline, corners, _straight_trace(1000, 10.0), _straight_trace(1000, 8.0), "x", "y"
+    )
+    assert out.iloc[0]["loss_s"] == pytest.approx(0.8)  # 400 m window: 4.0 s vs 3.2 s
+    assert bool(out.iloc[0]["flagged"]) is True
+
+
+def test_corner_losses_empty_window_is_nan_not_invented():
+    outline = pd.DataFrame({"x": [0.0, 500.0, 1000.0], "y": [0.0, 0.0, 0.0]})
+    corners = pd.DataFrame({"label": ["T1"], "x": [500.0], "y": [0.0], "idx": [1]})
+    out = analysis.corner_losses(
+        outline, corners, pd.DataFrame(), _straight_trace(1000, 8.0), "x", "y"
+    )
+    assert pd.isna(out.iloc[0]["loss_s"])
+    assert bool(out.iloc[0]["flagged"]) is False
+
+
 def test_map_plane_picks_widest_axes():
     loc = pd.DataFrame({"x": [0.0, 100.0], "y": [0.0, 1.0], "z": [5.0, 5.0]})
     assert analysis.map_plane(loc) == ("x", "y")

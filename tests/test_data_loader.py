@@ -147,6 +147,21 @@ def test_clamp_selection_keeps_order_max_three():
     assert data_loader.clamp_selection(["a"]) == ["a"]
 
 
+def test_lap_window_start_and_next():
+    import pandas as pd
+
+    df = pd.DataFrame(
+        {
+            "lap_number": [8, 9],
+            "date_start": ["2024-04-06T06:00:00+00:00", "2024-04-06T06:01:30+00:00"],
+        }
+    )
+    start, end = data_loader.lap_window(df, 8)
+    assert start == pd.Timestamp("2024-04-06T06:00:00+00:00")
+    assert end == pd.Timestamp("2024-04-06T06:01:30+00:00")
+    assert data_loader.lap_window(df, 99) == (None, None)
+
+
 # --- M2: battle data ---
 
 

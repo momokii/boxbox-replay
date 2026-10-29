@@ -11,9 +11,10 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+import coach
 import data_loader
 import viz
-from analysis import NOISE_THRESHOLD, best_lap, detect_corners, map_plane
+from analysis import NOISE_THRESHOLD, best_lap, corner_losses, detect_corners, map_plane
 from data_loader import clamp_selection, downsample_5hz, format_lap_time
 
 st.set_page_config(page_title="BoxBox Replay", layout="wide")
@@ -74,6 +75,12 @@ def _location(session_key: int, driver_number: int) -> pd.DataFrame:
 @st.cache_data
 def _car(session_key: int, driver_number: int) -> pd.DataFrame:
     return data_loader.get_car_data(session_key, driver_number=driver_number)
+
+
+@st.cache_data
+def _coach_answer(cache_key: str, prompt: str) -> str | None:
+    _ = cache_key  # part of the key so reruns and playback never re-fire the LLM
+    return coach.ask_llm(prompt)
 
 
 years = _years()
@@ -365,7 +372,38 @@ for pos, r in enumerate(tower_rows, start=1):
 
 map_col, eng_col = st.columns([3, 1])
 with map_col:
-    st.plotly_chart(viz.track_map(outline, dots, corners), use_container_width=True)
+    st.caption("Click a corner diamond, or pick one below. Playback keeps running.")
+    map_event = st.plotly_chart(
+        viz.track_map(outline, dots, corners), use_container_width=True,
+        selection_mode="points", on_select="rerun",
+    )
+clicked_corner: str | None = None
+try:
+    pts = (map_event.selection.points if map_event and map_event.selection else []) or []
+except AttributeError:
+    pts = []
+for p in pts:
+    if isinstance(p, dict):
+        px, py = p.get("x"), p.get("y")
+    else:
+        px, py = getattr(p, "x", None), getattr(p, "y", None)
+    if px is None or py is None:
+        continue
+    span = max(outline["x"].max() - outline["x"].min(), outline["y"].max() - outline["y"].min())
+    dist = ((corners["x"] - px) ** 2 + (corners["y"] - py) ** 2) ** 0.5
+    near = dist[dist <= span * 0.03]
+    if not near.empty:
+        clicked_corner = corners.loc[near.idxmin(), "label"]
+        break
+if clicked_corner:
+    st.session_state["selected_corner"] = clicked_corner
+corner_options = corners["label"].tolist() if corners is not None and not corners.empty else []
+if corner_options:
+    default_corner = st.session_state.get("selected_corner", corner_options[0])
+    st.session_state["selected_corner"] = st.selectbox(
+        "Corner", corner_options,
+        index=corner_options.index(default_corner) if default_corner in corner_options else 0,
+    )
 with eng_col:
     st.markdown("**Timing tower**")
     for i, r in enumerate(tower_rows, start=1):
@@ -373,7 +411,53 @@ with eng_col:
         st.markdown(f"P{i} `{label}` — {gap_txt}")
     st.divider()
     st.markdown("**RACE ENGINEER**")
-    st.caption("Corner-click coach arrives in M4.")
+    sel_corner = st.session_state.get("selected_corner")
+    if sel_corner and not corners.empty:
+        with st.spinner(f"Coach analysing {sel_corner}..."):
+            chal_laps = all_laps.query("driver_number == @chal_num").sort_values("lap_number")
+            ref_laps = all_laps.query("driver_number == @ref_num").sort_values("lap_number")
+            c_start, c_end = data_loader.lap_window(chal_laps, int(chal_lap))
+            r_start, r_end = data_loader.lap_window(ref_laps, int(ref_lap))
+            losses = pd.DataFrame()
+            if c_start is not None and r_start is not None:
+                c_loc = _location(session_int, chal_num)
+                r_loc = _location(session_int, ref_num)
+                c_end_ts = c_end if c_end is not None else c_start + pd.Timedelta(seconds=120)
+                r_end_ts = r_end if r_end is not None else r_start + pd.Timedelta(seconds=120)
+                c_stamps = pd.to_datetime(c_loc["date"], utc=True)
+                r_stamps = pd.to_datetime(r_loc["date"], utc=True)
+                c_trace = c_loc[(c_stamps >= c_start) & (c_stamps < c_end_ts)]
+                r_trace = r_loc[(r_stamps >= r_start) & (r_stamps < r_end_ts)]
+                losses = corner_losses(outline, corners, c_trace, r_trace, ax, ay)
+        row = losses.query("label == @sel_corner") if not losses.empty else pd.DataFrame()
+        if row.empty or pd.isna(row.iloc[0]["loss_s"]):
+            st.caption(f"{sel_corner}: no overlapping telemetry — nothing measured.")
+        else:
+            loss = float(row.iloc[0]["loss_s"])
+            conf = coach.confidence_for(loss)
+            basis = f"based on lap {chal_lap} vs ref {ref_lap}"
+            ref_t = ref_laps.query("lap_number == @ref_lap")
+            chal_t = chal_laps.query("lap_number == @chal_lap")
+            lap_delta = None
+            if not ref_t.empty and not chal_t.empty:
+                ref_dur = float(ref_t.iloc[0]["lap_duration"])
+                chal_dur = float(chal_t.iloc[0]["lap_duration"])
+                lap_delta = chal_dur - ref_dur
+            prompt = coach.build_prompt(
+                chal_driver_label, int(chal_lap), ref_driver_label,
+                int(ref_lap), sel_corner, loss, lap_delta,
+            )
+            key = f"{session_int}:{chal_num}:{chal_lap}:{ref_num}:{ref_lap}:{sel_corner}"
+            answer = _coach_answer(key, prompt)
+            st.markdown(f"**{sel_corner}** — corner loss `{loss:+.3f}s`")
+            if answer:
+                question = f"What should I have done in {sel_corner}?"
+                st.markdown(coach.render_radio(question, answer, conf, basis))
+            else:
+                st.caption("LLM unreachable here — measured loss above stands as-is.")
+                st.caption(f"`[{conf}]` *{basis}* (numbers only, no advice generated)")
+    else:
+        st.caption("Click a corner diamond to load the coach.")
 
 strip_series, strip_colors = {}, {}
 for num in replay_nums:
