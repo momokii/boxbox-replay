@@ -14,45 +14,21 @@ interface Props {
   onToggle: (driver: number) => void;
 }
 
+/** Order is position — no P-numbers needed. */
 export default function Tower(p: Props) {
   return (
     <div>
-      {p.rows.map((r, i) => (
+      {p.rows.map((r) => (
         <button
           key={r.driver}
           onClick={() => p.onToggle(r.driver)}
           title="Toggle highlight"
-          style={{
-            display: "flex",
-            width: "100%",
-            alignItems: "center",
-            gap: "8px",
-            padding: "6px 8px",
-            marginBottom: "4px",
-            background: r.highlighted ? "#1d2532" : "transparent",
-            border: "1px solid #2A3342",
-            borderLeft: r.selected ? "3px solid #FFB224" : "3px solid transparent",
-            color: "inherit",
-            cursor: "pointer",
-            textAlign: "left",
-          }}
+          aria-pressed={r.highlighted}
+          className={`tower-row${r.highlighted ? " lit" : ""}${r.selected ? " sel" : ""}`}
         >
-          <span className="dim mono">P{i + 1}</span>
-          <span
-            style={{
-              width: "10px",
-              height: "10px",
-              borderRadius: "2px",
-              background: r.color,
-              flexShrink: 0,
-            }}
-          />
-          <span className="mono" style={{ minWidth: "52px" }}>
-            {r.code}
-          </span>
-          <span className="mono dim" style={{ marginLeft: "auto" }}>
-            {formatGap(r.gap)}
-          </span>
+          <span className="tower-chip" style={{ background: r.color }} />
+          <span className="tower-code">{r.code}</span>
+          <span className="tower-gap">{formatGap(r.gap)}</span>
         </button>
       ))}
     </div>

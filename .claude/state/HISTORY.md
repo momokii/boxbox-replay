@@ -148,3 +148,16 @@ meeting=&session=), proper empty/loading states, compact tower, styled range
 input. Verified each state with screenshots (replay playing, battle, panels,
 coach ask with fallback) — zero page errors. 46 pytest + 18 vitest, tsc, ruff.
 Deployed prod, reachable via Tailnet.
+
+## 2026-10-29 — U2 skill-driven redesign, verified with screenshots
+
+Installed anthropics/frontend-design (1M installs, official) and applied its
+process: subject-grounded plan in docs/UI_REDESIGN.md (the wall: one hero, one
+accent, Barlow Condensed + Barlow, fused broadcast-style player bar, order-is-
+position tower, chips instead of multiselect, plain sentence-case copy).
+Removed generic tells (ALL-CAPS eyebrows, meta dot strings, accent-word
+headline, inline-style components). Fixed real bugs found on screenshots:
+battle defaulted to same driver, perf panel showed all 20 drivers of junk
+slopes, open-ended stints rendered wrong, empty SpeedStrip state. Verified per
+state with Playwright screenshots (replay playing with true positions, battle,
+panels, coach ask with fallback, mobile stacking) — zero page errors.

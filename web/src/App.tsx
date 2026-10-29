@@ -289,9 +289,7 @@ export default function App() {
   return (
     <>
       <header className="topbar">
-        <h1>
-          BoxBox <span className="accent">Replay</span>
-        </h1>
+        <h1>BoxBox Replay</h1>
         <span className="sub">
           {gpName} {sessName && `· ${sessName}`} {ref && `· lap ${ref.lap} replay`}
         </span>
@@ -398,57 +396,56 @@ export default function App() {
 
             {view === "replay" && (
               <>
-                <div className="player" aria-label="Replay controls">
-                  <button className="primary" onClick={() => playback.toggle()} disabled={!win}>
-                    {playing ? "Pause" : "Play"}
-                  </button>
-                  <span className="time mono">
-                    {playT.toFixed(1)} / {dur.toFixed(0)}s
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={Math.max(0.1, dur)}
-                    step={0.1}
-                    value={playT}
-                    onChange={(e) => playback.setT(Number(e.target.value))}
-                    aria-label="Scrub replay"
-                  />
-                  <div className="seg" role="group" aria-label="Speed">
-                    {[1, 2, 4].map((s) => (
-                      <button key={s} aria-pressed={speed === s} onClick={() => playback.setSpeed(s)}>
-                        {s}x
+                <div className="map-frame">
+                  {geo && geo.outline.length > 0 ? (
+                    <TrackMap
+                      playback={playback}
+                      outline={geo.outline}
+                      corners={geo.corners}
+                      zones={geo.zones}
+                      locs={locs}
+                      cars={cars}
+                      dots={dots}
+                      highlight={highlight}
+                      selectedCorner={selectedCorner}
+                      onCorner={setSelectedCorner}
+                    />
+                  ) : (
+                    <div className="empty" style={{ border: "none" }}>
+                      {loadNote ? `Loading ${loadNote}` : "Waiting for track data…"}
+                    </div>
+                  )}
+                  {win && (
+                    <div className="player player-overlay" aria-label="Replay controls">
+                      <button className="primary" onClick={() => playback.toggle()}>
+                        {playing ? "Pause" : "Play"}
                       </button>
-                    ))}
-                  </div>
-                  <label className="dim row" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
-                    <input type="checkbox" checked={calm} onChange={(e) => playback.setCalm(e.target.checked)} />
-                    Calm
-                  </label>
+                      <span className="time mono">
+                        {playT.toFixed(1)} / {dur.toFixed(0)}s
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={Math.max(0.1, dur)}
+                        step={0.1}
+                        value={playT}
+                        onChange={(e) => playback.setT(Number(e.target.value))}
+                        aria-label="Scrub replay"
+                      />
+                      <div className="seg" role="group" aria-label="Speed">
+                        {[1, 2, 4].map((s) => (
+                          <button key={s} aria-pressed={speed === s} onClick={() => playback.setSpeed(s)}>
+                            {s}x
+                          </button>
+                        ))}
+                      </div>
+                      <label className="dim row" style={{ fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+                        <input type="checkbox" checked={calm} onChange={(e) => playback.setCalm(e.target.checked)} />
+                        Calm
+                      </label>
+                    </div>
+                  )}
                 </div>
-
-                {loadNote && win && (
-                  <p className="dim">
-                    Loading {loadNote}
-                    <span className="skel" style={{ display: "inline-block", width: "120px", height: "10px", marginLeft: "8px" }} />
-                  </p>
-                )}
-                {geo && geo.outline.length > 0 ? (
-                  <TrackMap
-                    playback={playback}
-                    outline={geo.outline}
-                    corners={geo.corners}
-                    zones={geo.zones}
-                    locs={locs}
-                    cars={cars}
-                    dots={dots}
-                    highlight={highlight}
-                    selectedCorner={selectedCorner}
-                    onCorner={setSelectedCorner}
-                  />
-                ) : (
-                  <div className="empty">{loadNote ? `Loading ${loadNote}` : "Waiting for track data…"}</div>
-                )}
 
                 {geo && geo.corners.length > 0 && (
                   <div className="row" style={{ marginTop: "8px" }} aria-label="Corners">
@@ -573,21 +570,30 @@ export default function App() {
               </tbody>
             </table>
           </div>
-          <h3>Highlight drivers (optional)</h3>
-          <select
-            multiple
-            size={10}
-            style={{ minWidth: "140px" }}
-            value={highlight.map(String)}
-            disabled={!drivers.data?.length}
-            onChange={(e) => setHighlight(Array.from(e.target.selectedOptions).map((o) => Number(o.value)))}
-          >
-            {(drivers.data ?? []).map((d: Driver) => (
-              <option key={d.driver_number} value={d.driver_number}>
-                {driverLabel(d)}
-              </option>
-            ))}
-          </select>
+          <h3>Highlight drivers (optional, all shown by default)</h3>
+          <div className="chips" role="group" aria-label="Highlight drivers">
+            {(drivers.data ?? []).map((d: Driver) => {
+              const on = highlight.includes(d.driver_number);
+              return (
+                <button
+                  key={d.driver_number}
+                  aria-pressed={on}
+                  title={driverLabel(d)}
+                  onClick={() =>
+                    setHighlight((h) =>
+                      h.includes(d.driver_number) ? h.filter((x) => x !== d.driver_number) : [...h, d.driver_number],
+                    )
+                  }
+                >
+                  <span
+                    className="tower-chip"
+                    style={{ background: teamColor(d.team_colour), display: "inline-block", marginRight: "6px" }}
+                  />
+                  {d.name_acronym}
+                </button>
+              );
+            })}
+          </div>
         </section>
       )}
     </>

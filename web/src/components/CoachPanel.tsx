@@ -28,7 +28,7 @@ export default function CoachPanel(p: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!p.corner) return <p className="dim">Click a corner diamond on the map.</p>;
+  if (!p.corner) return <p className="dim">Pick a corner on the map to ask what happened there.</p>;
   if (!p.selfLap || !p.rivalLap)
     return <p className="dim">Need two timed laps (pick a lap in the table).</p>;
 
