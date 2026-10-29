@@ -23,7 +23,7 @@
 | Task ID             | TASK-002                                            |
 | Name                | Add automated security guardrails                   |
 | Priority            | High                                                |
-| Status              | TODO                                                |
+| Status              | DONE (pre-commit + CI pytest/ruff/gitleaks/pip-audit + advisory Trivy) |
 | Complexity          | M                                                   |
 | Depends On          | TASK-001                                            |
 | Scope               | Propose and, with user confirmation, add pre-commit secret scanning, dependency audit, static analysis, image scanning if containerized, and a CI pipeline running tests, lint, type checks and scans |

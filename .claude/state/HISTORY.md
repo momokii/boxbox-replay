@@ -81,3 +81,10 @@ migration. New `scripts/smoke_app.py` (AppTest) executes the whole script on
 a sparse 2026 session AND Suzuka 2024 Race — and caught 5 real bugs: mixed-ISO
 timestamps, 404-as-empty, non-default-index downsampling, empty-frame columns,
 string dates in intervals. All fixed + regression-tested. 41 tests, ruff clean.
+
+## 2026-10-29 — TASK-002 security guardrails
+
+`.pre-commit-config.yaml` (hooks, whitespace, ruff, gitleaks) and
+`.github/workflows/ci.yml` (pytest, ruff, gitleaks, pip-audit, advisory Trivy).
+Verified: pip-audit clean, gitleaks 15 commits no leaks, pins intact,
+SECURITY_STANDARDS §12 marked implemented.

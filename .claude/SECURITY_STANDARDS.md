@@ -57,9 +57,16 @@
 
 - Structured logs with correlation IDs. Log security events (auth failures, permission denials). No sensitive data in logs.
 
-## 12. Verification and Enforcement
+## 12. Verification and Enforcement (Implemented in TASK-002)
 
-- After stack choice, PROPOSE (never silently add) with user confirmation: pre-commit secret scanning (e.g. gitleaks), dep audit, SAST (e.g. Semgrep), image scanning (e.g. Trivy), CI running tests/lint/types/scans, automated dep updates. Tool names are examples; choose per stack.
+- Pre-commit (`.pre-commit-config.yaml`): trailing whitespace, EOF fixer,
+  YAML check, large-file check, `ruff check`, gitleaks secret scan.
+- CI (`.github/workflows/ci.yml`, every push/PR): pytest, ruff, gitleaks,
+  pip-audit on pinned requirements, Trivy image scan (SARIF upload).
+- Trivy is advisory (exit-code 0): slim-bookworm base CVEs are outside our
+  control; harden to failing once the base is digest-pinned and monitored.
+- The AppTest smoke (`scripts/smoke_app.py`) stays a local gate (needs
+  network + minutes of fetching); run on demand before release-relevant work.
 
 ## 13. Incident Handling
 

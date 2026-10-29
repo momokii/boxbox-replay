@@ -1,0 +1,53 @@
+# TASK-002: CI runs tests + lint + secret scan + dep audit on every push/PR.
+# The AppTest smoke (scripts/smoke_app.py) stays a LOCAL gate: it needs network
+# and minutes of OpenF1 fetching, so it runs on demand, not in CI.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: ruff check .
+      - run: pytest
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements.txt --desc
+  image:
+    # Advisory for now: slim-bookworm base CVEs are outside our control.
+    # Harden to exit-code 1 once the base image is pinned by digest + monitored.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t boxbox-replay:ci .
+      - uses: aquasecurity/trivy-action@0.32.0
+        with:
+          image-ref: boxbox-replay:ci
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: "0"
+          severity: CRITICAL,HIGH
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif

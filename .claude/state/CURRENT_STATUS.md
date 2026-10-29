@@ -26,5 +26,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-29: M7 committed
+2026-10-29: M7 committed; TASK-002 guardrails next
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
