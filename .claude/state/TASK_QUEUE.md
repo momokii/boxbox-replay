@@ -56,7 +56,17 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | M4                  | Coach on corner click, grounded via opencode run (DONE)         |
 | M5                  | Performance mode: deg slope + stints + weather + radio (DONE) |
 | M6                  | What-if pit toy model, labeled "toy model" (DONE)          |
-| M7                  | Polish: F1 sector colors, data-derived DRS zones, mobile CSS, reduce-motion, AppTest smoke (DONE) |
+| M7                  | Polish: F1 sector colors, data-derived DRS zones, mobile CSS, reduce-motion, AppTest smoke (DONE, Streamlit path superseded) |
+
+## Revamp R0–R4 — React SPA + FastAPI (user-approved option A)
+
+| Field               | R0–R4                                                       |
+|---------------------|-------------------------------------------------------------|
+| R0                  | FastAPI backend + React shell: pickers, lap table, compose api+web (DONE) |
+| R1                  | All-driver canvas replay: map, tower, playback, synced trace (TODO) |
+| R2                  | Feature panels: battle, performance, pit toy as secondary views (TODO) |
+| R3                  | Coach on-trigger: corner button, async ask, radio card (TODO) |
+| R4                  | Polish + cutover: sectors, mobile, Tailnet deploy, remove Streamlit (TODO) |
 
 ---
 

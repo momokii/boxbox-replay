@@ -7,6 +7,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 MODE="${1:-dev}"
+export UID GID="$(id -g)"
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "missing: $1" >&2; exit 1; }; }
 need docker

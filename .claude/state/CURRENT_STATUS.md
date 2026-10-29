@@ -1,19 +1,14 @@
 ## Project Phase
-M7 + TASK-002 done. DEPLOYED (prod stack, healthy) at http://<host>:8501.
+REVAMP (option A: React SPA + FastAPI). R0 done and committed. Next: R1 all-driver replay.
 
 ## Completed
-- [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
-- [x] M0: env + fetch proof — `feat(m0)` committed (6ebe3c0)
-- [x] Docker deployment proven: image builds, dev stack boots healthy (`/_stcore/health` → ok), clean down, prod config renders
+- [x] M0–M7 Streamlit app (superseded; removal planned at R4)
+- [x] TASK-002 security guardrails (pre-commit + CI)
+- [x] R0: FastAPI backend (all feeds, corner-loss, coach-ask) + React shell (pickers + lap table)
+- [x] UI research (`docs/UI_RESEARCH.md`): Streamlit out, React+FastAPI in
 
 ## In Progress
-- [x] M1: chooser + picker + lap table
-- [x] M3: synced track-map animation
-- [x] M4: coach on corner click (corner loss vs ref + opencode LLM + radio card)
-- [x] M5: performance mode (deg slope + stint timeline + weather + radio + race control)
-- [x] M6: what-if pit toy model (linear deg + traffic check, labeled toy)
-- [x] Docs: root README.md + docs/DEPLOYMENT.md reflect the built system
-- [x] Prod deploy verified via localhost + Tailnet IP
+- [ ] R1: all-driver canvas replay (map, tower, play/pause/speed/scrub, synced trace)
 
 ## Blocked
 None
@@ -24,8 +19,8 @@ None
 
 ## Security Notes
 - Only public, no-auth APIs touched (OpenF1, Jolpica). No secrets in repo.
-- Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
+- API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-10-29: deployed to prod stack, reachable via Tailnet; docs written
+2026-10-29: R0 committed (revamp backend + shell live)
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

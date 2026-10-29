@@ -1,4 +1,4 @@
-# BoxBox Replay — prod-capable image (M0). No secrets baked in; cache is a volume.
+# BoxBox Replay API (R0). No secrets baked in; cache is a volume.
 FROM python:3.12-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -14,14 +14,14 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py data_loader.py analysis.py viz.py coach.py ./
-COPY .streamlit ./.streamlit/
+COPY data_loader.py analysis.py viz.py coach.py app.py ./
+COPY api ./api
 
 USER app
 
-EXPOSE 8501
+EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health', timeout=4)"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=4)"
 
-CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true"]
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

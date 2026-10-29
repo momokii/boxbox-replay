@@ -95,3 +95,11 @@ Verification (ruff, 41 tests, both smoke paths, gitleaks): zero new bugs.
 Deployed prod stack (`boxbox-replay:stable`, healthy), reachable at
 `http://<host>:8501` via localhost AND Tailnet IP. Wrote root
 `README.md` + `docs/DEPLOYMENT.md` (dev/prod ops, Tailnet access).
+
+## 2026-10-29 — R0 revamp backend + shell
+
+FastAPI wrap over the proven modules (feeds, geometry, corner-loss, coach-ask;
+7 API tests), React+Vite+TS shell (pickers, session gating, lap table with
+sector colors; 7 vitest), compose split into api+web (nginx proxy, prod pins),
+dev runs as host UID for the bind mount. Verified: 48 pytest, npm build+lint,
+both services healthy, proxy + geometry + car window live.

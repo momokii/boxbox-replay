@@ -1,13 +1,18 @@
 # Development overrides — loaded AUTOMATICALLY by `docker compose up`.
-# Hot reload via bind mounts; cache persists in ./data on the host.
+# API hot reload + source mounts; web rebuilds on demand (`docker compose up --build web`).
 services:
-  app:
+  api:
+    # Dev runs as the host user so the ./data bind mount stays writable.
+    # Production keeps the locked-down `app` user with a managed volume.
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
       APP_ENV: development
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     volumes:
       - ./data:/app/data
-      - ./app.py:/app/app.py:ro
+      - ./api:/app/api:ro
       - ./data_loader.py:/app/data_loader.py:ro
       - ./analysis.py:/app/analysis.py:ro
-      - ./viz.py:/app/viz.py:ro
       - ./coach.py:/app/coach.py:ro

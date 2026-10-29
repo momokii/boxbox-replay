@@ -1,10 +1,10 @@
 # Production overrides — use EXPLICITLY:
 #   docker compose -f compose.yaml -f compose.prod.yaml up -d
-# (explicit -f flags disable automatic override loading, so no source mounts,
-# no debug ports, pinned restart policy and resource limits apply.)
+# (explicit -f flags disable automatic override loading: no source mounts,
+# no reload, restart policy and resource limits apply.)
 services:
-  app:
-    image: boxbox-replay:${APP_VERSION:-stable}
+  api:
+    image: boxbox-replay-api:${APP_VERSION:-stable}
     restart: unless-stopped
     environment:
       APP_ENV: production
@@ -15,6 +15,16 @@ services:
         limits:
           cpus: "2.0"
           memory: 2G
+    security_opt:
+      - no-new-privileges:true
+  web:
+    image: boxbox-replay-web:${APP_VERSION:-stable}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
     security_opt:
       - no-new-privileges:true
 

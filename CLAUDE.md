@@ -6,8 +6,8 @@
 
 ## Project Snapshot
 
-BoxBox Replay: free F1 telemetry viz + race replay + LLM coach (Streamlit).
-Phase: M0 done (env + fetch proof). Next: M1 chooser/picker/lap table.
+BoxBox Replay: F1 telemetry viz, revamp R0 in progress (React SPA + FastAPI).
+Backend done and live; R0 shell (pickers + lap table) builds and serves.
 
 ## Always-Loaded Context
 
@@ -39,11 +39,13 @@ Stack not yet chosen. The agent fills in real commands after TASK-001.
 
 | Purpose      | Command           | Status          |
 |--------------|-------------------|-----------------|
-| Run / dev    | `./scripts/setup.sh` (docker dev) or `streamlit run app.py` | M0 verified |
-| Test         | `pytest` | M0 verified |
-| Lint         | `ruff check .` | M0 verified |
-| Type check   | n/a (untyped Python; ruff covers lint) | M0 |
-| Health check | `curl localhost:8501/_stcore/health` (or container HEALTHCHECK) | M0 verified |
+| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | R0 verified |
+| Test (API)   | `pytest` | R0: 48 pass |
+| Test (web)   | `cd web && npm test` (vitest) | R0: 7 pass |
+| Lint (API)   | `ruff check .` | R0 clean |
+| Build (web)  | `cd web && npm run build` | R0 verified |
+| Type check   | `tsc -b` (runs inside `npm run build`) | R0 verified |
+| Health check | `curl localhost:8501/api/healthz` (via web proxy) | R0 verified |
 | Build        | `docker compose build` / `./scripts/setup.sh --build-only` | M0 verified |
 
 ## On-Demand References

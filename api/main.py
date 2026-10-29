@@ -1,0 +1,272 @@
+"""BoxBox Replay API (R0): thin FastAPI wrap over data_loader/analysis/coach.
+
+All domain logic lives in the tested modules; endpoints serialize to JSON.
+Empty datasets serialize as [] (the UI renders empty states, never crashes).
+"""
+
+from __future__ import annotations
+
+import pandas as pd
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+import analysis
+import coach
+import data_loader
+
+app = FastAPI(title="BoxBox Replay API")
+
+
+def records(df: pd.DataFrame) -> list[dict]:
+    """DataFrame -> JSON-safe records (NaN -> None, timestamps -> ISO str)."""
+    if df.empty:
+        return []
+    out = df.where(pd.notna(df), None)
+    for col in out.columns:
+        if pd.api.types.is_datetime64_any_dtype(out[col]) or (
+            len(out) and isinstance(out[col].iloc[0], pd.Timestamp)
+        ):
+            out[col] = out[col].map(lambda v: None if v is None else str(v))
+    return out.to_dict(orient="records")
+
+
+@app.get("/healthz")
+def healthz() -> dict:
+    return {"ok": True}
+
+
+@app.get("/years")
+def years() -> list[int]:
+    return data_loader.list_years()
+
+
+@app.get("/meetings")
+def meetings(year: int):
+    return records(data_loader.list_meetings(year))
+
+
+@app.get("/sessions")
+def sessions(year: int, meeting_key: int):
+    return records(data_loader.sessions_for_meeting(year, meeting_key))
+
+
+@app.get("/sessions/status")
+def session_status(keys: str) -> dict[str, str]:
+    """Telemetry probe per session key (comma-separated): key -> '' or reason."""
+    out: dict[str, str] = {}
+    for raw in keys.split(","):
+        raw = raw.strip()
+        if raw.isdigit():
+            out[raw] = data_loader.session_has_telemetry(int(raw))[1]
+    return out
+
+
+@app.get("/drivers")
+def drivers(session_key: int):
+    return records(data_loader.list_drivers(session_key))
+
+
+@app.get("/laps")
+def laps(session_key: int, driver_number: int | None = None):
+    return records(data_loader.list_laps(session_key, driver_number))
+
+
+@app.get("/lap-window")
+def lap_window(session_key: int, driver_number: int, lap: int) -> dict:
+    df = data_loader.list_laps(session_key, driver_number=driver_number)
+    start, end = data_loader.lap_window(df, lap)
+    if start is None:
+        raise HTTPException(404, "lap not found")
+    return {"start": str(start), "end": str(end) if end is not None else None}
+
+
+def _windowed(session_key: int, driver_number: int, lap: int, fetch):
+    laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
+    start, end = data_loader.lap_window(laps_df, lap)
+    if start is None:
+        raise HTTPException(404, "lap not found")
+    df = fetch(session_key, driver_number)
+    if df.empty or "date" not in df.columns:
+        return []
+    stamps = data_loader.to_dt(df["date"])
+    end_ts = end if end is not None else start + pd.Timedelta(seconds=150)
+    win = df[(stamps >= start) & (stamps < end_ts)].copy()
+    win["date"] = data_loader.to_dt(win["date"]).astype(str)
+    return win
+
+
+@app.get("/car")
+def car(session_key: int, driver_number: int, lap: int):
+    win = _windowed(session_key, driver_number, lap, data_loader.get_car_data)
+    if isinstance(win, list):
+        return win
+    t0 = data_loader.to_dt(win["date"]).min()
+    win = win.copy()
+    win["t"] = (data_loader.to_dt(win["date"]) - t0).dt.total_seconds()
+    cols = ["t", "date", "speed", "n_gear", "throttle", "brake", "drs"]
+    return records(win[[c for c in cols if c in win.columns]])
+
+
+@app.get("/location")
+def location(session_key: int, driver_number: int, lap: int, hz: int = 5):
+    win = _windowed(session_key, driver_number, lap, data_loader.get_location)
+    if isinstance(win, list):
+        return win
+    t0 = data_loader.to_dt(win["date"]).min()
+    win = win.copy()
+    win["t"] = (data_loader.to_dt(win["date"]) - t0).dt.total_seconds()
+    thin = data_loader.downsample_5hz(win) if hz == 5 else win
+    cols = ["t", "date", "x", "y", "z"]
+    return records(thin[[c for c in cols if c in thin.columns]])
+
+
+@app.get("/geometry")
+def geometry(session_key: int, driver_number: int, lap: int) -> dict:
+    """Track outline + corners + DRS zones for one lap window, plane-mapped."""
+    loc = data_loader.get_location(session_key, driver_number)
+    if loc.empty:
+        raise HTTPException(404, "no location data")
+    ax, ay = analysis.map_plane(loc)
+    laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
+    start, end = data_loader.lap_window(laps_df, lap)
+    if start is None:
+        raise HTTPException(404, "lap not found")
+    end_ts = end if end is not None else start + pd.Timedelta(seconds=150)
+    stamps = data_loader.to_dt(loc["date"])
+    trace = loc[(stamps >= start) & (stamps < end_ts)].reset_index(drop=True)
+    outline = trace.iloc[::5].reset_index(drop=True)
+    line = pd.DataFrame({"x": outline[ax].to_numpy(), "y": outline[ay].to_numpy()})
+    corners = analysis.detect_corners(line)
+    merged = _lap_merged_car_loc(session_key, driver_number, start, end_ts)
+    zones = analysis.drs_zones(merged, ax, ay) if not merged.empty else pd.DataFrame()
+    return {
+        "ax": ax,
+        "ay": ay,
+        "outline": line.values.tolist(),
+        "corners": records(corners.rename(columns={"x": "x", "y": "y"})),
+        "zones": zones.to_dict(orient="records") if not zones.empty else [],
+    }
+
+
+def _lap_merged_car_loc(session_key: int, driver_number: int, start, end_ts) -> pd.DataFrame:
+    car = data_loader.get_car_data(session_key, driver_number=driver_number)
+    loc = data_loader.get_location(session_key, driver_number=driver_number)
+    if car.empty or loc.empty or "drs" not in car.columns:
+        return pd.DataFrame()
+    car_s = car.sort_values("date").reset_index(drop=True)
+    loc_s = loc.sort_values("date").reset_index(drop=True)
+    car_s["date"] = data_loader.to_dt(car_s["date"])
+    loc_s["date"] = data_loader.to_dt(loc_s["date"])
+    window = car_s[(car_s["date"] >= start) & (car_s["date"] < end_ts)]
+    return pd.merge_asof(
+        window, loc_s, on="date", direction="nearest", tolerance=pd.Timedelta("500ms")
+    )
+
+
+@app.get("/intervals")
+def intervals(session_key: int):
+    return records(data_loader.get_intervals(session_key))
+
+
+@app.get("/stints")
+def stints(session_key: int):
+    return records(data_loader.get_stints(session_key))
+
+
+@app.get("/weather")
+def weather(session_key: int):
+    return records(data_loader.get_weather(session_key))
+
+
+@app.get("/radio")
+def radio(session_key: int):
+    return records(data_loader.get_team_radio(session_key))
+
+
+@app.get("/race-control")
+def race_control(session_key: int):
+    return records(data_loader.get_race_control(session_key))
+
+
+class LapRef(BaseModel):
+    driver: int
+    lap: int
+
+
+class CornerLossRequest(BaseModel):
+    session_key: int
+    ref: LapRef
+    chal: LapRef
+    corner: str
+
+
+@app.post("/corner-loss")
+def corner_loss(req: CornerLossRequest):
+    ref_laps = data_loader.list_laps(req.session_key, driver_number=req.ref.driver)
+    chal_laps = data_loader.list_laps(req.session_key, driver_number=req.chal.driver)
+    r_start, r_end = data_loader.lap_window(ref_laps, req.ref.lap)
+    c_start, c_end = data_loader.lap_window(chal_laps, req.chal.lap)
+    if r_start is None or c_start is None:
+        raise HTTPException(404, "lap not found")
+    r_end_ts = r_end if r_end is not None else r_start + pd.Timedelta(seconds=150)
+    c_end_ts = c_end if c_end is not None else c_start + pd.Timedelta(seconds=150)
+    loc = data_loader.get_location(req.session_key, req.ref.driver)
+    if loc.empty:
+        raise HTTPException(404, "no location data")
+    ax, ay = analysis.map_plane(loc)
+    outline_src = loc.iloc[::15].reset_index(drop=True)
+    line = pd.DataFrame({"x": outline_src[ax].to_numpy(), "y": outline_src[ay].to_numpy()})
+    corners = analysis.detect_corners(line)
+    if corners.empty or req.corner not in corners["label"].tolist():
+        raise HTTPException(404, "corner not found")
+    c_trace = _slice_loc(req.session_key, req.chal.driver, c_start, c_end_ts)
+    r_trace = _slice_loc(req.session_key, req.ref.driver, r_start, r_end_ts)
+    out = analysis.corner_losses(line, corners, c_trace, r_trace, ax, ay)
+    row = out[out["label"] == req.corner]
+    if row.empty:
+        raise HTTPException(404, "no overlapping telemetry")
+    loss = row.iloc[0]["loss_s"]
+    return {
+        "corner": req.corner,
+        "loss_s": None if loss is None or pd.isna(loss) else float(loss),
+        "flagged": bool(row.iloc[0]["flagged"]),
+        "confidence": coach.confidence_for(None if loss is None or pd.isna(loss) else float(loss)),
+    }
+
+
+def _slice_loc(session_key: int, driver: int, start, end_ts) -> pd.DataFrame:
+    loc = data_loader.get_location(session_key, driver)
+    if loc.empty:
+        return loc
+    stamps = data_loader.to_dt(loc["date"])
+    return loc[(stamps >= start) & (stamps < end_ts)].reset_index(drop=True)
+
+
+class CoachRequest(BaseModel):
+    driver: str
+    lap: int
+    ref_driver: str
+    ref_lap: int
+    corner: str
+    loss_s: float | None = None
+    lap_delta_s: float | None = None
+
+
+@app.post("/coach/ask")
+def coach_ask(req: CoachRequest) -> dict:
+    prompt = coach.build_prompt(
+        req.driver, req.lap, req.ref_driver, req.ref_lap, req.corner, req.loss_s, req.lap_delta_s
+    )
+    conf = coach.confidence_for(req.loss_s)
+    basis = f"based on lap {req.lap} vs ref {req.ref_lap}"
+    answer = coach.ask_llm(prompt)
+    if not answer:
+        return {"answer": None, "confidence": conf, "basis": basis, "llm": False}
+    return {
+        "answer": coach.render_radio(
+            f"What should I have done in {req.corner}?", answer, conf, basis
+        ),
+        "confidence": conf,
+        "basis": basis,
+        "llm": True,
+    }

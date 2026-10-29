@@ -1,0 +1,173 @@
+:root {
+  --bg: #0b0e13;
+  --panel: #161b24;
+  --line: #2a3342;
+  --ink: #e8edf3;
+  --dim: #8a94a6;
+  --amber: #ffb224;
+  --purple: #c678dd;
+  --green: #2bd97b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Archivo", "Oswald", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar h1 {
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.topbar .accent {
+  color: var(--amber);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 12px;
+  padding: 12px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.rail,
+.stage,
+.engineer {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 200px;
+}
+
+.pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px 0;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.pickers label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+}
+
+select,
+input,
+button {
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+button.primary {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #0b0e13;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+table.laps {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+table.laps th,
+table.laps td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+
+table.laps th:first-child,
+table.laps td:first-child,
+table.laps th:nth-child(2),
+table.laps td:nth-child(2) {
+  text-align: left;
+}
+
+table.laps tr.selected td {
+  border-left: 3px solid var(--amber);
+}
+
+.sector-session {
+  color: var(--purple);
+  font-weight: 700;
+}
+
+.sector-personal {
+  color: var(--green);
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+}
+
+.dim {
+  color: var(--dim);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    height: auto;
+    padding: 8px;
+    flex-wrap: wrap;
+  }
+  .rail,
+  .stage,
+  .engineer {
+    padding: 8px;
+  }
+}
