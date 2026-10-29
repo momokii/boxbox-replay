@@ -174,6 +174,16 @@ def get_positions(session_key: int) -> pd.DataFrame:
     )
 
 
+def downsample_by_time(df: pd.DataFrame, hz: float, time_col: str = "t") -> pd.DataFrame:
+    """Keep the first row per 1/hz bin of a numeric time column. Pure."""
+    if df.empty:
+        return df
+    step = 1.0 / float(hz)
+    bins = (df[time_col].to_numpy(dtype=float) // step).astype("int64")
+    keep = pd.Series(bins).drop_duplicates(keep="first").index
+    return df.iloc[keep].reset_index(drop=True)
+
+
 def get_location(session_key: int, driver_number: int) -> pd.DataFrame:
     """Track coordinates (x, y, z) + date for one driver. Cached per driver."""
     tag = f"location_{driver_number}.parquet"
@@ -293,6 +303,102 @@ def get_race_control(session_key: int) -> pd.DataFrame:
         {"session_key": session_key},
         _session_cache(session_key, "race_control.parquet"),
     )
+
+
+def get_session(session_key: int) -> dict:
+    """Single session row (start/end, name, meeting) for a session key."""
+    cache_file = _session_cache(session_key, "session.parquet")
+    if cache_file.exists():
+        df = pd.read_parquet(cache_file)
+    else:
+        df = pd.DataFrame(_fetch("sessions", {"session_key": session_key}))
+        df.to_parquet(cache_file, index=False)
+    return {} if df.empty else df.iloc[0].to_dict()
+
+
+def session_window(session_key: int):
+    """(start, end) timestamps for a session; raises LookupError if unknown."""
+    info = get_session(session_key)
+    start, end = info.get("date_start"), info.get("date_end")
+    if start is None:
+        raise LookupError(f"session {session_key} not found")
+    start_ts = pd.Timestamp(str(start))
+    end_ts = pd.Timestamp(str(end)) if end is not None else start_ts + pd.Timedelta(hours=3)
+    return start_ts, end_ts
+
+
+def clamp_to_session(
+    df: pd.DataFrame, session_key: int, time_col: str = "date"
+) -> pd.DataFrame:
+    """Drop telemetry rows outside the session window (OpenF1 leaks some)."""
+    if df.empty or time_col not in df.columns:
+        return df
+    start_ts, end_ts = session_window(session_key)
+    stamps = to_dt(df[time_col])
+    return df[(stamps >= start_ts) & (stamps <= end_ts)]
+
+
+def build_session_replay(session_key: int, hz: int = 2) -> pd.DataFrame:
+    """Per-driver positions for a WHOLE session, cached as parquet.
+
+    Columns: driver_number, t (seconds from session start), x, y.
+    Positions only — speed is fetched per driver on demand (/session/speed)
+    so the first build is cheap and the payload stays small.
+    """
+    cache_file = _session_cache(session_key, f"session_pos_{hz}hz.parquet")
+    if cache_file.exists():
+        return pd.read_parquet(cache_file)
+    start_ts, _ = session_window(session_key)
+    drivers = list_drivers(session_key)
+    frames: list[pd.DataFrame] = []
+    for num in [int(n) for n in drivers.get("driver_number", [])]:
+        loc = clamp_to_session(get_location(session_key, num), session_key)
+        if loc.empty:
+            continue
+        loc = loc.copy()
+        loc["date"] = to_dt(loc["date"])
+        loc = loc.sort_values("date").reset_index(drop=True)
+        loc["t"] = (loc["date"] - start_ts).dt.total_seconds()
+        loc = downsample_by_time(loc, hz, time_col="t")
+        frames.append(
+            pd.DataFrame(
+                {
+                    "driver_number": num,
+                    "t": loc["t"].round(1),
+                    "x": loc["x"].round(1),
+                    "y": loc["y"].round(1),
+                }
+            )
+        )
+    out = (
+        pd.concat(frames, ignore_index=True)
+        if frames
+        else pd.DataFrame(columns=["driver_number", "t", "x", "y"])
+    )
+    out.to_parquet(cache_file, index=False)
+    return out
+
+
+def session_speed(session_key: int, driver_number: int, hz: int = 1) -> pd.DataFrame:
+    """Whole-session speed for one driver at `hz`, clamped and cached."""
+    cache_file = _session_cache(session_key, f"session_speed_{driver_number}_{hz}hz.parquet")
+    if cache_file.exists():
+        return pd.read_parquet(cache_file)
+    start_ts, _ = session_window(session_key)
+    car = clamp_to_session(get_car_data(session_key, driver_number), session_key)
+    if car.empty:
+        out = pd.DataFrame(columns=["t", "v"])
+    else:
+        car = car.copy()
+        car["date"] = to_dt(car["date"])
+        car = car.sort_values("date").reset_index(drop=True)
+        car["t"] = (car["date"] - start_ts).dt.total_seconds()
+        car = downsample_by_time(car, hz, time_col="t")
+        out = pd.DataFrame(
+            {"t": car["t"].round(1), "v": pd.to_numeric(car["speed"], errors="coerce").round(0)}
+        ).dropna(subset=["v"])
+    out.to_parquet(cache_file, index=False)
+    return out
 
 
 # --- M3: replay helpers ---

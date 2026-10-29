@@ -33,13 +33,15 @@ why this stack replaced the original Streamlit prototype.
 
 ## What it does
 
-- **Replay (main)**: all 20 drivers on the map by default — play/pause, 1x/2x/4x,
-  scrub slider, Space shortcut, reduce-motion toggle. Timing tower with live
-  gaps (click = highlight), synced speed strip, hover shows speed/gear/throttle.
-  Corner diamonds + DRS zones derived from telemetry. Driver highlight is
-  optional; there is no cap.
+- **Replay (main)**: the WHOLE session from lights out (e.g. 1:26:08, LAP 26/52),
+  all drivers on the map, trails, corner labels and DRS zones derived from
+  telemetry. Timeline with lap ticks — click or drag to seek. Play/pause,
+  1x–8x, Space, reduce-motion. Click a car to follow it; the tower is ordered by
+  live gap. Day/night theme toggle, remembered between visits.
 - **Battle** (tab): head-to-head speed overlay for two laps + signed delta
   (below 0.05s is noise).
+- **Speed telemetry**: for the drivers you pick, the speed trace of the lap
+  under the playhead (labelled), never an unexplained changing set.
 - **Performance** (tab): degradation slopes, stint timeline (compound colors),
   weather, team radio (audio links — the API has no transcripts, none invented),
   race-control flags.

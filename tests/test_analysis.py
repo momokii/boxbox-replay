@@ -114,6 +114,46 @@ def test_drs_zones_bit4_runs():
     assert analysis.drs_zones(pd.DataFrame(), "x", "y").empty
 
 
+def test_lap_markers_and_progress():
+    laps = pd.DataFrame(
+        {
+            "driver_number": [1, 1, 1, 2],
+            "lap_number": [1, 2, 3, 1],
+            "lap_duration": [90.0, 90.0, 90.0, 90.0],
+            "date_start": [
+                "2024-01-01T00:00:00+00:00",
+                "2024-01-01T00:01:30+00:00",
+                "2024-01-01T00:03:00+00:00",
+                "2024-01-01T00:00:30+00:00",
+            ],
+        }
+    )
+    # Markers are per-lap minimum starts (sane laps only), forced monotonic,
+    # with a sequential display index.
+    markers = analysis.lap_markers(laps, "2024-01-01T00:00:00+00:00")
+    assert markers["index"].tolist() == [1, 2, 3]
+    assert markers["t"].tolist() == [0.0, 90.0, 180.0]
+    assert analysis.leader_progress(markers, -1) == (0, 3)
+    assert analysis.leader_progress(markers, 10) == (1, 3)
+    assert analysis.leader_progress(markers, 95) == (2, 3)
+    explicit = analysis.lap_markers(laps, "2024-01-01T00:00:00+00:00", driver_number=2)
+    assert explicit["t"].tolist() == [30.0]
+
+
+def test_derive_gaps_from_lap_times():
+    laps = pd.DataFrame(
+        {
+            "driver_number": [1, 1, 2, 2],
+            "lap_number": [1, 2, 1, 2],
+            "lap_duration": [90.0, 90.0, 92.0, 91.0],
+        }
+    )
+    gaps = analysis.derive_gaps(laps)
+    at2 = gaps[gaps["lap_number"] == 2].set_index("driver_number")["gap_s"]
+    assert at2[1] == 0.0
+    assert at2[2] == 3.0
+
+
 def test_pit_toy_stay_vs_pit_and_traffic():
     stay = analysis.pit_toy_model(90.0, 89.0, 0.2, 10)
     assert stay["recommendation"] == "STAY OUT" and stay["toy_model"] is True

@@ -19,6 +19,9 @@ __all__ = [
     "map_plane",
     "sector_flags",
     "drs_zones",
+    "lap_markers",
+    "leader_progress",
+    "derive_gaps",
     "pit_toy_model",
     "NOISE_THRESHOLD",
     "CORNER_LOSS_THRESHOLD",
@@ -186,6 +189,81 @@ def tyre_slope(laps: pd.DataFrame) -> float:
 
 
 # --- M7: sector flags + DRS zones (pure) ---
+
+
+def lap_markers(
+    laps: pd.DataFrame, session_start, driver_number: int | None = None
+) -> pd.DataFrame:
+    """lap_number -> t (seconds from session start): robust session clock. Pure.
+
+    Lap starts from different cars are not comparable (a car leaving the pits
+    starts 'lap 2' minutes later), and single-car data can carry red-flag
+    artifacts, so each marker is the MEDIAN start time across cars, forced
+    monotonic. With `driver_number`, that car's own starts are used instead.
+    """
+    if laps.empty or "date_start" not in laps.columns:
+        return pd.DataFrame(columns=["lap_number", "index", "t"])
+    df = laps.copy()
+    stamps = pd.to_datetime(df["date_start"], format="mixed", utc=True)
+    df = df.assign(t=(stamps - pd.Timestamp(session_start)).dt.total_seconds())
+    df = df[df["t"] >= 0]
+    if driver_number is not None:
+        df = df[df["driver_number"] == driver_number]
+    # Drop red-flag/data-artifact laps: they are many times a normal lap.
+    timed = pd.to_numeric(df.get("lap_duration"), errors="coerce")
+    df = df.assign(_dur=timed).dropna(subset=["_dur"])
+    if df.empty:
+        return pd.DataFrame(columns=["lap_number", "index", "t"])
+    typical = float(df["_dur"].median())
+    df = df[df["_dur"] <= typical * 1.6]
+    if df.empty:
+        return pd.DataFrame(columns=["lap_number", "index", "t"])
+    grouped = df.groupby("lap_number", as_index=False)["t"].min().sort_values("lap_number")
+    # A later lap can never start before an earlier one.
+    grouped["t"] = grouped["t"].cummax()
+    grouped = grouped.reset_index(drop=True)
+    # Display index is sequential (source lap numbers can have gaps after an
+    # aborted start); the timeline is about progress, not raw numbering.
+    grouped["index"] = range(1, len(grouped) + 1)
+    return grouped[["lap_number", "index", "t"]]
+
+
+def leader_progress(markers: pd.DataFrame, t: float) -> tuple[int, int]:
+    """(current_lap_index, total) at time t from sequential lap markers. Pure."""
+    if markers.empty:
+        return 0, 0
+    key = "index" if "index" in markers.columns else "lap_number"
+    labels = markers[key].to_numpy()
+    times = markers["t"].to_numpy(dtype=float)
+    total = int(labels.max())
+    idx = int((times <= t).sum()) - 1
+    if idx < 0:
+        return 0, total
+    return int(labels[min(idx, len(labels) - 1)]), total
+
+
+def derive_gaps(laps: pd.DataFrame) -> pd.DataFrame:
+    """Gap to leader at each lap boundary from real lap times. Pure.
+
+    Used only when /intervals is missing: cumulative time is summed from the
+    measured lap durations (never invented). Returns lap_number, driver_number,
+    cum_s, gap_s.
+    """
+    if laps.empty or "lap_duration" not in laps.columns:
+        return pd.DataFrame(columns=["lap_number", "driver_number", "cum_s", "gap_s"])
+    df = laps.dropna(subset=["lap_duration"]).copy()
+    df["lap_duration"] = pd.to_numeric(df["lap_duration"], errors="coerce")
+    df = df.dropna(subset=["lap_duration"])
+    # Red-flag / data artifacts show up as laps many times longer than typical.
+    if not df.empty:
+        typical = float(df["lap_duration"].median())
+        df = df[df["lap_duration"] <= typical * 1.6]
+    df = df.sort_values(["driver_number", "lap_number"])
+    if df.empty:
+        return pd.DataFrame(columns=["lap_number", "driver_number", "cum_s", "gap_s"])
+    df["cum_s"] = df.groupby("driver_number")["lap_duration"].cumsum()
+    df["gap_s"] = df["cum_s"] - df.groupby("lap_number")["cum_s"].transform("min")
+    return df[["lap_number", "driver_number", "cum_s", "gap_s"]].reset_index(drop=True)
 
 
 def sector_flags(laps: pd.DataFrame) -> pd.DataFrame:

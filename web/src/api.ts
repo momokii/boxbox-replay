@@ -8,7 +8,11 @@ import type {
   LapPoint,
   LocPoint,
   Meeting,
+  ReplayPayload,
+  SessionGaps,
   SessionInfo,
+  SessionInfoFull,
+  SpeedPoint,
   Stint,
 } from "./types";
 
@@ -62,6 +66,15 @@ export const api = {
   radio: (sessionKey: number) => get<Record<string, unknown>[]>(`/radio?session_key=${sessionKey}`),
   raceControl: (sessionKey: number) =>
     get<Record<string, unknown>[]>(`/race-control?session_key=${sessionKey}`),
+  sessionInfo: (sessionKey: number) => get<SessionInfoFull>(`/session/info?session_key=${sessionKey}`),
+  sessionGeometry: (sessionKey: number) =>
+    get<Geometry & { driver: number; lap: number }>(`/session/geometry?session_key=${sessionKey}`),
+  sessionReplay: (sessionKey: number) =>
+    get<ReplayPayload>(`/session/replay?session_key=${sessionKey}`),
+  sessionGaps: (sessionKey: number) =>
+    get<SessionGaps>(`/session/gaps?session_key=${sessionKey}`),
+  sessionSpeed: (sessionKey: number, driver: number) =>
+    get<SpeedPoint[]>(`/session/speed?session_key=${sessionKey}&driver_number=${driver}`),
   cornerLoss: (body: {
     session_key: number;
     ref: { driver: number; lap: number };

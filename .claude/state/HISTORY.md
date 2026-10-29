@@ -170,3 +170,13 @@ session). Now the app hunts newest-first for a session with real telemetry
 straight into the replay. Tabs went quiet text (amber = play only), tower
 codes set in condensed type, engineer shows session facts when idle.
 Verified: autopick lands US GP 2026 Race with live gaps in ~15s, no errors.
+
+## 2026-10-29 — U3 session-scale replay + day/night
+
+Reworked the data model: whole-session replay (lights out → chequered flag),
+clamped telemetry (OpenF1 leaks pre/post-session rows), robust lap clock
+(drops red-flag laps, monotonic, sequential index), gaps from intervals with
+lap-time fallback + visible source label, per-lap speed telemetry for chosen
+drivers, day/night tokens, sticky header with session clock. New API endpoints
+/session/{info,geometry,replay,speed,gaps} with tests for lap markers and gap
+derivation. Verified night+day+2026+mobile screenshots, zero page errors.

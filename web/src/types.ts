@@ -105,3 +105,45 @@ export interface CornerLoss {
   flagged: boolean;
   confidence: string;
 }
+
+export interface SessionInfoFull {
+  session_key: number;
+  session_name: string | null;
+  date_start: string;
+  date_end: string;
+  duration_s: number;
+  total_laps: number;
+  drivers: number;
+}
+
+export interface ReplayDriver {
+  driver_number: number;
+  t: number[];
+  x: number[];
+  y: number[];
+}
+
+export interface ReplayPayload {
+  start: string;
+  end: string;
+  duration_s: number;
+  hz: number;
+  laps: { lap_number: number; index: number; t: number }[];
+  drivers: ReplayDriver[];
+}
+
+export interface SessionGap {
+  driver_number: number;
+  t: number;
+  gap_to_leader: number | null;
+}
+
+export interface SessionGaps {
+  source: "intervals" | "lap_times" | "none";
+  points: SessionGap[];
+}
+
+export interface SpeedPoint {
+  t: number;
+  v: number;
+}

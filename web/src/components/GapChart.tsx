@@ -1,87 +1,119 @@
-import { useEffect, useRef } from "react";
-import type { IntervalPoint } from "../types";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { formatClock, gapAt, type GapTable } from "../session";
+import type { Playback } from "../playbackStore";
 
 interface Props {
-  intervals: IntervalPoint[];
+  playback: Playback;
+  table: GapTable;
   drivers: number[];
   labels: Map<number, string>;
   colors: Map<number, string>;
+  source: "intervals" | "lap_times" | "none";
 }
 
+/** Gap to leader over the whole session for the chosen drivers. */
 export default function GapChart(p: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  useSyncExternalStore(p.playback.subscribe, () => p.playback.state.rev);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
+    const style = getComputedStyle(document.documentElement);
+    const line = style.getPropertyValue("--line").trim();
+    const dim = style.getPropertyValue("--dim").trim();
+    const amber = style.getPropertyValue("--amber").trim();
     const dpr = window.devicePixelRatio || 1;
     const rect = wrap.getBoundingClientRect();
-    const w = Math.max(200, rect.width);
-    const h = 200;
+    const w = Math.max(240, rect.width);
+    const h = 170;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
 
-    const rows = p.intervals.filter(
-      (r) => p.drivers.includes(r.driver_number) && r.gap_to_leader != null,
-    );
     const padL = 40;
-    const padB = 20;
+    const padB = 18;
     const padT = 8;
-    ctx.strokeStyle = "#2A3342";
+    const dur = Math.max(1, p.playback.state.dur);
+
+    const series = p.drivers
+      .map((d) => ({ d, entry: p.table.get(d) }))
+      .filter((s): s is { d: number; entry: { t: number[]; gap: number[] } } => !!s.entry?.t.length);
+    const maxGap = Math.max(1, ...series.flatMap((s) => s.entry.gap.filter((_, i) => i % 5 === 0)));
+
+    const X = (t: number) => padL + (t / dur) * (w - padL - 6);
+    const Y = (g: number) => padT + (Math.min(g, maxGap) / maxGap) * (h - padT - padB);
+
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(padL, padT);
     ctx.lineTo(padL, h - padB);
-    ctx.lineTo(w - 8, h - padB);
+    ctx.lineTo(w - 6, h - padB);
     ctx.stroke();
-    if (!rows.length) {
-      ctx.fillStyle = "#8A94A6";
-      ctx.font = "12px monospace";
-      ctx.fillText("No interval data", padL + 8, 40);
-      return;
-    }
-    const ts = rows.map((r) => Date.parse(r.date));
-    const t0 = Math.min(...ts);
-    const t1 = Math.max(...ts);
-    const span = Math.max(1, t1 - t0);
-    const maxGap = Math.max(1, ...rows.map((r) => r.gap_to_leader as number));
-    const X = (d: string) => padL + ((Date.parse(d) - t0) / span) * (w - padL - 8);
-    const Y = (g: number) => padT + (1 - g / maxGap) * (h - padT - padB);
 
-    ctx.fillStyle = "#8A94A6";
-    ctx.font = "10px monospace";
-    ctx.fillText(`+${maxGap.toFixed(1)}s`, 2, padT + 8);
+    ctx.fillStyle = dim;
+    ctx.font = "10px 'Barlow', system-ui, sans-serif";
+    ctx.fillText(`+${maxGap.toFixed(0)}s`, 4, padT + 6);
+    ctx.fillText("0", 4, h - padB);
 
-    const byDriver = new Map<number, typeof rows>();
-    for (const r of rows) {
-      const g = byDriver.get(r.driver_number) ?? [];
-      g.push(r);
-      byDriver.set(r.driver_number, g);
-    }
-    byDriver.forEach((g, n) => {
-      const sorted = [...g].sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
-      ctx.strokeStyle = p.colors.get(n) ?? "#8A94A6";
-      ctx.lineWidth = 2;
+    const dashes = [[], [6, 4], [2, 3], [10, 3, 2, 3]];
+    let idx = 0;
+    for (const s of series) {
+      ctx.strokeStyle = p.colors.get(s.d) ?? dim;
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash(dashes[idx % dashes.length]);
+      idx += 1;
       ctx.beginPath();
-      sorted.forEach((r, i) =>
-        i ? ctx.lineTo(X(r.date), Y(r.gap_to_leader as number)) : ctx.moveTo(X(r.date), Y(r.gap_to_leader as number)),
-      );
+      s.entry.t.forEach((t, i) => (i ? ctx.lineTo(X(t), Y(s.entry.gap[i])) : ctx.moveTo(X(t), Y(s.entry.gap[i]))));
       ctx.stroke();
-      const last = sorted[sorted.length - 1];
-      ctx.fillStyle = p.colors.get(n) ?? "#8A94A6";
-      ctx.fillText(p.labels.get(n) ?? `#${n}`, X(last.date) + 4, Y(last.gap_to_leader as number));
-    });
+      ctx.setLineDash([]);
+      const lastT = s.entry.t[s.entry.t.length - 1];
+      const lastG = s.entry.gap[s.entry.gap.length - 1];
+      ctx.fillStyle = p.colors.get(s.d) ?? dim;
+      ctx.fillText(p.labels.get(s.d) ?? `#${s.d}`, X(lastT) + 4, Y(lastG) + 3);
+    }
+
+    const px = X(p.playback.state.t);
+    ctx.strokeStyle = amber;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(px, padT);
+    ctx.lineTo(px, h - padB);
+    ctx.stroke();
+
+    ctx.fillStyle = dim;
+    ctx.fillText(formatClock(dur), w - 46, h - 3);
+    if (p.source === "lap_times") {
+      ctx.fillText("from lap times", padL + 4, padT + 8);
+    }
   });
 
+  const now = p.playback.state.t;
   return (
     <div ref={wrapRef}>
       <canvas ref={canvasRef} />
+      <div className="legend">
+        {p.drivers.map((d) => (
+          <span key={d}>
+            <i style={{ background: p.colors.get(d) }} />
+            {p.labels.get(d) ?? `#${d}`}{" "}
+            <em className="dim">
+              {(() => {
+                const g = gapAt(p.table, d, now);
+                return g == null ? "—" : `+${g.toFixed(3)}`;
+              })()}
+            </em>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
