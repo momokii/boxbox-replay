@@ -118,24 +118,43 @@ def lap_window(session_key: int, driver_number: int, lap: int) -> dict:
     return {"start": str(start), "end": str(end) if end is not None else None}
 
 
-def _windowed(session_key: int, driver_number: int, lap: int, fetch):
-    laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
-    start, end = data_loader.lap_window(laps_df, lap)
-    if start is None:
-        raise HTTPException(404, "lap not found")
+def _windowed(
+    session_key: int,
+    driver_number: int,
+    lap: int | None,
+    fetch,
+    start: str | None = None,
+    end: str | None = None,
+):
+    if start and end:
+        win_start, win_end = pd.Timestamp(start), pd.Timestamp(end)
+    else:
+        if lap is None:
+            raise HTTPException(400, "lap or start/end required")
+        laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
+        win_start, win_end = data_loader.lap_window(laps_df, lap)
+        if win_start is None:
+            raise HTTPException(404, "lap not found")
+        if win_end is None:
+            win_end = win_start + pd.Timedelta(seconds=150)
     df = fetch(session_key, driver_number)
     if df.empty or "date" not in df.columns:
         return []
     stamps = data_loader.to_dt(df["date"])
-    end_ts = end if end is not None else start + pd.Timedelta(seconds=150)
-    win = df[(stamps >= start) & (stamps < end_ts)].copy()
+    win = df[(stamps >= win_start) & (stamps < win_end)].copy()
     win["date"] = data_loader.to_dt(win["date"]).astype(str)
     return win
 
 
 @app.get("/car")
-def car(session_key: int, driver_number: int, lap: int):
-    win = _windowed(session_key, driver_number, lap, data_loader.get_car_data)
+def car(
+    session_key: int,
+    driver_number: int,
+    lap: int | None = None,
+    start: str | None = None,
+    end: str | None = None,
+):
+    win = _windowed(session_key, driver_number, lap, data_loader.get_car_data, start, end)
     if isinstance(win, list):
         return win
     t0 = data_loader.to_dt(win["date"]).min()
@@ -146,8 +165,15 @@ def car(session_key: int, driver_number: int, lap: int):
 
 
 @app.get("/location")
-def location(session_key: int, driver_number: int, lap: int, hz: int = 5):
-    win = _windowed(session_key, driver_number, lap, data_loader.get_location)
+def location(
+    session_key: int,
+    driver_number: int,
+    lap: int | None = None,
+    hz: int = 5,
+    start: str | None = None,
+    end: str | None = None,
+):
+    win = _windowed(session_key, driver_number, lap, data_loader.get_location, start, end)
     if isinstance(win, list):
         return win
     t0 = data_loader.to_dt(win["date"]).min()

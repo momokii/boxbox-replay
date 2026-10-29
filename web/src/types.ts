@@ -87,8 +87,8 @@ export interface IntervalPoint {
 export interface Stint {
   driver_number: number;
   stint_number: number;
-  lap_start: number;
-  lap_end: number;
+  lap_start: number | null;
+  lap_end: number | null;
   compound: string | null;
 }
 

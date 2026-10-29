@@ -135,3 +135,16 @@ smoke, .streamlit/); rewrote README + DEPLOYMENT for api+web. Secrets clean
 with a documented .gitleaks.toml allowlist (sector field false positive).
 Deployed prod stack (api+web healthy), reachable via localhost AND Tailnet
 http://<host>:8501. Verified: 44 pytest, 17 vitest, tsc build, ruff.
+
+## 2026-10-29 — U1 minimalist UI overhaul (screenshot-driven)
+
+Set up Playwright screenshots + interaction harness (scripts/viz_review.py)
+and saw the real problems: dead Play button (dur 0), ghost-synced dots,
+spaghetti gap chart, void states. Fixed: staged loading (window -> geometry ->
+progressive locations -> background cars), one-line player bar, true
+session-time positions, gap chart scoped to top-5, 107%-rule cleaned slopes
+scoped to highlighted drivers, corner chips + deep-linkable URLs (?year=&
+meeting=&session=), proper empty/loading states, compact tower, styled range
+input. Verified each state with screenshots (replay playing, battle, panels,
+coach ask with fallback) — zero page errors. 46 pytest + 18 vitest, tsc, ruff.
+Deployed prod, reachable via Tailnet.

@@ -40,10 +40,20 @@ export const api = {
   drivers: (sessionKey: number) => get<Driver[]>(`/drivers?session_key=${sessionKey}`),
   laps: (sessionKey: number, driver?: number) =>
     get<Lap[]>(`/laps?session_key=${sessionKey}${driver ? `&driver_number=${driver}` : ""}`),
-  car: (sessionKey: number, driver: number, lap: number) =>
-    get<LapPoint[]>(`/car?session_key=${sessionKey}&driver_number=${driver}&lap=${lap}`),
-  location: (sessionKey: number, driver: number, lap: number) =>
-    get<LocPoint[]>(`/location?session_key=${sessionKey}&driver_number=${driver}&lap=${lap}`),
+  lapWindow: (sessionKey: number, driver: number, lap: number) =>
+    get<{ start: string; end: string | null }>(
+      `/lap-window?session_key=${sessionKey}&driver_number=${driver}&lap=${lap}`,
+    ),
+  car: (sessionKey: number, driver: number, lap?: number, start?: string, end?: string) =>
+    get<LapPoint[]>(
+      `/car?session_key=${sessionKey}&driver_number=${driver}` +
+        (lap != null ? `&lap=${lap}` : start && end ? `&start=${start}&end=${end}` : ""),
+    ),
+  location: (sessionKey: number, driver: number, lap?: number, start?: string, end?: string) =>
+    get<LocPoint[]>(
+      `/location?session_key=${sessionKey}&driver_number=${driver}` +
+        (lap != null ? `&lap=${lap}` : start && end ? `&start=${start}&end=${end}` : ""),
+    ),
   geometry: (sessionKey: number, driver: number, lap: number) =>
     get<Geometry>(`/geometry?session_key=${sessionKey}&driver_number=${driver}&lap=${lap}`),
   intervals: (sessionKey: number) => get<IntervalPoint[]>(`/intervals?session_key=${sessionKey}`),

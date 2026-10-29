@@ -113,18 +113,42 @@ def test_coach_ask_fallback(monkeypatch):
         assert body["answer"] is None and body["llm"] is False and body["confidence"] == "MED"
 
 
-def test_pit_call_delegates_to_model():
+def test_records_strict_json() -> None:
     import json
 
     nan_df = _frame([{"driver_number": 1, "lap_duration": float("nan")}])
     rows = m.records(nan_df)
     assert rows[0]["lap_duration"] is None
-    json.dumps(rows, allow_nan=False)  # must be strictly JSON-serializable
+    json.dumps(rows, allow_nan=False)
     arr_df = pd.DataFrame({"seg": [None]})
     arr_df.at[0, "seg"] = np.array([1.0, 2.0])
     rows = m.records(arr_df)
     assert rows[0]["seg"] == [1.0, 2.0]
     json.dumps(rows, allow_nan=False)
+
+
+def test_location_absolute_window(monkeypatch):
+    car = _frame(
+        [
+            {"date": "2024-01-01T00:00:10+00:00", "x": 1.0, "y": 2.0, "z": 0.0},
+            {"date": "2024-01-01T00:05:10+00:00", "x": 9.0, "y": 9.0, "z": 0.0},
+        ]
+    )
+    monkeypatch.setattr(m.data_loader, "get_location", lambda *a, **k: car)
+    with TestClient(m.app) as client:
+        rows = client.get(
+            "/location",
+            params={
+                "session_key": 1,
+                "driver_number": 1,
+                "start": "2024-01-01T00:00:00+00:00",
+                "end": "2024-01-01T00:01:00+00:00",
+            },
+        ).json()
+        assert len(rows) == 1 and rows[0]["x"] == 1.0 and rows[0]["t"] == 0.0
+
+
+def test_pit_call_delegates_to_model():
     payload = {
         "base_pace_s": 90.0,
         "fresh_pace_s": 89.0,

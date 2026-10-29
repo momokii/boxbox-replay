@@ -1,5 +1,5 @@
 ## Project Phase
-REVAMP complete (R0–R4). DEPLOYED prod stack, healthy at http://<host>:8501.
+REVAMP complete + UI overhaul shipped. DEPLOYED prod, healthy at http://<host>:8501.
 
 ## Completed
 - [x] M0–M7 Streamlit app (superseded; removal planned at R4)
@@ -11,7 +11,7 @@ REVAMP complete (R0–R4). DEPLOYED prod stack, healthy at http://<host>:8501.
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
 - [x] R2: feature panels (battle, performance, pit toy) as secondary views
 - [x] R3: coach on-trigger (corner button, async ask, radio card)
-- [x] R4: polish + cutover (docs current, Streamlit removed, Tailnet deploy verified)
+- [x] U1: minimalist UI overhaul (staged loading, inline player, true positions, corner chips, deep links)
 
 ## Blocked
 None
@@ -25,5 +25,5 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-10-29: R4 committed + prod deployed on Tailnet
+2026-10-29: U1 UI overhaul verified with screenshots + deployed
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

@@ -13,7 +13,22 @@ export function tyreSlope(laps: { lap_number: number; lap_duration: number | nul
   return num / den;
 }
 
-/** Median of the last n timed laps (current pace). */
+/** Drop pit-out laps and laps slower than 107% of the stint median (the classic
+ * 107% rule): in/out laps and incidents would otherwise dominate the slope. */
+export function cleanLaps<T extends { lap_duration: number | null; is_pit_out_lap?: boolean | null }>(
+  laps: T[],
+): T[] {
+  const timed = laps.filter((l) => l.lap_duration != null && !Number.isNaN(l.lap_duration) && !l.is_pit_out_lap);
+  if (!timed.length) return [];
+  const times = timed.map((l) => l.lap_duration as number).sort((a, b) => a - b);
+  const median = times[Math.floor(times.length / 2)];
+  return timed.filter((l) => (l.lap_duration as number) <= median * 1.07);
+}
+
+/** Degradation slope over cleaned laps. Throws with fewer than 2 laps left. */
+export function stintSlope(laps: { lap_number: number; lap_duration: number | null; is_pit_out_lap?: boolean | null }[]): number {
+  return tyreSlope(cleanLaps(laps));
+}
 export function recentPace(
   laps: { lap_number: number; lap_duration: number | null }[],
   n = 3,

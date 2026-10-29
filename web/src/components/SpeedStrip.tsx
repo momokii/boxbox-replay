@@ -58,8 +58,7 @@ export default function SpeedStrip(p: Props) {
 
     ctx.fillStyle = "#8A94A6";
     ctx.font = "10px monospace";
-    ctx.fillText(`${Math.round(sMax)}`, 4, padT + 8);
-    ctx.fillText("km/h", 4, h - padB - 14);
+    ctx.fillText(`${Math.round(sMax)} km/h`, 4, padT + 8);
     ctx.fillText(`${tMax.toFixed(0)}s`, w - 30, h - 6);
 
     for (const s of p.series) {

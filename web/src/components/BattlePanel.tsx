@@ -39,7 +39,8 @@ export default function BattlePanel(p: Props) {
   const ref = p.refProp;
   const [chalDriver, setChalDriver] = useState<number | null>(null);
   const [chalLap, setChalLap] = useState<number>(ref?.lap ?? 1);
-  const chal = chalDriver ?? p.drivers[0]?.driver_number ?? 0;
+  const chal =
+    chalDriver ?? p.drivers.find((d) => d.driver_number !== ref?.driver)?.driver_number ?? ref?.driver ?? 0;
 
   const refCar = useCar(p.sessionKey, ref?.driver ?? 0, ref?.lap ?? 0);
   const chalCar = useCar(p.sessionKey, chal, chalLap);

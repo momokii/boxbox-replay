@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { formatLapTime } from "../format";
-import { recentPace, tyreSlope } from "../perf";
+import { recentPace, stintSlope } from "../perf";
 import type { IntervalPoint, Lap } from "../types";
 
 interface Props {
@@ -30,7 +30,7 @@ export default function PitPanel(p: Props) {
   }, [mine]);
   let deg = 0;
   try {
-    deg = Math.max(0, tyreSlope(mine));
+    deg = Math.max(0, stintSlope(mine));
   } catch {
     deg = 0;
   }
