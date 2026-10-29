@@ -1,0 +1,7 @@
+# Gitleaks config: extend defaults with a documented false-positive allowlist.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "F1 OpenF1 sector field names (duration_sector_N) are data fields, not secrets"
+regexes = ['''duration_sector_[123]''']

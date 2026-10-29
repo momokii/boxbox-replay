@@ -66,7 +66,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | R1                  | All-driver canvas replay: map, tower, playback, synced trace (DONE) |
 | R2                  | Feature panels: battle, performance, pit toy (DONE) |
 | R3                  | Coach on-trigger: corner button, async ask, radio card (DONE) |
-| R4                  | Polish + cutover: sectors, mobile, Tailnet deploy, remove Streamlit (TODO) |
+| R4                  | Polish + cutover: docs current, Streamlit removed, Tailnet deploy (DONE) |
 
 ---
 

@@ -1,5 +1,9 @@
 # Deployment
 
+Two services: `api` (FastAPI :8000, internal except dev) and `web`
+(nginx :80, published as `${APP_PORT:-8501}`). `/api/*` on the web service
+proxies to the API.
+
 ## Environments
 
 | Command | Stack | Notes |
@@ -33,7 +37,7 @@ between your devices (default policy allows all).
 ## Operating
 
 ```bash
-docker compose ps                                    # dev status
+docker compose ps                                    # dev status (api + web)
 docker compose -f compose.yaml -f compose.prod.yaml ps   # prod status
 docker compose logs --tail=50 app                    # logs
 ./scripts/setup.sh --prod                            # redeploy (rebuilds)
@@ -42,8 +46,9 @@ docker compose -f compose.yaml -f compose.prod.yaml down  # stop prod
 
 - Cache lives in `./data` (dev, inspectable) or the `cache` volume (prod).
   Delete it to force a refetch; the app rebuilds it automatically.
-- Health: container `HEALTHCHECK` hits `/_stcore/health`; unhealthy containers
-  show in `ps` and should be investigated via logs, not restarted blindly.
+- Health: API `HEALTHCHECK` hits `/healthz`; web checks `/`. The app health
+  endpoint is `GET /api/healthz` through the proxy. Unhealthy containers show
+  in `ps` and should be investigated via logs, not restarted blindly.
 - Updates: `git pull`, then re-run setup (rebuilds the image with new pins).
 - Never edit `.env` values into chat/logs; `.env` is gitignored and required
   only for local overrides — defaults work without it.

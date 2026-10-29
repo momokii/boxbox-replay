@@ -1,7 +1,8 @@
-# web/ — BoxBox Replay frontend (R0+)
+# web/ — BoxBox Replay frontend
 
-React + TypeScript + Vite SPA. Talk to the API only via `src/api.ts`
-(same-origin `/api`, proxied to the API service in Docker, to
+React + TypeScript + Vite SPA: full-field canvas replay, timing tower, battle /
+performance / pit panels, on-trigger coach. Talks to the API only via
+`src/api.ts` (same-origin `/api`, proxied to the API service in Docker, to
 `localhost:8000` in `npm run dev`). See the root README for the full picture.
 
 ```bash

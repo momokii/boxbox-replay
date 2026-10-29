@@ -1,5 +1,5 @@
 ## Project Phase
-REVAMP (option A). R3 done and committed. Next: R4 polish + cutover.
+REVAMP complete (R0–R4). DEPLOYED prod stack, healthy at http://<host>:8501.
 
 ## Completed
 - [x] M0–M7 Streamlit app (superseded; removal planned at R4)
@@ -11,6 +11,7 @@ REVAMP (option A). R3 done and committed. Next: R4 polish + cutover.
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
 - [x] R2: feature panels (battle, performance, pit toy) as secondary views
 - [x] R3: coach on-trigger (corner button, async ask, radio card)
+- [x] R4: polish + cutover (docs current, Streamlit removed, Tailnet deploy verified)
 
 ## Blocked
 None
@@ -24,5 +25,5 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-10-29: R3 committed (on-trigger coach live)
+2026-10-29: R4 committed + prod deployed on Tailnet
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)

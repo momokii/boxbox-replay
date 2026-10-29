@@ -127,3 +127,11 @@ Engineer column: corner click -> explicit "Ask engineer" button -> measured
 corner loss -> async LLM answer with [confidence] + basis, cached per key,
 numbers-only fallback when the LLM is unreachable. Verified live: T1 loss
 +0.280s flagged MED on Suzuka 2024 Race; coach/ask fallback path in container.
+
+## 2026-10-29 — R4 polish + cutover + Tailnet deploy
+
+Removed the Streamlit path (app.py, viz.py, streamlit/plotly pins, AppTest
+smoke, .streamlit/); rewrote README + DEPLOYMENT for api+web. Secrets clean
+with a documented .gitleaks.toml allowlist (sector field false positive).
+Deployed prod stack (api+web healthy), reachable via localhost AND Tailnet
+http://<host>:8501. Verified: 44 pytest, 17 vitest, tsc build, ruff.
