@@ -161,3 +161,12 @@ battle defaulted to same driver, perf panel showed all 20 drivers of junk
 slopes, open-ended stints rendered wrong, empty SpeedStrip state. Verified per
 state with Playwright screenshots (replay playing with true positions, battle,
 panels, coach ask with fallback, mobile stacking) — zero page errors.
+
+## 2026-10-29 — U2 continued: hero-first autopick
+
+First paint used to land on empty pickers (or worse, a telemetry-less
+session). Now the app hunts newest-first for a session with real telemetry
+(Race preferred, bounded to 8 meetings, deep links still win) and opens
+straight into the replay. Tabs went quiet text (amber = play only), tower
+codes set in condensed type, engineer shows session facts when idle.
+Verified: autopick lands US GP 2026 Race with live gaps in ~15s, no errors.
