@@ -90,11 +90,13 @@ def track_map(
     outline: pd.DataFrame,
     dots: list[dict],
     corners: pd.DataFrame | None = None,
+    zones: pd.DataFrame | None = None,
 ) -> go.Figure:
     """Dark circuit outline + driver dots (team color, white stroke) + trails.
 
     outline: (x, y) reference line. dots: list of dicts with keys
     label/color/x/y/tail (tail = (tx, ty) trail points). corners: T-labels.
+    zones: DRS segments drawn as amber ticks.
     """
     fig = go.Figure()
     fig.add_trace(
@@ -120,6 +122,19 @@ def track_map(
                 textposition="top center",
                 textfont={"color": AMBER, "size": 10},
                 hovertemplate="%{text}<extra></extra>",
+            )
+        )
+    if zones is not None and not zones.empty:
+        fig.add_trace(
+            go.Scatter(
+                x=[v for z in zones.itertuples() for v in (z.x0, z.x1, None)],
+                y=[v for z in zones.itertuples() for v in (z.y0, z.y1, None)],
+                mode="lines",
+                name="DRS",
+                line={"color": AMBER, "width": 6},
+                opacity=0.55,
+                hovertemplate="DRS zone<extra></extra>",
+                showlegend=False,
             )
         )
     for dot in dots:

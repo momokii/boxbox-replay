@@ -38,7 +38,11 @@ def _throttle() -> None:
 
 
 def _fetch(endpoint: str, params: dict | None = None) -> list[dict]:
-    """GET BASE_URL/endpoint with throttle + retry. Returns parsed JSON list."""
+    """GET BASE_URL/endpoint with throttle + retry. Returns parsed JSON list.
+
+    404 means "no data for this filter" — returned as [] so callers show
+    empty states instead of crashing. Only 429/5xx and network errors retry.
+    """
     url = f"{BASE_URL}/{endpoint.lstrip('/')}"
     last_error: Exception | None = None
     with httpx.Client(timeout=30.0, headers={"User-Agent": "boxbox-replay-m0"}) as client:
@@ -46,12 +50,16 @@ def _fetch(endpoint: str, params: dict | None = None) -> list[dict]:
             _throttle()
             try:
                 resp = client.get(url, params=params or {})
+                if resp.status_code == 404:
+                    return []
                 if resp.status_code in RETRYABLE_STATUS:
                     time.sleep(2**attempt)
                     continue
                 resp.raise_for_status()
                 data = resp.json()
                 return data if isinstance(data, list) else []
+            except httpx.HTTPStatusError:
+                raise
             except (httpx.HTTPError, ValueError) as exc:
                 last_error = exc
                 time.sleep(2**attempt)
@@ -61,6 +69,11 @@ def _fetch(endpoint: str, params: dict | None = None) -> list[dict]:
 def _slug(text: str) -> str:
     """Filesystem-safe slug for cache path parts."""
     return "".join(c if c.isalnum() or c in "-_" else "_" for c in text).strip("_") or "unknown"
+
+
+def to_dt(series: pd.Series) -> pd.Series:
+    """Parse mixed ISO8601 timestamps (with/without microseconds) to UTC."""
+    return pd.to_datetime(series, format="mixed", utc=True)
 
 
 def _cache_path(*parts: str) -> Path:
@@ -289,10 +302,10 @@ def downsample_5hz(df: pd.DataFrame, time_col: str = "date") -> pd.DataFrame:
     """Thin telemetry to 5 Hz for the map (first row per 200 ms bin). Pure."""
     if df.empty:
         return df
-    stamps = pd.to_datetime(df[time_col], utc=True)
+    stamps = to_dt(df[time_col])
     bins = ((stamps - stamps.min()) // pd.Timedelta("200ms")).to_numpy()
     keep = pd.Series(bins).drop_duplicates(keep="first").index
-    return df.loc[keep].reset_index(drop=True)
+    return df.iloc[keep].reset_index(drop=True)
 
 
 # --- M2: battle data ---
@@ -306,12 +319,16 @@ def get_intervals(session_key: int) -> pd.DataFrame:
     """
     cache_file = _session_cache(session_key, "intervals.parquet")
     if cache_file.exists():
-        return pd.read_parquet(cache_file)
-    df = pd.DataFrame(_fetch("intervals", {"session_key": session_key}))
-    for col in ("gap_to_leader", "gap_to_ahead", "interval"):
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-    df.to_parquet(cache_file, index=False)
+        df = pd.read_parquet(cache_file)
+    else:
+        df = pd.DataFrame(_fetch("intervals", {"session_key": session_key}))
+        for col in ("gap_to_leader", "gap_to_ahead", "interval"):
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+        df.to_parquet(cache_file, index=False)
+    if "date" in df.columns:
+        df = df.copy()
+        df["date"] = to_dt(df["date"])
     return df
 
 
@@ -343,7 +360,7 @@ def lap_car_data(session_key: int, driver_number: int, lap_number: int) -> pd.Da
     car = get_car_data(session_key, driver_number=driver_number)
     if car.empty:
         return car
-    stamps = pd.to_datetime(car["date"], utc=True)
+    stamps = to_dt(car["date"])
     mask = stamps >= start
     if pd.notna(later):
         mask &= stamps < pd.Timestamp(later)

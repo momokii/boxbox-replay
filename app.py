@@ -21,6 +21,17 @@ from data_loader import clamp_selection, downsample_5hz, format_lap_time
 st.set_page_config(page_title="BoxBox Replay", layout="wide")
 st.title("BoxBox Replay")
 
+st.markdown(
+    "<style>"
+    "table, .stDataFrame { font-variant-numeric: tabular-nums; }"
+    "@media (max-width: 768px) {"
+    "  .block-container { padding-left: 0.5rem; padding-right: 0.5rem; }"
+    "  h1 { font-size: 1.4rem; }"
+    "}"
+    "</style>",
+    unsafe_allow_html=True,
+)
+
 
 @st.cache_data
 def _years() -> list[int]:
@@ -71,6 +82,29 @@ def _team_colors(session_key: int) -> dict[int, str]:
 @st.cache_data
 def _location(session_key: int, driver_number: int) -> pd.DataFrame:
     return data_loader.get_location(session_key, driver_number)
+
+
+@st.cache_data
+def _lap_merged(session_key: int, driver_number: int, lap_number: int) -> pd.DataFrame:
+    """Car telemetry merged with track position for one lap (for DRS zones)."""
+    laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
+    start, end = data_loader.lap_window(laps_df, lap_number)
+    if start is None:
+        return pd.DataFrame()
+    car = data_loader.get_car_data(session_key, driver_number=driver_number)
+    loc = data_loader.get_location(session_key, driver_number=driver_number)
+    if car.empty or loc.empty:
+        return pd.DataFrame()
+    car_s = car.sort_values("date").reset_index(drop=True)
+    loc_s = loc.sort_values("date").reset_index(drop=True)
+    car_s["date"] = data_loader.to_dt(car_s["date"])
+    loc_s["date"] = data_loader.to_dt(loc_s["date"])
+    end_ts = end if end is not None else start + pd.Timedelta(seconds=150)
+    window = car_s[(car_s["date"] >= start) & (car_s["date"] < end_ts)]
+    merged = pd.merge_asof(
+        window, loc_s, on="date", direction="nearest", tolerance=pd.Timedelta("500ms")
+    )
+    return merged.dropna(subset=["x", "y"]).reset_index(drop=True)
 
 
 @st.cache_data
@@ -150,6 +184,7 @@ picked = clamp_selection(picked, 3)
 st.session_state["_picked"] = picked
 
 laps = _laps(int(session_key))
+all_laps = laps
 if laps.empty:
     st.warning("No lap data for this session.")
     st.stop()
@@ -157,6 +192,9 @@ if laps.empty:
 if picked:
     wanted = {int(p.split()[0][1:]) for p in picked}
     laps = laps[laps["driver_number"].isin(wanted)]
+flags = analysis.sector_flags(all_laps)
+flag_cols = [c for c in flags.columns if c.endswith("_flag")]
+laps = laps.merge(flags, on=["driver_number", "lap_number"], how="left")
 
 
 def _driver_label(n: int) -> str:
@@ -169,14 +207,30 @@ table = pd.DataFrame(
         "Lap": laps["lap_number"].astype(int),
         "Driver": laps["driver_number"].map(_driver_label),
         "Time": laps["lap_duration"].map(format_lap_time),
+        "S1": laps["duration_sector_1"].map(format_lap_time),
+        "S2": laps["duration_sector_2"].map(format_lap_time),
+        "S3": laps["duration_sector_3"].map(format_lap_time),
         "Pit out": laps.get("is_pit_out_lap", False).fillna(False).astype(bool),
     }
 ).sort_values(["Driver", "Lap"], ignore_index=True)
+SECTOR_PURPLE = "color: #C678DD; font-weight: bold"
+SECTOR_GREEN = "color: #2BD97B"
+flag_cols = [c for c in laps.columns if c.endswith("_flag")]
+if flag_cols:
+    flag_by_col = {"S1": "s1_flag", "S2": "s2_flag", "S3": "s3_flag"}
+    styles = pd.DataFrame("", index=table.index, columns=["S1", "S2", "S3"])
+    for shown, flag in flag_by_col.items():
+        if flag in laps.columns:
+            painted = laps[flag].map({"session": SECTOR_PURPLE, "personal": SECTOR_GREEN})
+            styles[shown] = painted.fillna("")
+    table_view = table.style.apply(lambda _: styles, axis=None)
+else:
+    table_view = table
 
 st.subheader(f"Lap table - {len(table)} laps")
 event = st.dataframe(
-    table,
-    use_container_width=True,
+    table_view,
+    width="stretch",
     hide_index=True,
     selection_mode="single-row",
     on_select="rerun",
@@ -204,7 +258,6 @@ if "selected_lap" in st.session_state:
 st.subheader("Battle")
 
 session_int = int(session_key)
-all_laps = _laps(session_int)
 
 sel = st.session_state.get("selected_lap")
 if sel and sel.get("session_key") == session_int:
@@ -235,7 +288,7 @@ chal_num = int(chal_driver_label.split()[0][1:])
 
 
 def _trace_df(df: pd.DataFrame) -> pd.DataFrame:
-    stamps = pd.to_datetime(df["date"], utc=True)
+    stamps = data_loader.to_dt(df["date"])
     return pd.DataFrame({"t": (stamps - stamps.iloc[0]).dt.total_seconds(), "speed": df["speed"]})
 
 
@@ -250,7 +303,7 @@ else:
         ref_driver_label: colors.get(ref_num, "#8A94A6"),
         chal_driver_label: colors.get(chal_num, "#8A94A6"),
     }
-    st.plotly_chart(viz.speed_trace(series, color_by_label), use_container_width=True)
+    st.plotly_chart(viz.speed_trace(series, color_by_label), width="stretch")
     ref_t = all_laps.query("driver_number == @ref_num and lap_number == @ref_lap")
     chal_t = all_laps.query("driver_number == @chal_num and lap_number == @chal_lap")
     if not ref_t.empty and not chal_t.empty:
@@ -260,14 +313,14 @@ else:
 
 st.subheader("Gap to leader")
 intervals = _intervals(session_int)
-if intervals.empty:
+if intervals.empty or "gap_to_leader" not in intervals.columns:
     st.warning("No interval data for this session.")
 else:
     gap_labels = {int(n): _driver_label(int(n)) for n in intervals["driver_number"].unique()}
     if picked:
         keep = {int(p.split()[0][1:]) for p in picked}
         intervals = intervals[intervals["driver_number"].isin(keep)]
-    st.plotly_chart(viz.gap_chart(intervals, gap_labels), use_container_width=True)
+    st.plotly_chart(viz.gap_chart(intervals, gap_labels), width="stretch")
 
 # --- M3: replay — synced track-map animation ---
 
@@ -320,10 +373,10 @@ win_locs: dict[int, pd.DataFrame] = {}
 win_cars: dict[int, pd.DataFrame] = {}
 for num in replay_nums:
     loc = _location(session_int, num)
-    stamps = pd.to_datetime(loc["date"], utc=True)
+    stamps = data_loader.to_dt(loc["date"])
     win_locs[num] = downsample_5hz(loc[(stamps >= win_start) & (stamps < win_end_ts)])
     car = _car(session_int, num)
-    cstamps = pd.to_datetime(car["date"], utc=True)
+    cstamps = data_loader.to_dt(car["date"])
     win_cars[num] = car[(cstamps >= win_start) & (cstamps < win_end_ts)].reset_index(drop=True)
 
 if "play_t" not in st.session_state:
@@ -333,7 +386,7 @@ if "playing" not in st.session_state:
 if "speed" not in st.session_state:
     st.session_state["speed"] = 1.0
 
-top_a, top_b, top_c = st.columns([3, 1, 1])
+top_a, top_b, top_c, top_d = st.columns([3, 1, 1, 1])
 with top_a:
     gp_name = meetings.set_index("meeting_key").loc[int(meeting_key), "meeting_name"]
     st.markdown(f"**{gp_name}** — lap {replay_lap} replay window ({win_dur:.0f}s)")
@@ -345,15 +398,22 @@ with top_c:
     idx = SPEEDS.index(st.session_state["speed"])
     st.session_state["speed"] = st.selectbox("Speed", SPEEDS, index=idx)
 
+with top_d:
+    calm = st.checkbox("Reduce motion", value=False, help="Disables auto-advance; scrub manually.")
+
 play_t = st.slider("Scrub", 0.0, float(win_dur), float(st.session_state["play_t"]), 0.2)
+_calm = calm
 st.session_state["play_t"] = play_t
 now = win_start + pd.Timedelta(seconds=play_t)
 
 tower_rows = []
+have_intervals = not intervals.empty and "driver_number" in intervals.columns
 for num in replay_nums:
-    iv = intervals.query("driver_number == @num and date <= @now").sort_values("date")
-    last_gap = iv.iloc[-1]["gap_to_leader"] if not iv.empty else None
-    gap = float(last_gap) if pd.notna(last_gap) else None
+    gap = None
+    if have_intervals:
+        iv = intervals.query("driver_number == @num and date <= @now").sort_values("date")
+        last_gap = iv.iloc[-1]["gap_to_leader"] if not iv.empty else None
+        gap = float(last_gap) if pd.notna(last_gap) else None
     tower_rows.append({"num": num, "gap": gap})
 tower_rows.sort(key=lambda r: (r["gap"] is None, r["gap"] if r["gap"] is not None else 0))
 
@@ -363,7 +423,7 @@ for pos, r in enumerate(tower_rows, start=1):
     loc = win_locs.get(num, pd.DataFrame())
     if loc.empty:
         continue
-    past = loc[pd.to_datetime(loc["date"], utc=True) <= now]
+    past = loc[data_loader.to_dt(loc["date"]) <= now]
     if past.empty:
         continue
     cur = past.iloc[-1]
@@ -371,7 +431,7 @@ for pos, r in enumerate(tower_rows, start=1):
     car = win_cars.get(num, pd.DataFrame())
     speed_now, gear_now, thr_now = 0.0, 0, 0
     if not car.empty:
-        deltas = (pd.to_datetime(car["date"], utc=True) - now).abs()
+        deltas = (data_loader.to_dt(car["date"]) - now).abs()
         nearest = car.iloc[deltas.argsort()[:1]]
         speed_now = float(nearest.iloc[0]["speed"])
         gear_now = int(nearest.iloc[0]["n_gear"])
@@ -391,11 +451,13 @@ for pos, r in enumerate(tower_rows, start=1):
     gap_txt = f"+{r['gap']:.3f}" if r["gap"] else "—"
     tower_rows[pos - 1]["line"] = (label, colors.get(num, "#8A94A6"), gap_txt)
 
+ref_merged = _lap_merged(session_int, replay_num, replay_lap)
+ref_zones = analysis.drs_zones(ref_merged, ax, ay) if not ref_merged.empty else pd.DataFrame()
 map_col, eng_col = st.columns([3, 1])
 with map_col:
     st.caption("Click a corner diamond, or pick one below. Playback keeps running.")
     map_event = st.plotly_chart(
-        viz.track_map(outline, dots, corners), use_container_width=True,
+        viz.track_map(outline, dots, corners, ref_zones), width="stretch",
         selection_mode="points", on_select="rerun",
     )
 clicked_corner: str | None = None
@@ -445,8 +507,8 @@ with eng_col:
                 r_loc = _location(session_int, ref_num)
                 c_end_ts = c_end if c_end is not None else c_start + pd.Timedelta(seconds=120)
                 r_end_ts = r_end if r_end is not None else r_start + pd.Timedelta(seconds=120)
-                c_stamps = pd.to_datetime(c_loc["date"], utc=True)
-                r_stamps = pd.to_datetime(r_loc["date"], utc=True)
+                c_stamps = data_loader.to_dt(c_loc["date"])
+                r_stamps = data_loader.to_dt(r_loc["date"])
                 c_trace = c_loc[(c_stamps >= c_start) & (c_stamps < c_end_ts)]
                 r_trace = r_loc[(r_stamps >= r_start) & (r_stamps < r_end_ts)]
                 losses = corner_losses(outline, corners, c_trace, r_trace, ax, ay)
@@ -485,7 +547,7 @@ for num in replay_nums:
     car = win_cars.get(num, pd.DataFrame())
     if car.empty:
         continue
-    stamps = pd.to_datetime(car["date"], utc=True)
+    stamps = data_loader.to_dt(car["date"])
     label = next((p for p in picked if p.startswith(f"#{num} ")), f"#{num}")
     strip_series[label] = pd.DataFrame(
         {"t": (stamps - win_start).dt.total_seconds(), "speed": car["speed"]}
@@ -493,9 +555,9 @@ for num in replay_nums:
     strip_colors[label] = colors.get(num, "#8A94A6")
 if strip_series:
     fig = viz.speed_trace(strip_series, strip_colors, playhead_s=play_t)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
-if st.session_state["playing"]:
+if st.session_state["playing"] and not _calm:
     if play_t >= win_dur:
         st.session_state["playing"] = False
     else:
@@ -516,7 +578,7 @@ if stints.empty:
     st.caption("No stint data for this session.")
 else:
     stint_labels = {int(n): _driver_label(int(n)) for n in stints["driver_number"].unique()}
-    st.plotly_chart(viz.stint_timeline(stints, stint_labels), use_container_width=True)
+    st.plotly_chart(viz.stint_timeline(stints, stint_labels), width="stretch")
     slope_lines = []
     for (num, grp) in stints.groupby("driver_number"):
         for s in grp.itertuples():
@@ -547,7 +609,7 @@ with radio_col:
     if radio.empty:
         st.caption("No radio events.")
     else:
-        rstamps = pd.to_datetime(radio["date"], utc=True)
+        rstamps = data_loader.to_dt(radio["date"])
         in_win = radio[(rstamps >= win_start) & (rstamps < win_end_ts)].sort_values("date")
         if in_win.empty:
             st.caption("None in this window.")
@@ -559,7 +621,7 @@ with rc_col:
     if rc.empty:
         st.caption("No race-control messages.")
     else:
-        cstamps = pd.to_datetime(rc["date"], utc=True)
+        cstamps = data_loader.to_dt(rc["date"])
         in_win = rc[(cstamps >= win_start) & (cstamps < win_end_ts)].sort_values("date")
         if in_win.empty:
             st.caption("None in this window.")
@@ -585,8 +647,14 @@ else:
         deg = max(0.0, analysis.tyre_slope(timed))
     except ValueError:
         deg = 0.0
-    latest_iv = intervals.sort_values("date").groupby("driver_number").tail(1)
-    gaps = latest_iv.set_index("driver_number")["gap_to_leader"].dropna()
+    latest_iv = None
+    if not intervals.empty and {"date", "driver_number"} <= set(intervals.columns):
+        latest_iv = intervals.sort_values("date").groupby("driver_number").tail(1)
+    gaps = (
+        latest_iv.set_index("driver_number")["gap_to_leader"].dropna()
+        if latest_iv is not None
+        else pd.Series(dtype=float)
+    )
     gap_behind = None
     if toy_num in gaps.index:
         behind = gaps[gaps > gaps[toy_num]]

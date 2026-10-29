@@ -31,6 +31,14 @@ def test_stint_timeline_blocks_and_compound_colors():
     assert fig.data[1].base[0] == 10
 
 
+def test_track_map_draws_drs_zones():
+    outline = pd.DataFrame({"x": [0.0, 1.0], "y": [0.0, 0.0]})
+    zones = pd.DataFrame({"label": ["DRS1"], "x0": [0.2], "y0": [0.0], "x1": [0.8], "y1": [0.0]})
+    fig = viz.track_map(outline, [], pd.DataFrame(), zones)
+    assert [t.name for t in fig.data] == ["track", "DRS"]
+    assert fig.data[1].line.color == viz.AMBER
+
+
 def test_gap_chart_drops_bad_gaps():
     df = pd.DataFrame(
         {

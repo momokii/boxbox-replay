@@ -24,10 +24,38 @@ def test_cache_miss_fetches_then_hit_avoids_network(isolated_cache, monkeypatch)
 
     monkeypatch.setattr(data_loader, "_fetch", fake_fetch)
     first = data_loader.list_sessions(2024)
+    assert len(first) == 1
     second = data_loader.list_sessions(2024)
-    assert calls["n"] == 2  # sessions + meetings, then all parquet
-    assert len(first) == 1 and len(second) == 1
-    assert list(isolated_cache.rglob("*.parquet"))  # cache file written
+    assert len(second) == 1
+    assert calls["n"] == 2
+    assert list(isolated_cache.rglob("*.parquet"))  # cache files written
+
+
+def test_fetch_404_means_empty_no_retry(monkeypatch):
+    monkeypatch.setattr(data_loader, "RATE_MIN_INTERVAL_S", 0.0)
+    monkeypatch.setattr(data_loader.time, "sleep", lambda s: None)
+    calls = {"n": 0}
+
+    class FakeResp:
+        status_code = 404
+
+    class FakeClient:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def get(self, url, params=None):
+            calls["n"] += 1
+            return FakeResp()
+
+    monkeypatch.setattr(data_loader.httpx, "Client", FakeClient)
+    assert data_loader._fetch("intervals", {"session_key": 1}) == []
+    assert calls["n"] == 1  # 404 is final: no retry
 
 
 def test_empty_response_returns_empty_frame_no_crash(isolated_cache, monkeypatch):
@@ -270,6 +298,8 @@ def test_downsample_5hz_keeps_first_per_bin():
     out = data_loader.downsample_5hz(df)
     assert out["v"].tolist() == [1, 3]
     assert data_loader.downsample_5hz(pd.DataFrame()).empty
+    gapped = df.iloc[[0, 2]]  # non-default index after a boolean filter
+    assert data_loader.downsample_5hz(gapped)["v"].tolist() == [1, 3]
 
 
 def test_m5_feeds_cached(monkeypatch, isolated_cache):

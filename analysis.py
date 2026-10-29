@@ -17,6 +17,9 @@ __all__ = [
     "tyre_slope",
     "detect_corners",
     "map_plane",
+    "sector_flags",
+    "drs_zones",
+    "pit_toy_model",
     "NOISE_THRESHOLD",
     "CORNER_LOSS_THRESHOLD",
 ]
@@ -180,6 +183,59 @@ def tyre_slope(laps: pd.DataFrame) -> float:
     y = timed["lap_duration"].to_numpy(dtype=float)
     slope = float(((x - x.mean()) * (y - y.mean())).sum() / ((x - x.mean()) ** 2).sum())
     return slope
+
+
+# --- M7: sector flags + DRS zones (pure) ---
+
+
+def sector_flags(laps: pd.DataFrame) -> pd.DataFrame:
+    """Per-lap sector labels: 'session' (fastest of session), 'personal'
+    (driver's best), or '' — for F1-standard purple/green coloring. Pure.
+    """
+    out = laps[["driver_number", "lap_number"]].copy()
+    for i in (1, 2, 3):
+        col = f"duration_sector_{i}"
+        flag = f"s{i}_flag"
+        out[flag] = ""
+        if col not in laps.columns:
+            continue
+        sec = pd.to_numeric(laps[col], errors="coerce")
+        session_best = sec.min()
+        personal_best = laps.assign(_s=sec).groupby("driver_number")["_s"].transform("min")
+        out.loc[sec == session_best, flag] = "session"
+        out.loc[(sec == personal_best) & (out[flag] == ""), flag] = "personal"
+    return out
+
+
+def drs_zones(trace: pd.DataFrame, ax: str, ay: str, min_points: int = 5) -> pd.DataFrame:
+    """DRS-open segments on a trace: rows where bit4 of `drs` is set (12/14),
+    grouped into contiguous runs. Returns label/x0/y0/x1/y1 per zone. Pure.
+    """
+    if trace.empty or "drs" not in trace.columns:
+        return pd.DataFrame(columns=["label", "x0", "y0", "x1", "y1"])
+    drs = pd.to_numeric(trace["drs"], errors="coerce").fillna(0).astype(int).to_numpy()
+    open_mask = (drs & 4) != 0
+    zones = []
+    i = 0
+    while i < len(trace):
+        if open_mask[i]:
+            j = i
+            while j + 1 < len(trace) and open_mask[j + 1]:
+                j += 1
+            if j - i + 1 >= min_points:
+                zones.append(
+                    {
+                        "label": f"DRS{len(zones) + 1}",
+                        "x0": float(trace.iloc[i][ax]),
+                        "y0": float(trace.iloc[i][ay]),
+                        "x1": float(trace.iloc[j][ax]),
+                        "y1": float(trace.iloc[j][ay]),
+                    }
+                )
+            i = j + 1
+        else:
+            i += 1
+    return pd.DataFrame(zones, columns=["label", "x0", "y0", "x1", "y1"])
 
 
 # --- M6: what-if pit toy model (explicitly NOT strategy advice) ---

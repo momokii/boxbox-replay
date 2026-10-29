@@ -72,3 +72,12 @@ live pace/deg/gaps). Caught live: API dropped `meeting_name` from /sessions
 (coerced to NaN). §8 acceptance on Suzuka 2024 Race: 908 laps, 20 drivers,
 41k telemetry rows, full feeds. Verified: 37 tests pass, ruff clean, healthy
 boot, prod config renders.
+
+## 2026-10-29 — M7 polish + hardening via smoke test
+
+F1 purple/green sector styling in the lap table, data-derived DRS zones
+(bit-4 of `drs`, amber ticks), mobile CSS, reduce-motion toggle, `width` API
+migration. New `scripts/smoke_app.py` (AppTest) executes the whole script on
+a sparse 2026 session AND Suzuka 2024 Race — and caught 5 real bugs: mixed-ISO
+timestamps, 404-as-empty, non-default-index downsampling, empty-frame columns,
+string dates in intervals. All fixed + regression-tested. 41 tests, ruff clean.

@@ -82,6 +82,38 @@ def test_tyre_slope_linear_deg_and_floor():
         analysis.tyre_slope(laps.iloc[:1])
 
 
+def test_sector_flags_session_and_personal():
+    laps = pd.DataFrame(
+        {
+            "driver_number": [1, 1, 2, 2],
+            "lap_number": [1, 2, 1, 2],
+            "duration_sector_1": [30.0, 29.5, 29.5, 31.0],
+            "duration_sector_2": [40.0, 40.1, 39.9, 40.2],
+            "duration_sector_3": [20.0, 20.0, 20.0, 20.0],
+        }
+    )
+    out = analysis.sector_flags(laps)
+    s1 = out.set_index(["driver_number", "lap_number"])["s1_flag"]
+    assert s1[(1, 2)] == "session"  # 29.5 is session best, shared -> both session
+    assert s1[(2, 1)] == "session"
+    s2 = out.set_index(["driver_number", "lap_number"])["s2_flag"]
+    assert s2[(2, 1)] == "session" and s2[(1, 1)] == "personal"
+
+
+def test_drs_zones_bit4_runs():
+    trace = pd.DataFrame(
+        {
+            "drs": [8, 8, 12, 12, 12, 12, 12, 12, 8, 14, 8],
+            "x": list(range(11)),
+            "y": [0.0] * 11,
+        }
+    )
+    zones = analysis.drs_zones(trace, "x", "y")
+    assert len(zones) == 1  # only the 6-point run qualifies
+    assert zones.iloc[0]["x0"] == 2.0 and zones.iloc[0]["x1"] == 7.0
+    assert analysis.drs_zones(pd.DataFrame(), "x", "y").empty
+
+
 def test_pit_toy_stay_vs_pit_and_traffic():
     stay = analysis.pit_toy_model(90.0, 89.0, 0.2, 10)
     assert stay["recommendation"] == "STAY OUT" and stay["toy_model"] is True

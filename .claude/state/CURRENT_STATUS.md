@@ -1,5 +1,5 @@
 ## Project Phase
-M6 done and committed. All milestones M0–M6 complete.
+M7 done and committed. Next: TASK-002 security guardrails.
 
 ## Completed
 - [x] `.claude/` agent infrastructure and root CLAUDE.md initialized
@@ -12,6 +12,7 @@ M6 done and committed. All milestones M0–M6 complete.
 - [x] M4: coach on corner click (corner loss vs ref + opencode LLM + radio card)
 - [x] M5: performance mode (deg slope + stint timeline + weather + radio + race control)
 - [x] M6: what-if pit toy model (linear deg + traffic check, labeled toy)
+- [x] M7: sector colors, DRS zones, mobile CSS, reduce-motion, smoke-tested
 
 ## Blocked
 None
@@ -25,5 +26,5 @@ None
 - Prod image: non-root user, no secrets baked, `no-new-privileges`, named cache volume.
 
 ## Last Updated
-2026-10-28: M6 committed — all milestones done
+2026-10-29: M7 committed
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
