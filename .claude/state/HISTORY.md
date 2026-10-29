@@ -103,3 +103,11 @@ FastAPI wrap over the proven modules (feeds, geometry, corner-loss, coach-ask;
 sector colors; 7 vitest), compose split into api+web (nginx proxy, prod pins),
 dev runs as host UID for the bind mount. Verified: 48 pytest, npm build+lint,
 both services healthy, proxy + geometry + car window live.
+
+## 2026-10-29 — R1 all-driver canvas replay
+
+Full-field replay: canvas map (dots, trails, corners, DRS zones, hover
+telemetry), timing tower with live gaps + highlight toggles, Play/Pause +
+1x/2x/4x + scrub + Space, reduce-motion, synced canvas speed strip. No driver
+cap — highlight is optional. Verified: 14 vitest, tsc build, rAF playback
+store, live geometry/lap-window endpoints, both services healthy via proxy.

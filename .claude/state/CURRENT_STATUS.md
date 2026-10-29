@@ -1,5 +1,5 @@
 ## Project Phase
-REVAMP (option A: React SPA + FastAPI). R0 done and committed. Next: R1 all-driver replay.
+REVAMP (option A). R1 done and committed. Next: R2 feature panels.
 
 ## Completed
 - [x] M0–M7 Streamlit app (superseded; removal planned at R4)
@@ -8,7 +8,7 @@ REVAMP (option A: React SPA + FastAPI). R0 done and committed. Next: R1 all-driv
 - [x] UI research (`docs/UI_RESEARCH.md`): Streamlit out, React+FastAPI in
 
 ## In Progress
-- [ ] R1: all-driver canvas replay (map, tower, play/pause/speed/scrub, synced trace)
+- [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
 
 ## Blocked
 None
@@ -22,5 +22,5 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-10-29: R0 committed (revamp backend + shell live)
+2026-10-29: R1 committed (full-field canvas replay live)
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
