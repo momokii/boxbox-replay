@@ -30,3 +30,6 @@ None
 
 - [x] U9: smoothness (60fps), chart hover + responsive widths, stacked stints, honest pit model
 - [x] F1: pit stops, overtakes, results, DNF labels, `?t=` share links, lap-time chart
+
+## Last Updated
+2026-10-30: feature pass shipped (pit stops, overtakes, results, share links, lap chart); OpenF1 credential requirement handled with OPENF1_API_KEY
