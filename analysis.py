@@ -511,3 +511,69 @@ def pit_toy_model(
         "traffic_on_exit": bool(traffic),
         "toy_model": True,
     }
+
+
+# --- Pit stops, overtakes, classification (pure) ---
+
+
+def pit_summary(pits: pd.DataFrame, max_stop_s: float = 120.0) -> pd.DataFrame:
+    """Per-driver pit-stop facts from measured stops. Pure.
+
+    Uses `stop_duration` when present (the stationary time), ignores lane-time
+    artifacts (a red flag can show 20+ minutes "in the pit lane").
+    """
+    cols = ["driver_number", "stops", "best_stop_s", "total_stop_s", "laps"]
+    if pits.empty or "driver_number" not in pits.columns:
+        return pd.DataFrame(columns=cols)
+    df = pits.copy()
+    stop = pd.to_numeric(df.get("stop_duration"), errors="coerce")
+    lane = pd.to_numeric(df.get("pit_duration"), errors="coerce")
+    # Prefer the measured stationary time; fall back to the pit-lane time for
+    # rows where the feed has no stop_duration.
+    df = df.assign(_stop=stop.fillna(lane))
+    df = df[(df["_stop"] > 0) & (df["_stop"] <= max_stop_s)]
+    if df.empty:
+        return pd.DataFrame(columns=cols)
+    out = (
+        df.groupby("driver_number")
+        .agg(
+            stops=("_stop", "size"),
+            best_stop_s=("_stop", "min"),
+            total_stop_s=("_stop", "sum"),
+            laps=("lap_number", lambda s: sorted({int(v) for v in s if pd.notna(v)})),
+        )
+        .reset_index()
+    )
+    return out[cols]
+
+
+def overtake_counts(overtakes: pd.DataFrame) -> pd.DataFrame:
+    """Overtakes made and lost per driver. Pure."""
+    cols = ["driver_number", "made", "lost"]
+    if overtakes.empty:
+        return pd.DataFrame(columns=cols)
+    made = overtakes.groupby("overtaking_driver_number").size()
+    lost = overtakes.groupby("overtaken_driver_number").size()
+    drivers = sorted(set(made.index) | set(lost.index))
+    return pd.DataFrame(
+        {
+            "driver_number": drivers,
+            "made": [int(made.get(d, 0)) for d in drivers],
+            "lost": [int(lost.get(d, 0)) for d in drivers],
+        }
+    )
+
+
+def position_at(positions: pd.DataFrame, t: float) -> dict[int, int]:
+    """Official position per driver at time t (seconds from lights out). Pure."""
+    if positions.empty or "t" not in positions.columns:
+        return {}
+    df = positions[positions["t"] <= t].sort_values("t")
+    if df.empty:
+        return {}
+    latest = df.groupby("driver_number").tail(1)
+    return {
+        int(r.driver_number): int(r.position)
+        for r in latest.itertuples()
+        if pd.notna(r.position)
+    }

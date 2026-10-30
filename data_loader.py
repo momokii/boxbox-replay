@@ -320,6 +320,49 @@ def get_race_control(session_key: int) -> pd.DataFrame:
     )
 
 
+def get_pit(session_key: int) -> pd.DataFrame:
+    """Pit stops with measured durations. Cached per session."""
+    return _cached(
+        "pit", {"session_key": session_key}, _session_cache(session_key, "pit.parquet")
+    )
+
+
+def get_position(session_key: int) -> pd.DataFrame:
+    """Official classification over time. Cached per session."""
+    return _cached(
+        "position",
+        {"session_key": session_key},
+        _session_cache(session_key, "position.parquet"),
+    )
+
+
+def get_overtakes(session_key: int) -> pd.DataFrame:
+    """On-track overtakes (who passed whom, when). Cached per session."""
+    return _cached(
+        "overtakes",
+        {"session_key": session_key},
+        _session_cache(session_key, "overtakes.parquet"),
+    )
+
+
+def get_session_result(session_key: int) -> pd.DataFrame:
+    """Final classification for a session. Cached per session.
+
+    `gap_to_leader` mixes numbers with strings like "+1 LAP"; the numeric part
+    is cached and the original label is kept as `gap_text`.
+    """
+    cache_file = _session_cache(session_key, "session_result.parquet")
+    if cache_file.exists():
+        return pd.read_parquet(cache_file)
+    df = pd.DataFrame(_fetch("session_result", {"session_key": session_key}))
+    if not df.empty and "gap_to_leader" in df.columns:
+        df = df.copy()
+        df["gap_text"] = df["gap_to_leader"].astype(str)
+        df["gap_to_leader"] = pd.to_numeric(df["gap_to_leader"], errors="coerce")
+    df.to_parquet(cache_file, index=False)
+    return df
+
+
 def get_session(session_key: int) -> dict:
     """Single session row (start/end, name, meeting) for a session key."""
     cache_file = _session_cache(session_key, "session.parquet")

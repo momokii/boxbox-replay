@@ -296,6 +296,65 @@ def weather(session_key: int):
     return records(df[[c for c in cols if c in df.columns]])
 
 
+@app.get("/session/pit")
+def session_pit(session_key: int) -> dict:
+    """Pit stops with measured durations, plus a per-driver summary."""
+    raw = data_loader.get_pit(session_key)
+    timed = _with_session_time(raw, session_key) if not raw.empty else raw
+    summary = analysis.pit_summary(raw)
+    stop_cols = [
+        c
+        for c in ("driver_number", "t", "lap_number", "stop_duration", "pit_duration")
+        if c in timed.columns
+    ]
+    return {
+        "summary": records(summary),
+        "stops": records(timed[stop_cols]) if not timed.empty and stop_cols else [],
+    }
+
+
+@app.get("/session/positions")
+def session_positions(session_key: int) -> list[dict]:
+    """Official classification over time, zeroed at lights out."""
+    raw = data_loader.get_position(session_key)
+    if raw.empty:
+        return []
+    timed = _with_session_time(raw, session_key)
+    cols = [c for c in ("driver_number", "t", "position") if c in timed.columns]
+    return records(timed[cols]) if cols else []
+
+
+@app.get("/session/overtakes")
+def session_overtakes(session_key: int) -> dict:
+    """On-track overtakes with times, plus made/lost totals per driver."""
+    raw = data_loader.get_overtakes(session_key)
+    if raw.empty:
+        return {"counts": [], "events": []}
+    timed = _with_session_time(raw, session_key)
+    events = records(
+        timed[
+            [
+                c
+                for c in (
+                    "t",
+                    "overtaking_driver_number",
+                    "overtaken_driver_number",
+                    "position",
+                )
+                if c in timed.columns
+            ]
+        ]
+    )
+    return {"counts": records(analysis.overtake_counts(raw)), "events": events}
+
+
+@app.get("/session/result")
+def session_result(session_key: int) -> list[dict]:
+    """Final classification (position, points, DNF) for the session."""
+    raw = data_loader.get_session_result(session_key)
+    return records(raw)
+
+
 @app.get("/session/info")
 def session_info(session_key: int) -> dict:
     """Session clock + race distance: the numbers the UI should show."""

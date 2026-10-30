@@ -240,3 +240,49 @@ def test_rotate_points_handles_points_and_segments():
     assert seg[0]["y1"] == pytest.approx(2.0)
     assert analysis.rotate_points([], 45) == []
     assert analysis.rotate_points([{"x": 1.0, "y": 1.0}], 0)[0] == {"x": 1.0, "y": 1.0}
+
+
+def test_pit_summary_uses_stop_duration_and_drops_artifacts():
+    pits = pd.DataFrame(
+        {
+            "driver_number": [1, 1, 2, 2],
+            "lap_number": [16, 34, 12, 30],
+            "stop_duration": [23.1, 23.2, None, 1800.0],
+            "pit_duration": [1575.0, 24.0, 25.5, 1801.0],
+        }
+    )
+    out = analysis.pit_summary(pits).set_index("driver_number")
+    assert out.loc[1, "stops"] == 2
+    assert out.loc[1, "best_stop_s"] == pytest.approx(23.1)
+    assert out.loc[1, "laps"] == [16, 34]
+    # driver 2: stop_duration missing on one row, the other is a red-flag artifact
+    assert out.loc[2, "stops"] == 1
+    assert out.loc[2, "best_stop_s"] == pytest.approx(25.5)
+    assert analysis.pit_summary(pd.DataFrame()).empty
+
+
+def test_overtake_counts_made_and_lost():
+    ov = pd.DataFrame(
+        {
+            "overtaking_driver_number": [1, 1, 2],
+            "overtaken_driver_number": [3, 4, 1],
+        }
+    )
+    out = analysis.overtake_counts(ov).set_index("driver_number")
+    assert out.loc[1, "made"] == 2 and out.loc[1, "lost"] == 1
+    assert out.loc[3, "lost"] == 1 and out.loc[3, "made"] == 0
+    assert analysis.overtake_counts(pd.DataFrame()).empty
+
+
+def test_position_at_uses_latest_sample():
+    pos = pd.DataFrame(
+        {
+            "driver_number": [1, 1, 2],
+            "t": [0, 100, 50],
+            "position": [3, 1, 4],
+        }
+    )
+    assert analysis.position_at(pos, 60) == {1: 3, 2: 4}
+    assert analysis.position_at(pos, 150) == {1: 1, 2: 4}
+    assert analysis.position_at(pos, -5) == {}
+    assert analysis.position_at(pd.DataFrame(), 10) == {}
