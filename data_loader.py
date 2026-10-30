@@ -360,9 +360,14 @@ def build_session_replay(session_key: int, hz: int = 2) -> pd.DataFrame:
     Positions only — speed is fetched per driver on demand (/session/speed)
     so the first build is cheap and the payload stays small.
     """
-    cache_file = _session_cache(session_key, f"session_pos_{hz}hz.parquet")
+    # Versioned name: older builds used different cleaning/plane rules, and a
+    # cached empty file used to make a session look permanently broken.
+    cache_file = _session_cache(session_key, f"session_pos_v2_{hz}hz.parquet")
     if cache_file.exists():
-        return pd.read_parquet(cache_file)
+        cached = pd.read_parquet(cache_file)
+        if not cached.empty:
+            return cached
+        cache_file.unlink(missing_ok=True)
     start_ts, _ = session_window(session_key)
     drivers = list_drivers(session_key)
     frames: list[pd.DataFrame] = []
@@ -400,7 +405,10 @@ def build_session_replay(session_key: int, hz: int = 2) -> pd.DataFrame:
         if frames
         else pd.DataFrame(columns=["driver_number", "t", "x", "y"])
     )
-    out.to_parquet(cache_file, index=False)
+    # Never cache an empty result: a transient feed failure must not turn into a
+    # permanent "no data" for this session.
+    if not out.empty:
+        out.to_parquet(cache_file, index=False)
     return out
 
 

@@ -36,6 +36,24 @@ describe("trailAt", () => {
     expect(trail.length).toBeGreaterThanOrEqual(2);
     expect(trail[0].x).toBeGreaterThanOrEqual(100);
   });
+
+  it("stops at a telemetry gap instead of drawing across the circuit", () => {
+    const jumped: ReplayDriver = {
+      driver_number: 9,
+      t: [0, 1, 2, 20],
+      x: [0, 10, 20, 900],
+      y: [0, 0, 0, 900],
+    };
+    const trail = trailAt(jumped, 20, 30, 50);
+    expect(trail).toEqual([{ x: 900, y: 900 }]);
+  });
+});
+
+describe("posAt step guard", () => {
+  it("holds the earlier sample across a jump", () => {
+    const jumped: ReplayDriver = { driver_number: 9, t: [0, 10], x: [0, 900], y: [0, 900] };
+    expect(posAt(jumped, 9, 50)).toEqual({ x: 0, y: 0 });
+  });
 });
 
 describe("gaps", () => {

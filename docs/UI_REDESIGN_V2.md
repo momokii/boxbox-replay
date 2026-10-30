@@ -181,3 +181,21 @@ amber darkened to `#A86A00` for contrast on light. Data colors unchanged.
   on every tick while playing, the speed chart has ink, session switches reset
   the clock to 0:00 and load the new session, and a page reload keeps the deep
   link.
+
+
+## Pass 7 — persistent failures and stray trails
+
+- **A cached empty replay made failures permanent.** `build_session_replay`
+  wrote the parquet even when it had zero rows, so after one transient feed
+  failure the session returned "no data" forever — reloading (with the same
+  deep link) changed nothing. Empty results are no longer cached, cached files
+  are revalidated, the cache filename is versioned (`session_pos_v2_*`), and a
+  refresh clears every variant. A transient failure now also retries once
+  automatically before the button is needed.
+- **Trails pointed across the circuit.** The gap guard was written but never
+  applied (a failed edit), and all 22 drivers drew trails at once. Trails are
+  now drawn only for the drivers you follow, stop at telemetry gaps
+  (`maxStep` = 5% of circuit span), and `posAt` holds the earlier sample rather
+  than sliding a dot across a gap. Unit tests cover both.
+- Session facts count drivers from the entry list, so a cancelled round no
+  longer reads "0 drivers" while the tower lists 22.

@@ -19,30 +19,46 @@ export interface Pos {
   y: number;
 }
 
-/** Interpolated position of a driver at time t; null before their first sample. */
-export function posAt(d: ReplayDriver, t: number): Pos | null {
+/**
+ * Interpolated position of a driver at time t; null when there is no data.
+ *
+ * `maxStep` guards against telemetry gaps: if two samples are further apart
+ * than any car could travel in one frame, we hold the earlier one instead of
+ * sliding the dot across the circuit.
+ */
+export function posAt(d: ReplayDriver, t: number, maxStep = Infinity): Pos | null {
   if (!d.t.length) return null;
   const i = indexAt(d.t, t);
   if (i < 0) return { x: d.x[0], y: d.y[0] };
   if (i >= d.t.length - 1) return { x: d.x[i], y: d.y[i] };
+  const jump = Math.hypot(d.x[i + 1] - d.x[i], d.y[i + 1] - d.y[i]);
+  if (jump > maxStep) return { x: d.x[i], y: d.y[i] };
   const t0 = d.t[i];
   const t1 = d.t[i + 1];
   const f = t1 > t0 ? (t - t0) / (t1 - t0) : 0;
   return { x: d.x[i] + (d.x[i + 1] - d.x[i]) * f, y: d.y[i] + (d.y[i + 1] - d.y[i]) * f };
 }
 
-/** Trail points in [t - window, t] for the trail drawn behind a dot. */
-export function trailAt(d: ReplayDriver, t: number, window: number): Pos[] {
+/**
+ * Trail points in [t - window, t], stopping at telemetry gaps.
+ *
+ * A trail must be one continuous run of samples: if the feed skips a couple of
+ * seconds the next point can be a kilometre away, which used to draw a line
+ * across the circuit.
+ */
+export function trailAt(d: ReplayDriver, t: number, window: number, maxStep = Infinity): Pos[] {
   const end = indexAt(d.t, t);
   if (end < 1) return [];
   let start = end;
-  while (start > 0 && d.t[start - 1] >= t - window) start -= 1;
+  while (start > 0 && d.t[start - 1] >= t - window) {
+    const jump = Math.hypot(d.x[start] - d.x[start - 1], d.y[start] - d.y[start - 1]);
+    if (jump > maxStep) break;
+    start -= 1;
+  }
   const out: Pos[] = [];
   for (let i = start; i <= end; i += 1) out.push({ x: d.x[i], y: d.y[i] });
-  if (end < d.t.length - 1) {
-    const p = posAt(d, t);
-    if (p) out.push(p);
-  }
+  const p = posAt(d, t, maxStep);
+  if (p && end < d.t.length - 1) out.push(p);
   return out;
 }
 

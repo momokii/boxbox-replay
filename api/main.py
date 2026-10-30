@@ -303,6 +303,9 @@ def session_info(session_key: int) -> dict:
     info = data_loader.get_session(session_key)
     laps = data_loader.list_laps(session_key)
     total = pd.to_numeric(laps["lap_number"], errors="coerce").max() if not laps.empty else 0
+    # Driver count comes from the entry list, not from who completed a lap:
+    # a cancelled or partially covered session still has entries.
+    entrants = data_loader.list_drivers(session_key)
     return {
         "session_key": session_key,
         "session_name": info.get("session_name"),
@@ -310,7 +313,7 @@ def session_info(session_key: int) -> dict:
         "date_end": str(end),
         "duration_s": round(race_duration, 1),
         "total_laps": 0 if pd.isna(total) else int(total),
-        "drivers": int(laps["driver_number"].nunique()) if not laps.empty else 0,
+        "drivers": 0 if entrants.empty else int(entrants["driver_number"].nunique()),
     }
 
 
@@ -418,8 +421,9 @@ def session_replay(session_key: int, hz: int | None = None, refresh: bool = Fals
     duration = (end - start).total_seconds()
     rate = hz or (2 if duration <= 1800 else 1)
     if refresh:
-        cache = data_loader._session_cache(session_key, f"session_pos_{rate}hz.parquet")
-        cache.unlink(missing_ok=True)
+        for hz_name in {rate, 1, 2}:
+            cache = data_loader._session_cache(session_key, f"session_pos_v2_{hz_name}hz.parquet")
+            cache.unlink(missing_ok=True)
     df = data_loader.build_session_replay(session_key, hz=rate)
     if df.empty:
         raise HTTPException(404, "no telemetry for this session")

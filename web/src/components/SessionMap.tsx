@@ -97,7 +97,9 @@ export default function SessionMap(p: Props) {
     const ox = pad + (w - pad * 2 - (maxX - minX) * scale) / 2 - minX * scale;
     // World y grows up, canvas y grows down: negate so the map is not mirrored.
     const oy = pad + (h - pad * 2 - (maxY - minY) * scale) / 2 + maxY * scale;
-    geom.current = { scale, ox, oy, span: Math.max(1, maxX - minX, maxY - minY) };
+    const span = Math.max(1, maxX - minX, maxY - minY);
+    geom.current = { scale, ox, oy, span };
+    const maxStep = span * 0.05; // ~5% of the circuit per sample is impossible
     const X = (x: number) => ox + x * scale;
     const Y = (y: number) => oy - y * scale;
 
@@ -142,14 +144,19 @@ export default function SessionMap(p: Props) {
     for (const dot of p.dots) {
       const d = p.replay.get(dot.driver);
       if (!d) continue;
-      const pos = posAt(d, t);
+      const pos = posAt(d, t, maxStep);
       if (!pos) continue;
       const rp = rotate(pos.x, pos.y, -p.angle);
       const sx = X(rp.x);
       const sy = Y(rp.y);
       screen.current.set(dot.driver, { x: sx, y: sy });
       const dim = p.highlight.length > 0 && !p.highlight.includes(dot.driver);
-      const trail = trailAt(d, t, TRAIL_S);
+      // Trails only for the drivers you follow: 22 at once reads as stray lines
+      // rather than motion. maxStep stops a trail at telemetry gaps.
+      const followed = p.highlight.includes(dot.driver) || p.selectedDriver === dot.driver;
+      const trail = followed
+        ? trailAt(d, t, TRAIL_S, maxStep).map((v) => rotate(v.x, v.y, -p.angle))
+        : [];
       if (trail.length > 1) {
         ctx.strokeStyle = dot.color;
         ctx.globalAlpha = dim ? 0.06 : 0.28;

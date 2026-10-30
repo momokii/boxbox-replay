@@ -226,3 +226,16 @@ explains itself while everything else keeps working. Speed panel follows a
 stable leader by default (named in the heading). Verified with canvas pixel
 hashing: map animates every tick, speed draws, session switch resets to 0:00,
 reload keeps the deep link. 51 pytest + 27 vitest.
+
+## 2026-10-30 — U8 persistent-cache and trail fixes
+
+Empty replay builds were cached, so one transient failure made a session
+permanently "no data" across reloads: empty results are never cached now, the
+cache is versioned (session_pos_v2_*), files are revalidated on read, refresh
+clears variants, and the client auto-retries once. The trail gap guard existed
+only in the helper — the component still called the unguarded version and drew
+trails for all 22 cars; trails are now limited to followed drivers, stop at
+gaps, and posAt holds position across a jump (unit-tested). Session facts count
+drivers from the entry list. Verified: geometry 200 on 10 sessions (single 404
+is a cancelled round with no laps/positions), playback animates, switch shows a
+contextual loading card, reload restores the deep link. 51 pytest + 29 vitest.

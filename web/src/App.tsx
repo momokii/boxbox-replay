@@ -173,9 +173,22 @@ export default function App() {
       : Promise.resolve({ ...EMPTY_GEO, driver: 0, lap: 0 }),
   );
   const [replayRetry, setReplayRetry] = useState(0);
+  const autoRetried = useRef<Set<number>>(new Set());
+
   const replay = useAsync(`replay:${sessionKey ?? "none"}:${replayRetry}`, () =>
     sessionKey ? api.sessionReplay(sessionKey, replayRetry > 0) : Promise.resolve(null),
   );
+
+  // A transient feed failure should not need a button press: retry once per
+  // session on its own, and leave the explicit button for a second failure.
+  useEffect(() => {
+    if (!sessionKey || !replay.error) return;
+    if (replay.error.includes("404")) return;
+    if (autoRetried.current.has(sessionKey)) return;
+    autoRetried.current.add(sessionKey);
+    const id = window.setTimeout(() => setReplayRetry((n) => n + 1), 1200);
+    return () => window.clearTimeout(id);
+  }, [sessionKey, replay.error]);
   const gaps = useAsync(`gaps:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionGaps(sessionKey) : Promise.resolve(null as unknown as SessionGaps),
   );
