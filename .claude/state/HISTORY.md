@@ -251,3 +251,8 @@ legend. Pit model inputs corrected (green-lap median for current pace, laps 2-4
 of each stint for fresh pace, current-stint wear with "not measurable"
 fallback) and the panel now shows a full breakdown and assumptions. Head-to-head
 gained tooltips and a between-them row. 51 pytest + 32 vitest.
+
+Verified on the user's own circuit (Spanish GP 2024, 66 laps): production build
+loads in ~60s cold, plays at a locked 60 fps (p50/p95 16.7 ms), 20 drivers on
+track, leader-in-Speed-panel default. Two commits: d43f791 (performance +
+charts + stints + pit inputs) and 814c33f (weather tooltip anchor + docs).

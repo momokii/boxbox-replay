@@ -27,3 +27,5 @@ None
 ## Last Updated
 2026-10-29: U2 redesign verified on desktop + mobile, prod deployed
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
+
+- [x] U9: smoothness (60fps), chart hover + responsive widths, stacked stints, honest pit model
