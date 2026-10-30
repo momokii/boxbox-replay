@@ -225,3 +225,18 @@ def test_corner_losses_empty_window_is_nan_not_invented():
 def test_map_plane_picks_widest_axes():
     loc = pd.DataFrame({"x": [0.0, 100.0], "y": [0.0, 1.0], "z": [5.0, 5.0]})
     assert analysis.map_plane(loc) == ("x", "y")
+
+
+def test_rotate_points_handles_points_and_segments():
+    pts = analysis.rotate_points([{"x": 1.0, "y": 0.0}], 90)
+    assert pts[0]["x"] == pytest.approx(0.0, abs=1e-9)
+    assert pts[0]["y"] == pytest.approx(1.0)
+
+    seg = analysis.rotate_points(
+        [{"x0": 1.0, "y0": 0.0, "x1": 2.0, "y1": 0.0, "label": "DRS1"}], 90
+    )
+    assert seg[0]["label"] == "DRS1"
+    assert seg[0]["y0"] == pytest.approx(1.0)
+    assert seg[0]["y1"] == pytest.approx(2.0)
+    assert analysis.rotate_points([], 45) == []
+    assert analysis.rotate_points([{"x": 1.0, "y": 1.0}], 0)[0] == {"x": 1.0, "y": 1.0}

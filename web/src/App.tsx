@@ -179,8 +179,7 @@ export default function App() {
   const gaps = useAsync(`gaps:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionGaps(sessionKey) : Promise.resolve(null as unknown as SessionGaps),
   );
-  const sessionLoading =
-    sessionKey != null && replay.error == null && (replay.data == null || geo.data == null);
+  const sessionLoading = sessionKey != null && replay.error == null && replay.data == null;
   const drivers = useAsync(`drivers:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.drivers(sessionKey) : Promise.resolve([]),
   );
@@ -315,7 +314,40 @@ export default function App() {
   const lapEndT = lapMarkers[lapIdx + 1]?.t ?? Math.max(lapStartT + 1, dur);
   const lapWindow = { start: lapStartT, end: lapEndT };
   const focusDrivers = highlight.length ? highlight : selectedDriver != null ? [selectedDriver] : [];
-  const chartDrivers = focusDrivers.length ? focusDrivers : towerRows.slice(0, 5).map((r) => r.driver);
+
+  // When you have not picked anyone, follow one stable driver (the leader at
+  // lights out) instead of a set that changes as the replay runs.
+  const defaultDriver = useMemo(() => {
+    let best: { driver: number; gap: number } | null = null;
+    for (const d of drivers.data ?? []) {
+      const g = gapAt(gapTable, d.driver_number, 0);
+      if (g == null) continue;
+      if (!best || g < best.gap) best = { driver: d.driver_number, gap: g };
+    }
+    return best?.driver ?? null;
+  }, [drivers.data, gapTable]);
+
+  useEffect(() => {
+    if (!sessionKey || focusDrivers.length || defaultDriver == null) return;
+    if (speedByDriver.has(defaultDriver)) return;
+    let live = true;
+    api
+      .sessionSpeed(sessionKey, defaultDriver)
+      .then((pts) => {
+        if (live) setSpeedByDriver((prev) => new Map(prev).set(defaultDriver, pts));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [sessionKey, focusDrivers.length, defaultDriver, speedByDriver]);
+
+
+  const chartDrivers = focusDrivers.length
+    ? focusDrivers
+    : defaultDriver != null
+      ? [defaultDriver]
+      : [];
 
   const speedLoading = chartDrivers.filter((d) => !speedByDriver.has(d));
   const series: SpeedSeries[] = chartDrivers.flatMap((d) => {
@@ -520,9 +552,15 @@ export default function App() {
                     timing feed had no position data for the rest.
                   </p>
                 )}
-                {replay.data && geo.data && (
+                {replay.data && (
                   <>
                     <div className="map-frame">
+                      {geo.error && (
+                        <p className="dim small" style={{ padding: "8px 10px" }}>
+                          The circuit outline didn't load for this session — cars still replay, but there is
+                          no track to draw them on.
+                        </p>
+                      )}
                       <SessionMap
                         playback={playback}
                         outline={geo.data?.outline ?? []}
@@ -587,7 +625,12 @@ export default function App() {
                     ) : null}
 
                     <div className="panel">
-                      <h3>Speed telemetry</h3>
+                      <h3>
+                        Speed telemetry
+                        {focusDrivers.length === 0 && defaultDriver != null && (
+                          <span className="dim small"> · leader {driverMeta.get(defaultDriver)?.code ?? `#${defaultDriver}`} (pick a driver in the tower to change)</span>
+                        )}
+                      </h3>
                       {speedLoading.length > 0 && (
                         <p className="dim small loading-inline">
                           <span className="spinner" aria-hidden="true" />

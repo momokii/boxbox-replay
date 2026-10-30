@@ -183,19 +183,26 @@ def rotate_path(path: pd.DataFrame, angle_deg: float) -> pd.DataFrame:
 
 
 def rotate_points(points: list[dict], angle_deg: float) -> list[dict]:
-    """Rotate a list of {x, y, ...} dicts by `angle_deg` about the origin."""
+    """Rotate point dictionaries by `angle_deg` about the origin.
+
+    Handles plain points ({x, y}) and segments ({x0, y0, x1, y1}), so corners
+    and DRS zones go through the same transform as the outline.
+    """
     import math
 
     if not points or angle_deg == 0:
         return points
     a = math.radians(angle_deg)
     cos, sin = math.cos(a), math.sin(a)
+    pairs = (("x", "y"), ("x0", "y0"), ("x1", "y1"))
     out = []
-    for p in points:
-        x, y = float(p["x"]), float(p["y"])
-        q = dict(p)
-        q["x"] = x * cos - y * sin
-        q["y"] = x * sin + y * cos
+    for point in points:
+        q = dict(point)
+        for xk, yk in pairs:
+            if xk in q and yk in q:
+                x, y = float(q[xk]), float(q[yk])
+                q[xk] = x * cos - y * sin
+                q[yk] = x * sin + y * cos
         out.append(q)
     return out
 

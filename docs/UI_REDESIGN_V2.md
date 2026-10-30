@@ -162,3 +162,22 @@ amber darkened to `#A86A00` for contrast on light. Data colors unchanged.
   echoes the delta bars in the UI. Shipped as SVG + 32/180/192/512 PNGs + a
   maskable variant, wired into `favicon`, `apple-touch-icon`, a web manifest
   (`application/manifest+json`) and the in-app header lockup.
+
+
+## Pass 6 — replay actually plays
+
+- **Geometry crashed on DRS zones**: `rotate_points` assumed `{x, y}` while zones
+  are segments `{x0, y0, x1, y1}`, raising `KeyError: 'x'` → HTTP 500 → the map
+  block (and the speed panel inside it) never rendered, so Play advanced the
+  clock while the circuit stayed empty. Rotation now handles both shapes, with a
+  regression test.
+- **One failed request no longer blanks the whole replay**: loading depends on
+  the replay payload only; a geometry failure renders the map area with an
+  explanation while the player, timeline, corners, speed and gaps still work.
+- **Speed telemetry is never empty**: with nothing picked, the panel follows one
+  stable driver (the leader at lights out, named in the heading) instead of
+  showing nothing or a set that changes every frame.
+- Verified by pixel-hashing the canvases in a real browser: the map hash changes
+  on every tick while playing, the speed chart has ink, session switches reset
+  the clock to 0:00 and load the new session, and a page reload keeps the deep
+  link.

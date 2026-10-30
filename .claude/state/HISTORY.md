@@ -214,3 +214,15 @@ placeholders. New brand mark (timing bars) replaces the Vite default across
 favicon.svg, 32/180/192/512 PNGs, maskable icon, web manifest and the header.
 Verified: Monaco 2026 renders (22/22 drivers, 1:30:50, position coverage note),
 Monaco/Suzuka 2024 unaffected, 50 pytest + 27 vitest.
+
+## 2026-10-30 — U7 replay playback fixed at the root
+
+Root cause of "Play advances the clock but the circuit does nothing": the
+geometry endpoint crashed (KeyError x) because rotate_points only handled
+{x,y} and DRS zones are {x0,y0,x1,y1} — a 500 meant the whole map block, speed
+panel included, never rendered. Rotation handles both shapes (regression
+tested), loading no longer depends on geometry, and a geometry failure now
+explains itself while everything else keeps working. Speed panel follows a
+stable leader by default (named in the heading). Verified with canvas pixel
+hashing: map animates every tick, speed draws, session switch resets to 0:00,
+reload keeps the deep link. 51 pytest + 27 vitest.
