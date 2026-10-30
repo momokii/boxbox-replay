@@ -26,7 +26,7 @@ interface Feed {
 
 export default function PerformancePanel(p: Props) {
   const [feed, setFeed] = useState<Feed | null>(null);
-  const [scope, setScope] = useState<"focus" | "all">("focus");
+  const [scope, setScope] = useState<"focus" | "all">("all");
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -54,6 +54,15 @@ export default function PerformancePanel(p: Props) {
       (s.lap_end == null || s.lap_end >= s.lap_start),
   );
   const maxLap = Math.max(1, ...stints.map((s) => s.lap_end ?? 0));
+
+  const byDriver = [...new Set(stints.map((s) => s.driver_number))]
+    .sort((x, y) => x - y)
+    .map((driver) => ({
+      driver,
+      stints: stints
+        .filter((s) => s.driver_number === driver)
+        .sort((x, y) => (x.lap_start ?? 0) - (y.lap_start ?? 0)),
+    }));
 
   const slopeRows = stints.map((s) => {
     const start = s.lap_start ?? 1;
@@ -88,38 +97,51 @@ export default function PerformancePanel(p: Props) {
         <h3>
           <Info
             label="Stints"
-            tip="A stint is one continuous run on a set of tyres. The bar spans the whole race, from lap 1 to the flag."
+            tip="One row per driver. Each coloured block is a stint: one continuous run on a set of tyres. Hover a block for the compound and lap range."
           />{" "}
           · whole race
         </h3>
         <div className="stint-list">
-        {stints.length ? (
-          stints.map((s, i) => {
-            const start = s.lap_start ?? 1;
-            const end = s.lap_end ?? maxLap;
-            return (
-              <div key={`${s.driver_number}-${i}`} className="row" style={{ fontSize: "0.8rem", marginBottom: 2 }}>
-                <span className="mono" style={{ minWidth: 34 }}>{p.driverCode(s.driver_number)}</span>
-                <div className="stint-track">
-                  <div
-                    className="stint-block"
-                    title={`${p.driverCode(s.driver_number)} · ${s.compound} · laps ${start}-${s.lap_end ?? "end"}`}
-                    style={{
-                      left: `${((start - 1) / maxLap) * 100}%`,
-                      width: `${Math.max(1, ((end - start + 1) / maxLap) * 100)}%`,
-                      background: compoundColor(s.compound),
-                    }}
-                  />
-                </div>
-                <span className="dim small" style={{ minWidth: 86 }}>
-                  {s.compound} {start}–{s.lap_end ?? "end"}
-                </span>
+        {byDriver.length ? (
+          byDriver.map(({ driver, stints: driverStints }) => (
+            <div key={driver} className="row" style={{ fontSize: "0.8rem", marginBottom: 3 }}>
+              <span className="mono" style={{ minWidth: 34 }}>{p.driverCode(driver)}</span>
+              <div className="stint-track">
+                {driverStints.map((s, i) => {
+                  const start = s.lap_start ?? 1;
+                  const end = s.lap_end ?? maxLap;
+                  const compound = s.compound ?? "?";
+                  return (
+                    <div
+                      key={i}
+                      className="stint-block"
+                      title={`${p.driverCode(driver)} · ${compound} · laps ${start}–${s.lap_end ?? maxLap}`}
+                      style={{
+                        left: `${((start - 1) / maxLap) * 100}%`,
+                        width: `${Math.max(0.6, ((end - start + 1) / maxLap) * 100)}%`,
+                        background: compoundColor(compound),
+                      }}
+                    />
+                  );
+                })}
               </div>
-            );
-          })
+              <span className="dim small" style={{ minWidth: 96 }}>
+                {driverStints.length} stint{driverStints.length > 1 ? "s" : ""} ·{" "}
+                {[...new Set(driverStints.map((s) => s.compound ?? "?"))].join("/")}
+              </span>
+            </div>
+          ))
         ) : (
           <p className="dim small">No stint data for these drivers.</p>
         )}
+        </div>
+        <div className="legend" style={{ marginTop: 6 }}>
+          {["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"].map((c) => (
+            <span key={c}>
+              <i style={{ background: compoundColor(c) }} />
+              {c.toLowerCase()}
+            </span>
+          ))}
         </div>
         {stints.length > 0 && (
           <div className="stint-axis">
@@ -153,7 +175,9 @@ export default function PerformancePanel(p: Props) {
             </tr>
           </thead>
           <tbody>
-            {slopeRows.map(({ stint, slope }) => (
+            {slopeRows
+              .filter(({ stint }) => (stint.lap_end ?? 0) > (stint.lap_start ?? 0))
+              .map(({ stint, slope }) => (
               <tr key={`${stint.driver_number}-${stint.lap_start}`}>
                 <td>{p.driverCode(stint.driver_number)}</td>
                 <td>{stint.compound ?? "?"}</td>
@@ -163,6 +187,13 @@ export default function PerformancePanel(p: Props) {
                 <td>{slope == null ? "not enough laps" : `+${slope.toFixed(3)}s`}</td>
               </tr>
             ))}
+            {slopeRows.some(({ stint }) => (stint.lap_end ?? 0) <= (stint.lap_start ?? 0)) && (
+              <tr>
+                <td colSpan={4} className="dim small">
+                  One-lap stints are hidden — a slope needs at least two timed laps.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </section>

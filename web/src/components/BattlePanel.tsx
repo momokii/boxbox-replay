@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { beginDraw, themeColors, useCanvasSize } from "../chart";
+import { formatClock, gapAt, type GapTable } from "../session";
+import Info from "./Info";
 import { formatLapTime } from "../format";
-import { gapAt, type GapTable } from "../session";
 import type { Driver, Lap } from "../types";
 
 interface Props {
@@ -12,9 +14,11 @@ interface Props {
   onSeek: (t: number) => void;
 }
 
+const H = 190;
+
 /**
- * Battle view: two drivers, their relative gap over the WHOLE session and a
- * lap-by-lap pace comparison. Playhead is shared with the replay clock.
+ * Battle view: two drivers, their relative gap across the WHOLE session and a
+ * lap-by-lap pace comparison. The playhead is shared with the replay clock.
  */
 export default function BattlePanel(p: Props) {
   const [a, setA] = useState<number | null>(null);
@@ -39,14 +43,17 @@ export default function BattlePanel(p: Props) {
   const bestA = best(lapsA);
   const bestB = best(lapsB);
 
-  // Lap-by-lap pace difference (B minus A) for laps both completed.
-  const deltas = lapsA
-    .map((la) => {
-      const lb = lapsB.find((l) => l.lap_number === la.lap_number);
-      if (!lb) return null;
-      return { lap: la.lap_number, delta: (lb.lap_duration as number) - (la.lap_duration as number) };
-    })
-    .filter((x): x is { lap: number; delta: number } => x != null);
+  const deltas = useMemo(
+    () =>
+      lapsA
+        .map((la) => {
+          const lb = lapsB.find((l) => l.lap_number === la.lap_number);
+          if (!lb) return null;
+          return { lap: la.lap_number, delta: (lb.lap_duration as number) - (la.lap_duration as number) };
+        })
+        .filter((x): x is { lap: number; delta: number } => x != null),
+    [lapsA, lapsB],
+  );
   const maxAbs = Math.max(0.3, ...deltas.map((d) => Math.abs(d.delta)));
 
   return (
@@ -82,15 +89,26 @@ export default function BattlePanel(p: Props) {
       </p>
 
       <div className="panel">
-        <h3>Relative gap over the session</h3>
+        <h3>
+          <Info
+            label="Relative gap over the session"
+            tip="For each moment, A's gap to the leader minus B's. Above the line means A is behind; below the line means A is ahead. Hover the chart for exact values."
+          />
+        </h3>
         <RelativeGap playback={p.playback} table={p.table} a={driverA} b={driverB} />
         <p className="dim small">
-          Difference between their gaps to the leader across the whole session. Below the line = A ahead.
+          Difference between their gaps to the leader across the whole session. The dashed line is zero — the
+          moment they are side by side.
         </p>
       </div>
 
       <div className="panel">
-        <h3>Lap pace, A vs B</h3>
+        <h3>
+          <Info
+            label="Lap pace, A vs B"
+            tip="Each row is one lap both drivers completed. The bar shows how much slower B was than A on that lap (right = B slower, left = B faster). Click a row to move the replay to that lap."
+          />
+        </h3>
         {deltas.length ? (
           <div className="delta-bars">
             {deltas.map((d) => {
@@ -109,7 +127,10 @@ export default function BattlePanel(p: Props) {
                       style={{ width: `${width}%` }}
                     />
                   </span>
-                  <span className="mono small">{d.delta >= 0 ? "+" : "−"}{Math.abs(d.delta).toFixed(3)}</span>
+                  <span className="mono small">
+                    {d.delta >= 0 ? "+" : "−"}
+                    {Math.abs(d.delta).toFixed(3)}
+                  </span>
                 </button>
               );
             })}
@@ -122,21 +143,43 @@ export default function BattlePanel(p: Props) {
       <div className="panel">
         <h3>Head to head</h3>
         <table className="laps mono" style={{ fontSize: "0.82rem" }}>
+          <thead>
+            <tr>
+              <th>&nbsp;</th>
+              <th>#{driverA}</th>
+              <th>#{driverB}</th>
+            </tr>
+          </thead>
           <tbody>
             <tr>
-              <td>Best lap</td>
+              <td>
+                <Info label="Best lap" tip="Each driver's fastest measured lap of the session." />
+              </td>
               <td>{bestA ? formatLapTime(bestA) : "—"}</td>
               <td>{bestB ? formatLapTime(bestB) : "—"}</td>
             </tr>
             <tr>
-              <td>Laps measured</td>
+              <td>
+                <Info label="Laps measured" tip="Laps with a timing value. Missing laps mean the feed has no time for them." />
+              </td>
               <td>{lapsA.length}</td>
               <td>{lapsB.length}</td>
             </tr>
             <tr>
-              <td>Gap now</td>
+              <td>
+                <Info
+                  label="Gap now"
+                  tip="Seconds behind the RACE LEADER at the replay clock — not the gap between these two drivers. The line above the chart gives their gap to each other."
+                />
+              </td>
               <td>{gapA == null ? "—" : `+${gapA.toFixed(3)}`}</td>
               <td>{gapB == null ? "—" : `+${gapB.toFixed(3)}`}</td>
+            </tr>
+            <tr>
+              <td>
+                <Info label="Between them" tip="The gap from one driver to the other at the replay clock." />
+              </td>
+              <td colSpan={2}>{relative == null ? "—" : `${Math.abs(relative).toFixed(3)}s`}</td>
             </tr>
           </tbody>
         </table>
@@ -151,80 +194,125 @@ function RelativeGap(p: {
   a: number;
   b: number;
 }) {
-  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const { canvasRef, wrapRef, width, dpr } = useCanvasSize(H);
+  const [hoverT, setHoverT] = useState<number | null>(null);
+  const dur = Math.max(1, p.playback.state.dur);
 
-  useEffect(() => {
-    if (!canvas) return;
-    const style = getComputedStyle(document.documentElement);
-    const line = style.getPropertyValue("--line").trim();
-    const dim = style.getPropertyValue("--dim").trim();
-    const amber = style.getPropertyValue("--amber").trim();
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(240, rect.width);
-    const h = 150;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-
-    const entryA = p.table.get(p.a);
-    const entryB = p.table.get(p.b);
-    if (!entryA || !entryB) {
-      ctx.fillStyle = dim;
-      ctx.font = "12px 'Barlow', system-ui, sans-serif";
-      ctx.fillText("Gap data unavailable for one of these drivers.", 12, 40);
-      return;
-    }
-    const dur = Math.max(1, p.playback.state.dur);
-    const padL = 8;
-    const padB = 16;
-    const mid = 60;
-    const X = (t: number) => padL + (t / dur) * (w - padL - 8);
-    let maxAbs = 1;
-    const samples: { t: number; d: number }[] = [];
-    for (let t = 0; t <= dur; t += Math.max(1, dur / 600)) {
+  const samples = useMemo(() => {
+    const out: { t: number; d: number; ga: number; gb: number }[] = [];
+    const step = Math.max(1, dur / 900);
+    for (let t = 0; t <= dur; t += step) {
       const ga = gapAt(p.table, p.a, t);
       const gb = gapAt(p.table, p.b, t);
       if (ga == null || gb == null) continue;
-      samples.push({ t, d: ga - gb });
-      maxAbs = Math.max(maxAbs, Math.abs(ga - gb));
+      out.push({ t, d: ga - gb, ga, gb });
     }
-    ctx.strokeStyle = line;
+    return out;
+  }, [p.table, p.a, p.b, dur]);
+
+  const maxAbs = Math.max(1, ...samples.map((s) => Math.abs(s.d)));
+  const padL = 44;
+  const padB = 18;
+  const padT = 12;
+  const mid = (H - padB + padT) / 2;
+  const amp = (H - padB - padT) / 2 - 6;
+  const X = (t: number, w: number) => padL + (t / dur) * (w - padL - 8);
+  const Y = (d: number) => mid - (d / maxAbs) * amp;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !width) return;
+    const draw = beginDraw(canvas, width, H, dpr);
+    if (!draw) return;
+    const { ctx, w, h } = draw;
+    const c = themeColors();
+
+    ctx.strokeStyle = c.line;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT);
+    ctx.lineTo(padL, h - padB);
+    ctx.lineTo(w - 8, h - padB);
+    ctx.stroke();
+
+    ctx.strokeStyle = c.dim;
+    ctx.globalAlpha = 0.5;
+    ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(padL, mid);
     ctx.lineTo(w - 8, mid);
     ctx.stroke();
-    ctx.strokeStyle = amber;
-    ctx.lineWidth = 1.6;
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = c.dim;
+    ctx.font = "10px 'Barlow', system-ui, sans-serif";
+    ctx.fillText(`+${maxAbs.toFixed(1)}s`, 2, padT + 6);
+    ctx.fillText("0", 2, mid + 3);
+    ctx.fillText(`−${maxAbs.toFixed(1)}s`, 2, h - padB);
+    ctx.fillText("B ahead", padL + 4, padT + 10);
+    ctx.fillText("A ahead", padL + 4, h - padB - 4);
+    ctx.fillText(formatClock(dur), w - 46, h - 3);
+
+    if (!samples.length) {
+      ctx.fillText("Gap data unavailable for one of these drivers.", padL + 8, 40);
+      return;
+    }
+
+    ctx.strokeStyle = c.amber;
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    samples.forEach((s, i) => {
-      const y = mid - (s.d / maxAbs) * 45;
-      i ? ctx.lineTo(X(s.t), y) : ctx.moveTo(X(s.t), y);
-    });
+    samples.forEach((s, i) => (i ? ctx.lineTo(X(s.t, w), Y(s.d)) : ctx.moveTo(X(s.t, w), Y(s.d))));
     ctx.stroke();
-    const px = X(Math.min(dur, p.playback.state.t));
-    ctx.strokeStyle = dim;
-    ctx.lineWidth = 1;
+
+    if (hoverT != null) {
+      ctx.strokeStyle = c.ink;
+      ctx.globalAlpha = 0.4;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(X(hoverT, w), padT);
+      ctx.lineTo(X(hoverT, w), h - padB);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      const near = samples.reduce((best, s) => (Math.abs(s.t - hoverT) < Math.abs(best.t - hoverT) ? s : best), samples[0]);
+      ctx.fillStyle = c.amber;
+      ctx.beginPath();
+      ctx.arc(X(near.t, w), Y(near.d), 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const px = X(Math.min(dur, p.playback.state.t), w);
+    ctx.strokeStyle = c.amber;
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(px, 8);
+    ctx.moveTo(px, padT);
     ctx.lineTo(px, h - padB);
     ctx.stroke();
-    ctx.fillStyle = dim;
-    ctx.font = "10px 'Barlow', system-ui, sans-serif";
-    ctx.fillText(`±${maxAbs.toFixed(1)}s`, 10, 12);
-    ctx.fillText("A ahead", 10, mid - 34);
-    ctx.fillText("B ahead", 10, mid + 40);
-  }, [canvas, p.table, p.a, p.b, p.playback.state.rev, p.playback.state.t, p.playback.state.dur]);
+    ctx.globalAlpha = 1;
+  }, [canvasRef, width, dpr, samples, hoverT, dur, maxAbs, mid, amp, padB, padT, p.playback.state.t]);
+
+  const hover = hoverT == null
+    ? null
+    : samples.reduce((best, s) => (Math.abs(s.t - hoverT) < Math.abs(best.t - hoverT) ? s : best), samples[0]);
 
   return (
-    <canvas
-      ref={setCanvas}
-      aria-label="Relative gap chart"
-    />
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <canvas
+        ref={canvasRef}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setHoverT(((e.clientX - rect.left - padL) / Math.max(1, rect.width - padL - 8)) * dur);
+        }}
+        onMouseLeave={() => setHoverT(null)}
+      />
+      {hover && (
+        <div className="chart-tip" style={{ left: Math.min(Math.max(X(hover.t, width) + 10, 8), Math.max(8, width - 160)) }}>
+          <strong>{formatClock(hover.t)}</strong>
+          <div>#{p.a} ahead by {Math.abs(hover.d).toFixed(3)}s</div>
+          <div className="dim">#{p.a} +{hover.ga.toFixed(3)} · #{p.b} +{hover.gb.toFixed(3)} to leader</div>
+        </div>
+      )}
+    </div>
   );
 }

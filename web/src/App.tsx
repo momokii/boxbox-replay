@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import BattlePanel from "./components/BattlePanel";
 import CoachPanel from "./components/CoachPanel";
@@ -14,7 +14,7 @@ import Info from "./components/Info";
 import { formatClock } from "./session";
 import { formatLapTime, teamColor } from "./format";
 import { buildGapTable, gapAt, indexAt, lapAt, type GapTable } from "./session";
-import { createPlayback } from "./playbackStore";
+import { createPlayback, useThrottledTick } from "./playbackStore";
 import { sectorFlags } from "./sectors";
 import { useTheme } from "./theme";
 import type {
@@ -206,7 +206,9 @@ export default function App() {
 
   const playbackRef = useRef(createPlayback());
   const playback = playbackRef.current;
-  useSyncExternalStore(playback.subscribe, () => playback.state.rev);
+  // Capped re-render rate: the map/timeline subscribe at full frame rate on
+  // their own; the page around them only needs ~8 updates a second.
+  useThrottledTick(playback, 120);
   const { t: playT, dur, playing, speed, calm } = playback.state;
 
   useEffect(() => {
@@ -711,9 +713,11 @@ export default function App() {
               <PitPanel
                 sessionKey={sessionKey}
                 laps={allLaps}
+                stints={stints.data ?? []}
                 driver={highlight[0] ?? selectedDriver ?? towerRows[0]?.driver ?? 0}
                 driverCode={(n) => driverMeta.get(n)?.code ?? `#${n}`}
                 gapBehind={gapBehind}
+                lap={Math.max(1, progress.lap)}
                 onSeek={(t) => playback.setT(t)}
               />
             )}

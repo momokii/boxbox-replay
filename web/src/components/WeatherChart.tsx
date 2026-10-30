@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatClock } from "../session";
 import type { SpeedPoint } from "../types";
 
@@ -20,6 +20,7 @@ interface Props {
 export default function WeatherChart(p: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<{ t: number; x: number } | null>(null);
   const data = p.points.filter((w) => w.t >= 0 && w.track_temperature != null);
   const latest = data[data.length - 1];
 
@@ -96,11 +97,56 @@ export default function WeatherChart(p: Props) {
     ctx.fillText(`${hi.toFixed(0)}°C`, 4, padT + 6);
     ctx.fillText(`${lo.toFixed(0)}°C`, 4, h - padB);
     ctx.fillText(formatClock(dur), w - 46, h - 3);
-  }, [p.points, p.duration]);
+
+    if (hover) {
+      ctx.strokeStyle = dim;
+      ctx.globalAlpha = 0.55;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(hover.x, padT);
+      ctx.lineTo(hover.x, h - padB);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      const near = data.reduce((b, d) => (Math.abs(d.t - hover.t) < Math.abs(b.t - hover.t) ? d : b), data[0]);
+      if (near.track_temperature != null) {
+        ctx.fillStyle = amber;
+        ctx.beginPath();
+        ctx.arc(X(near.t), Y(near.track_temperature), 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (near.air_temperature != null) {
+        ctx.fillStyle = dim;
+        ctx.beginPath();
+        ctx.arc(X(near.t), Y(near.air_temperature), 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }, [p.points, p.duration, hover]);
 
   return (
     <div ref={wrapRef}>
-      <canvas ref={canvasRef} aria-label="Weather over the session" />
+      <canvas
+        ref={canvasRef}
+        aria-label="Weather over the session"
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const t = ((x - 34) / Math.max(1, rect.width - 42)) * Math.max(1, p.duration);
+          setHover({ t, x });
+        }}
+        onMouseLeave={() => setHover(null)}
+      />
+      {hover && (() => {
+        const near = data.reduce((b, d) => (Math.abs(d.t - hover.t) < Math.abs(b.t - hover.t) ? d : b), data[0]);
+        return (
+          <div className="chart-tip" style={{ left: Math.min(Math.max(hover.x + 10, 8), 320) }}>
+            <strong>{formatClock(near.t)}</strong>
+            <div>Track {near.track_temperature?.toFixed(1) ?? "—"}°C</div>
+            <div>Air {near.air_temperature?.toFixed(1) ?? "—"}°C</div>
+            <div>Humidity {near.humidity?.toFixed(0) ?? "—"}% · Rain {near.rainfall?.toFixed(0) ?? "—"}mm</div>
+          </div>
+        );
+      })()}
       <div className="legend">
         <span>
           <i style={{ background: "var(--amber)" }} /> Track {latest?.track_temperature?.toFixed(1) ?? "—"}°C

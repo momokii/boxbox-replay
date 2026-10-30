@@ -1,5 +1,5 @@
-import { useEffect, useRef, useSyncExternalStore } from "react";
-import { lapAt, type LapMarker } from "../session";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { formatClock, lapAt, type LapMarker } from "../session";
 import type { Playback } from "../playbackStore";
 
 interface Props {
@@ -17,6 +17,7 @@ export default function Timeline(p: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  const [hover, setHover] = useState<{ t: number; x: number } | null>(null);
   useSyncExternalStore(p.playback.subscribe, () => p.playback.state.rev);
 
   const seekFromEvent = (clientX: number) => {
@@ -109,6 +110,17 @@ export default function Timeline(p: Props) {
     ctx.arc(px, baseY, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
+    if (hover) {
+      ctx.strokeStyle = dim;
+      ctx.globalAlpha = 0.6;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(hover.x, baseY - 10);
+      ctx.lineTo(hover.x, baseY + 8);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
     const { lap, total } = lapAt(p.markers, p.playback.state.t);
     if (total) {
       const label = `LAP ${Math.max(1, lap)}/${total}`;
@@ -119,8 +131,10 @@ export default function Timeline(p: Props) {
     }
   });
 
+  const hoverLap = hover ? lapAt(p.markers, hover.t) : null;
+
   return (
-    <div ref={wrapRef}>
+    <div ref={wrapRef} style={{ position: "relative" }}>
       <canvas
         ref={canvasRef}
         style={{ cursor: "pointer", touchAction: "none" }}
@@ -137,8 +151,20 @@ export default function Timeline(p: Props) {
         }}
         onPointerLeave={() => {
           dragging.current = false;
+          setHover(null);
+        }}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          setHover({ t: (x / Math.max(1, rect.width)) * p.playback.state.dur, x });
         }}
       />
+      {hover && hoverLap && (
+        <div className="chart-tip" style={{ top: -6, left: Math.min(Math.max(hover.x - 40, 8), 520) }}>
+          <strong>{formatClock(hover.t)}</strong>
+          <div>LAP {Math.max(1, hoverLap.lap)} / {hoverLap.total}</div>
+        </div>
+      )}
     </div>
   );
 }

@@ -43,3 +43,50 @@ export function recentPace(
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
+
+/** Laps that represent real running: no pit-out laps, no 115%+ outliers. */
+export function greenLaps<T extends { lap_duration: number | null; is_pit_out_lap?: boolean | null }>(
+  laps: T[],
+): T[] {
+  const timed = laps.filter(
+    (l) => l.lap_duration != null && !Number.isNaN(l.lap_duration) && !l.is_pit_out_lap,
+  );
+  if (timed.length < 3) return timed;
+  const sorted = timed.map((l) => l.lap_duration as number).sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  return timed.filter((l) => (l.lap_duration as number) <= median * 1.15);
+}
+
+/** Median of a list of numbers, or null when empty. */
+export function median(values: number[]): number | null {
+  if (!values.length) return null;
+  const s = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+/**
+ * Median of the first *flying* laps of every stint — laps 2..4 of the stint,
+ * because lap 1 is an out-lap and includes the pit exit.
+ */
+export function freshTyrePace(
+  stints: { lap_start: number | null; lap_end: number | null; driver_number: number }[],
+  laps: { driver_number: number; lap_number: number; lap_duration: number | null; is_pit_out_lap?: boolean | null }[],
+  driver: number,
+): number | null {
+  const samples: number[] = [];
+  for (const s of stints.filter((x) => x.driver_number === driver)) {
+    const start = s.lap_start ?? 1;
+    const end = s.lap_end ?? Number.MAX_SAFE_INTEGER;
+    const window = greenLaps(
+      laps.filter(
+        (l) =>
+          l.driver_number === driver &&
+          l.lap_number >= start + 1 &&
+          l.lap_number <= Math.min(end, start + 3),
+      ),
+    );
+    for (const l of window) samples.push(l.lap_duration as number);
+  }
+  return median(samples);
+}

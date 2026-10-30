@@ -1,3 +1,5 @@
+import { useEffect, useReducer } from "react";
+
 export interface PlayState {
   t: number;
   dur: number;
@@ -92,4 +94,28 @@ export function createPlayback(): Playback {
       notify();
     },
   };
+}
+
+/**
+ * Subscribe at a capped rate.
+ *
+ * The map and timeline need every animation frame; the rest of the page (tower
+ * gaps, clock, panels) does not, and re-rendering the whole app at 60 fps is
+ * what made playback feel like it stuttered.
+ */
+export function useThrottledTick(
+  playback: Playback,
+  minIntervalMs = 120,
+): number {
+  const [, bump] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    let last = 0;
+    return playback.subscribe(() => {
+      const now = performance.now();
+      if (now - last < minIntervalMs) return;
+      last = now;
+      bump();
+    });
+  }, [playback, minIntervalMs]);
+  return playback.state.rev;
 }
