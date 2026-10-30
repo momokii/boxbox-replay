@@ -349,14 +349,32 @@ export default function App() {
   );
 
   const statusByDriver = useMemo(() => {
-    const m = new Map<number, "DNF" | "DNS" | "DSQ">();
+    const m = new Map<number, "DNF" | "DNS" | "DSQ" | "OUT">();
     for (const r of result.data ?? []) {
       if (r.dnf) m.set(r.driver_number, "DNF");
       else if (r.dns) m.set(r.driver_number, "DNS");
       else if (r.dsq) m.set(r.driver_number, "DSQ");
     }
+    // Without a result feed, a car that stopped setting laps is out of the race.
+    // Evidence: its last recorded lap is far behind the replay clock.
+    if (replay.data) {
+      const startMs = Date.parse(replay.data.start);
+      const lastT = new Map<number, number>();
+      for (const l of allLaps) {
+        if (!l.date_start) continue;
+        const ms = Date.parse(l.date_start);
+        if (Number.isNaN(ms)) continue;
+        const t = (ms - startMs) / 1000;
+        if (t >= 0 && t > (lastT.get(l.driver_number) ?? -1)) lastT.set(l.driver_number, t);
+      }
+      // Only for drivers the result feed did not classify: a car with no fresh
+      // laps is out, which is evidence, not a guess.
+      for (const [driver, t] of lastT) {
+        if (!m.has(driver) && playT - t > 180) m.set(driver, "OUT");
+      }
+    }
     return m;
-  }, [result.data]);
+  }, [result.data, replay.data, allLaps, playT]);
 
   const towerRows = useMemo(() => {
     const rows = (drivers.data ?? []).map((d) => ({

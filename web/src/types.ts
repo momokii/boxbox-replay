@@ -22,6 +22,7 @@ export interface Driver {
 }
 
 export interface Lap {
+  date_start?: string | null;
   driver_number: number;
   lap_number: number;
   lap_duration: number | null;

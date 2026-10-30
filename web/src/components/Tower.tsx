@@ -8,7 +8,7 @@ export interface TowerRow {
   position?: number | null;
   highlighted: boolean;
   selected: boolean;
-  status?: "DNF" | "DNS" | "DSQ" | null;
+  status?: "DNF" | "DNS" | "DSQ" | "OUT" | null;
 }
 
 interface Props {
