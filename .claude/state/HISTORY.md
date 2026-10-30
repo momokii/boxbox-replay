@@ -268,3 +268,11 @@ driver card gains pit stops, overtakes and final result; `?t=` deep links with a
 copy button. Key finding documented: `/position` is physical track order while
 `gap_to_leader` is classification order, so the tower stays gap-ordered.
 54 pytest + 34 vitest, screenshots night/day/mobile, 60 fps unchanged.
+
+## 2026-10-30 — U10 OpenF1 started requiring credentials
+
+Mid-session the upstream began returning 401 to every anonymous request. Added a
+FeedAuthRequired error, a 503 JSON response that names OPENF1_API_KEY, optional
+feeds that degrade to empty instead of 500, and support for sending the key as
+Bearer + api_key. Cached sessions keep every feature; uncached ones show an
+actionable message. Docs and .env.example updated.
