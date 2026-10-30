@@ -52,3 +52,22 @@ docker compose -f compose.yaml -f compose.prod.yaml down  # stop prod
 - Updates: `git pull`, then re-run setup (rebuilds the image with new pins).
 - Never edit `.env` values into chat/logs; `.env` is gitignored and required
   only for local overrides — defaults work without it.
+
+
+## If the data feed asks for credentials
+
+OpenF1 has, at times, answered `401` for anonymous historical requests. The app
+handles this without failing:
+
+- Cached sessions (parquet under the cache volume) keep playing, including all
+  derived panels.
+- Anything uncached returns `503` with a plain message; the UI shows it and
+  tells you what to set.
+- To restore fetching, put a key in `.env` and restart:
+
+```bash
+OPENF1_API_KEY=your-key
+docker compose -f compose.yaml -f compose.prod.yaml up -d
+```
+
+The key is sent as `Authorization: Bearer …` and as `api_key=…`, never logged.

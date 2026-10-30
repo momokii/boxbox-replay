@@ -79,3 +79,12 @@ sorted by a stale gap.
 
 All additive: no layout was moved, and every block hides itself when its feed is
 empty.
+
+
+## Incident during the pass (2026-10-30)
+
+Mid-implementation, every OpenF1 endpoint began returning `401` for anonymous
+requests. Handled rather than hidden: a distinct `FeedAuthRequired` error, a
+`503` with an actionable message, optional feeds that degrade to empty, a client
+message that names `OPENF1_API_KEY`, and support for sending the key as both a
+Bearer token and a query parameter. Cached sessions continue to work in full.

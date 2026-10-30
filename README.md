@@ -58,6 +58,11 @@ why this stack replaced the original Streamlit prototype.
 
 ## Data (free, auto-updating, no auth)
 
+- **OpenF1 credential (2026-10-30)**: the feed started answering `401` for
+  anonymous requests mid-session. Set `OPENF1_API_KEY` in `.env` (sent as both a
+  Bearer token and an `api_key` parameter). Everything already cached keeps
+  working without a key; uncached sessions say so plainly in the UI instead of
+  failing.
 - **OpenF1** (`https://api.openf1.org/v1`, primary): car data 3.7Hz,
   positions, laps, intervals, stints, weather, radio, race control. Historical
   since 2023; ~3 req/s respected with throttle + retry; 404 means "no data"

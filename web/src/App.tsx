@@ -62,9 +62,18 @@ function useAsync<T>(key: string, fn: () => Promise<T>): { data: T | null; error
 
 function ReplayFailure(p: { error: string; onRetry: () => void }) {
   const missing = p.error.includes("404");
+  const needsKey = p.error.includes("503") || p.error.includes("401");
   return (
     <div className="empty">
-      {missing ? (
+      {needsKey ? (
+        <>
+          <p>The timing feed now asks for credentials, so this session can't be fetched.</p>
+          <p className="dim small">
+            Add <code>OPENF1_API_KEY</code> to <code>.env</code> and restart the stack. Sessions
+            already downloaded keep playing without a key.
+          </p>
+        </>
+      ) : missing ? (
         <p>This session has no position data in the timing feed, so there is nothing to replay.</p>
       ) : (
         <>
@@ -877,11 +886,11 @@ export default function App() {
                         tip="Race distance in laps. The replay clock starts at lights out and runs to the chequered flag."
                       />
                     </dt>
-                    <dd>{info.data?.total_laps ?? "—"} laps</dd>
+                    <dd>{info.data?.total_laps ? `${info.data.total_laps} laps` : "—"}</dd>
                   </div>
                   <div>
                     <dt><Info label="Drivers" tip="Cars classified in this session." /></dt>
-                    <dd>{info.data?.drivers ?? "—"}</dd>
+                    <dd>{info.data?.drivers ? info.data.drivers : "—"}</dd>
                   </div>
                   <div>
                     <dt>

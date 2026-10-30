@@ -18,6 +18,13 @@ import httpx
 import pandas as pd
 
 BASE_URL = os.getenv("OPENF1_BASE_URL", "https://api.openf1.org/v1").rstrip("/")
+# OpenF1 can start requiring credentials at any time; when a key is configured
+# we send it both ways so either scheme works.
+API_KEY = os.getenv("OPENF1_API_KEY", "").strip()
+
+
+class FeedAuthRequired(RuntimeError):
+    """The upstream feed answered 401/403: credentials are needed."""
 CACHE_ROOT = Path(os.getenv("CACHE_DIR", "data/cache"))
 
 # OpenF1 free tier: max 3 requests/second. 0.4s spacing keeps us safely under.
@@ -45,11 +52,21 @@ def _fetch(endpoint: str, params: dict | None = None) -> list[dict]:
     """
     url = f"{BASE_URL}/{endpoint.lstrip('/')}"
     last_error: Exception | None = None
-    with httpx.Client(timeout=30.0, headers={"User-Agent": "boxbox-replay-m0"}) as client:
+    headers = {"User-Agent": "boxbox-replay-m0"}
+    if API_KEY:
+        headers["Authorization"] = f"Bearer {API_KEY}"
+    params = dict(params or {})
+    if API_KEY:
+        params.setdefault("api_key", API_KEY)
+    with httpx.Client(timeout=30.0, headers=headers) as client:
         for attempt in range(1, MAX_RETRIES + 1):
             _throttle()
             try:
-                resp = client.get(url, params=params or {})
+                resp = client.get(url, params=params)
+                if resp.status_code in (401, 403):
+                    raise FeedAuthRequired(
+                        f"OpenF1 requires credentials (HTTP {resp.status_code})"
+                    )
                 if resp.status_code == 404:
                     return []
                 if resp.status_code in RETRYABLE_STATUS:
@@ -322,27 +339,36 @@ def get_race_control(session_key: int) -> pd.DataFrame:
 
 def get_pit(session_key: int) -> pd.DataFrame:
     """Pit stops with measured durations. Cached per session."""
-    return _cached(
-        "pit", {"session_key": session_key}, _session_cache(session_key, "pit.parquet")
-    )
+    try:
+        return _cached(
+            "pit", {"session_key": session_key}, _session_cache(session_key, "pit.parquet")
+        )
+    except FeedAuthRequired:
+        return pd.DataFrame()
 
 
 def get_position(session_key: int) -> pd.DataFrame:
     """Official classification over time. Cached per session."""
-    return _cached(
-        "position",
-        {"session_key": session_key},
-        _session_cache(session_key, "position.parquet"),
-    )
+    try:
+        return _cached(
+            "position",
+            {"session_key": session_key},
+            _session_cache(session_key, "position.parquet"),
+        )
+    except FeedAuthRequired:
+        return pd.DataFrame()
 
 
 def get_overtakes(session_key: int) -> pd.DataFrame:
     """On-track overtakes (who passed whom, when). Cached per session."""
-    return _cached(
-        "overtakes",
-        {"session_key": session_key},
-        _session_cache(session_key, "overtakes.parquet"),
-    )
+    try:
+        return _cached(
+            "overtakes",
+            {"session_key": session_key},
+            _session_cache(session_key, "overtakes.parquet"),
+        )
+    except FeedAuthRequired:
+        return pd.DataFrame()
 
 
 def get_session_result(session_key: int) -> pd.DataFrame:
@@ -354,7 +380,10 @@ def get_session_result(session_key: int) -> pd.DataFrame:
     cache_file = _session_cache(session_key, "session_result.parquet")
     if cache_file.exists():
         return pd.read_parquet(cache_file)
-    df = pd.DataFrame(_fetch("session_result", {"session_key": session_key}))
+    try:
+        df = pd.DataFrame(_fetch("session_result", {"session_key": session_key}))
+    except FeedAuthRequired:
+        return pd.DataFrame()
     if not df.empty and "gap_to_leader" in df.columns:
         df = df.copy()
         df["gap_text"] = df["gap_to_leader"].astype(str)

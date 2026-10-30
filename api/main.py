@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 import analysis
@@ -16,6 +17,19 @@ import coach
 import data_loader
 
 app = FastAPI(title="BoxBox Replay API")
+
+
+@app.exception_handler(data_loader.FeedAuthRequired)
+def _feed_auth_required(_request: Request, exc: data_loader.FeedAuthRequired) -> JSONResponse:
+    """The upstream feed wants credentials: say so plainly, never a bare 500."""
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": "The OpenF1 feed now requires credentials. Set OPENF1_API_KEY "
+            "in .env and restart; already-cached sessions keep working.",
+            "reason": str(exc),
+        },
+    )
 
 
 def records(df: pd.DataFrame) -> list[dict]:
