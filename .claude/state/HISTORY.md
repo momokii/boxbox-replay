@@ -239,3 +239,15 @@ gaps, and posAt holds position across a jump (unit-tested). Session facts count
 drivers from the entry list. Verified: geometry 200 on 10 sessions (single 404
 is a cancelled round with no laps/positions), playback animates, switch shows a
 contextual loading card, reload restores the deep link. 51 pytest + 29 vitest.
+
+## 2026-10-30 — U9 smoothness, charts, stints, pit model
+
+Playback stutter traced to App re-rendering on every playback tick: the page is
+now throttled to ~8 Hz while map/timeline keep their own loop (measured 60 fps,
+p95 16.7 ms). Shared useCanvasSize hook fixes charts drawn at stale widths
+(battle pane). Added hover tooltips to speed, gap, relative-gap, weather and
+timeline charts. Stints became one stacked row per driver with a compound
+legend. Pit model inputs corrected (green-lap median for current pace, laps 2-4
+of each stint for fresh pace, current-stint wear with "not measurable"
+fallback) and the panel now shows a full breakdown and assumptions. Head-to-head
+gained tooltips and a between-them row. 51 pytest + 32 vitest.

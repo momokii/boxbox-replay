@@ -124,7 +124,7 @@ export default function WeatherChart(p: Props) {
   }, [p.points, p.duration, hover]);
 
   return (
-    <div ref={wrapRef}>
+    <div ref={wrapRef} style={{ position: "relative" }}>
       <canvas
         ref={canvasRef}
         aria-label="Weather over the session"

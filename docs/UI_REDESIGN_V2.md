@@ -199,3 +199,29 @@ amber darkened to `#A86A00` for contrast on light. Data colors unchanged.
   than sliding a dot across a gap. Unit tests cover both.
 - Session facts count drivers from the entry list, so a cancelled round no
   longer reads "0 drivers" while the tower lists 22.
+
+
+## Pass 8 — smoothness, chart width, hover, stints, pit model
+
+- **Playback stutter was the whole page re-rendering at 60 fps.** App subscribed
+  to every playback tick, so 22 tower rows, gaps and panels re-rendered each
+  frame. The page now ticks at ~8 Hz; the map, timeline and charts keep their
+  own frame loop. Measured after the change: 230 frames, median 16.7 ms,
+  p95 16.7 ms — a locked 60 fps.
+- **Charts were drawn at a stale width** (measured once, never re-measured),
+  which left "Relative gap" filling a quarter of its pane. A shared
+  `useCanvasSize` hook with a ResizeObserver now sizes every chart to its
+  container.
+- **Hover on every chart**: speed (time + km/h per driver), gap to leader
+  (time + gap per driver), relative gap (who is ahead and by how much),
+  weather (air/track/humidity/rain), timeline (clock + lap under the cursor).
+- **Stints are one row per driver** with stacked compound blocks, a compound
+  legend and a stint count — no more three rows for a two-stop race.
+- **Pit model numbers were wrong**: "current pace" came from the red-flag lap
+  and "fresh pace" from out-laps. Current pace is now the median of green laps
+  in the current stint; fresh pace is the median of laps 2-4 of each stint;
+  wear is measured only on the current stint, and shown as "not measurable"
+  when the stint is too short. The panel now states its question, the two
+  totals, the verdict, a full breakdown table and what the model ignores.
+- Battle "Head to head" gained tooltips (gap now = to the race leader, plus a
+  "between them" row); the relative-gap axis labels were corrected.
