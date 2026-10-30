@@ -42,9 +42,11 @@ why this stack replaced the original Streamlit prototype.
   (below 0.05s is noise).
 - **Speed telemetry**: for the drivers you pick, the speed trace of the lap
   under the playhead (labelled), never an unexplained changing set.
-- **Performance** (tab): degradation slopes, stint timeline (compound colors),
-  weather, team radio (audio links — the API has no transcripts, none invented),
-  race-control flags.
+- **Performance** (tab): stint timeline with pit-stop markers, degradation
+  slopes, lap-time evolution, weather, team radio (audio links — the API has no
+  transcripts, none invented), race-control flags, pit-stop and overtake totals.
+- **Share a moment**: "Copy link to this moment" captures `?t=` so a replay
+  reopens at the same frame.
 - **Pit wall** (tab): what-if model (stay vs pit on linear deg + traffic check),
   bannered **TOY MODEL**, grounded in live pace/deg/gaps.
 - **Driver card**: click a car or tower row for full name, team, gap, tyre age,

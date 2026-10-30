@@ -5,6 +5,8 @@ import { formatClock } from "../session";
 import { stintSlope } from "../perf";
 import Info from "./Info";
 import WeatherChart from "./WeatherChart";
+import LapChart from "./LapChart";
+import type { Playback } from "../playbackStore";
 import type { Lap, Stint } from "../types";
 import type { PitStopSummary } from "../api";
 
@@ -18,6 +20,9 @@ interface Props {
   duration: number;
   pitSummary: PitStopSummary[];
   overtakeCounts: { driver_number: number; made: number; lost: number }[];
+  playback: Playback;
+  totalLaps: number;
+  colors: Map<number, string>;
 }
 
 interface Feed {
@@ -194,6 +199,7 @@ export default function PerformancePanel(p: Props) {
           />{" "}
           · seconds per lap
         </h3>
+        <div className="table-scroll">
         <table className="laps mono" style={{ fontSize: "0.82rem" }}>
           <thead>
             <tr>
@@ -225,6 +231,24 @@ export default function PerformancePanel(p: Props) {
             )}
           </tbody>
         </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <h3>
+          <Info
+            label="Lap times over the race"
+            tip="Every timed lap for the drivers in scope, in lap order. Spikes are traffic, mistakes or pit in/out laps. Hover for exact times."
+          />
+        </h3>
+        <LapChart
+          playback={p.playback}
+          laps={p.laps}
+          drivers={shownDrivers}
+          codes={new Map(p.towerOrder.map((d) => [d, p.driverCode(d)]))}
+          colors={p.colors}
+          totalLaps={p.totalLaps}
+        />
       </section>
 
       <section className="panel">

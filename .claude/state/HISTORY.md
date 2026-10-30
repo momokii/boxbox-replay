@@ -256,3 +256,15 @@ Verified on the user's own circuit (Spanish GP 2024, 66 laps): production build
 loads in ~60s cold, plays at a locked 60 fps (p50/p95 16.7 ms), 20 drivers on
 track, leader-in-Speed-panel default. Two commits: d43f791 (performance +
 charts + stints + pit inputs) and 814c33f (weather tooltip anchor + docs).
+
+## 2026-10-30 — F1 feature pass (pit stops, overtakes, results, share links)
+
+Researched which feeds were unused (pit, position, overtakes, session_result;
+starting_grid is empty for 2024) and shipped them additively: API endpoints with
+caching/clamping + 3 new pure helpers (pit summary, overtake counts, position
+lookup) and tests; tower gains positions and DNF labels; stints gain pit-stop
+notches; Performance gains pit/overtake totals and a lap-time evolution chart;
+driver card gains pit stops, overtakes and final result; `?t=` deep links with a
+copy button. Key finding documented: `/position` is physical track order while
+`gap_to_leader` is classification order, so the tower stays gap-ordered.
+54 pytest + 34 vitest, screenshots night/day/mobile, 60 fps unchanged.

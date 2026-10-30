@@ -790,6 +790,9 @@ export default function App() {
                 duration={dur}
                 pitSummary={pit.data?.summary ?? []}
                 overtakeCounts={overtakes.data?.counts ?? []}
+                playback={playback}
+                totalLaps={info.data?.total_laps ?? 0}
+                colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
               />
             )}
             {view === "pit" && sessionKey && (

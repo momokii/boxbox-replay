@@ -63,3 +63,19 @@ tower therefore stays **ordered by classification gap** (matching the gaps it
 prints) and numbers itself, with the position feed used only as a tie-break when
 a driver has no gap. Retired cars are classified last and labelled DNF, never
 sorted by a stale gap.
+
+
+## Shipped (verified)
+
+| # | Feature | Where |
+|---|---|---|
+| 1 | Pit-stop data (count, best/total stop time, lap numbers) | `GET /session/pit`, Performance, Pit Wall, driver card |
+| 2 | Official position feed as tie-break + retired-car labelling | tower (DNF/DNS/DSQ last, no stale gaps) |
+| 3 | Pit-stop notches on the stint timeline | Performance → Stints |
+| 4 | Overtakes made/lost per driver, and passes between the two battle drivers | driver card, Battle |
+| 5 | Final classification (position, points, DNF) | session facts + driver card |
+| 6 | Shareable moment: `?t=` deep link + "Copy link to this moment" | player bar |
+| 7 | Lap-time evolution chart with hover | Performance |
+
+All additive: no layout was moved, and every block hides itself when its feed is
+empty.
