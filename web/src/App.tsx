@@ -13,7 +13,15 @@ import DriverCard from "./components/DriverCard";
 import Info from "./components/Info";
 import { formatClock } from "./session";
 import { formatLapTime, teamColor } from "./format";
-import { buildGapTable, gapAt, indexAt, lapAt, type GapTable } from "./session";
+import {
+  buildGapTable,
+  buildPositionTable,
+  gapAt,
+  indexAt,
+  lapAt,
+  positionAt,
+  type GapTable,
+} from "./session";
 import { createPlayback, useThrottledTick } from "./playbackStore";
 import { sectorFlags } from "./sectors";
 import { useTheme } from "./theme";
@@ -86,7 +94,9 @@ function readParams() {
     const v = q.get(k);
     return v && /^\d+$/.test(v) ? Number(v) : undefined;
   };
-  return { year: num("year"), meeting: num("meeting"), session: num("session") };
+  const tRaw = q.get("t");
+  const t = tRaw && /^\d+(\.\d+)?$/.test(tRaw) ? Number(tRaw) : undefined;
+  return { year: num("year"), meeting: num("meeting"), session: num("session"), t };
 }
 
 const EMPTY_GEO: Geometry = { ax: "x", ay: "y", outline: [], corners: [], zones: [] };
@@ -105,14 +115,6 @@ export default function App() {
   const [view, setView] = useState<"replay" | "battle" | "performance" | "pit">("replay");
   const [showLaps, setShowLaps] = useState(false);
   const year = yearSel ?? years.data?.[years.data.length - 1] ?? null;
-
-  useEffect(() => {
-    const q = new URLSearchParams();
-    if (year) q.set("year", String(year));
-    if (meetingKey) q.set("meeting", String(meetingKey));
-    if (sessionKey) q.set("session", String(sessionKey));
-    window.history.replaceState(null, "", `${window.location.pathname}?${q.toString()}`);
-  }, [year, meetingKey, sessionKey]);
 
   const meetings = useAsync(`meetings:${year ?? "none"}`, () =>
     year ? api.meetings(year) : Promise.resolve([]),
@@ -173,6 +175,7 @@ export default function App() {
       : Promise.resolve({ ...EMPTY_GEO, driver: 0, lap: 0 }),
   );
   const [replayRetry, setReplayRetry] = useState(0);
+  const [pausedAt, setPausedAt] = useState(0);
   const autoRetried = useRef<Set<number>>(new Set());
 
   const replay = useAsync(`replay:${sessionKey ?? "none"}:${replayRetry}`, () =>
@@ -202,6 +205,18 @@ export default function App() {
   const stints = useAsync(`stints:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.stints(sessionKey) : Promise.resolve([]),
   );
+  const pit = useAsync(`pit:${sessionKey ?? "none"}`, () =>
+    sessionKey ? api.sessionPit(sessionKey) : Promise.resolve({ summary: [], stops: [] }),
+  );
+  const positions = useAsync(`positions:${sessionKey ?? "none"}`, () =>
+    sessionKey ? api.sessionPositions(sessionKey) : Promise.resolve([]),
+  );
+  const overtakes = useAsync(`overtakes:${sessionKey ?? "none"}`, () =>
+    sessionKey ? api.sessionOvertakes(sessionKey) : Promise.resolve({ counts: [], events: [] }),
+  );
+  const result = useAsync(`result:${sessionKey ?? "none"}`, () =>
+    sessionKey ? api.sessionResult(sessionKey) : Promise.resolve([]),
+  );
   const allLaps = useMemo(() => laps.data ?? [], [laps.data]);
 
   const playbackRef = useRef(createPlayback());
@@ -210,6 +225,32 @@ export default function App() {
   // their own; the page around them only needs ~8 updates a second.
   useThrottledTick(playback, 120);
   const { t: playT, dur, playing, speed, calm } = playback.state;
+
+  const restoredMoment = useRef(false);
+  useEffect(() => {
+    const q = new URLSearchParams();
+    if (year) q.set("year", String(year));
+    if (meetingKey) q.set("meeting", String(meetingKey));
+    if (sessionKey) q.set("session", String(sessionKey));
+    // Only carry a moment in the URL when paused on a real position, so the
+    // link always reproduces the frame that was copied.
+    if (!playbackRef.current.state.playing && playbackRef.current.state.t > 0.5) {
+      q.set("t", playbackRef.current.state.t.toFixed(1));
+    }
+    window.history.replaceState(null, "", `${window.location.pathname}?${q.toString()}`);
+  }, [year, meetingKey, sessionKey, pausedAt]);
+
+  useEffect(() => {
+    if (restoredMoment.current || params.t == null || !replay.data) return;
+    restoredMoment.current = true;
+    const moment = Math.min(params.t, replay.data.duration_s);
+    // The duration must be set before seeking, otherwise the seek clamps to 0.
+    playbackRef.current.setDur(replay.data.duration_s);
+    playbackRef.current.setT(moment);
+    setPausedAt(moment);
+  }, [params.t, replay.data]);
+
+
 
   useEffect(() => {
     if (replay.data) playback.setDur(Math.max(1, replay.data.duration_s));
@@ -293,22 +334,49 @@ export default function App() {
     return i < 0 ? null : Math.round(pts[i].v);
   };
 
+  const positionTable = useMemo(
+    () => buildPositionTable(positions.data ?? []),
+    [positions.data],
+  );
+
+  const statusByDriver = useMemo(() => {
+    const m = new Map<number, "DNF" | "DNS" | "DSQ">();
+    for (const r of result.data ?? []) {
+      if (r.dnf) m.set(r.driver_number, "DNF");
+      else if (r.dns) m.set(r.driver_number, "DNS");
+      else if (r.dsq) m.set(r.driver_number, "DSQ");
+    }
+    return m;
+  }, [result.data]);
+
   const towerRows = useMemo(() => {
     const rows = (drivers.data ?? []).map((d) => ({
       driver: d.driver_number,
       code: d.name_acronym,
       color: teamColor(d.team_colour),
       gap: gapAt(gapTable, d.driver_number, playT),
+      position: positionAt(positionTable, d.driver_number, playT),
       highlighted: highlight.includes(d.driver_number),
       selected: selectedDriver === d.driver_number,
+      status: statusByDriver.get(d.driver_number) ?? null,
     }));
+    // Classification order is what the tower shows, and the gaps we display are
+    // classification gaps — so order by gap. The official position feed is used
+    // only to break ties when a driver has no gap (e.g. intervals missing).
     rows.sort((a, b) => {
-      if (a.gap == null) return 1;
-      if (b.gap == null) return -1;
-      return a.gap - b.gap;
+      // Retired / disqualified cars are classified last, never by stale gaps.
+      if (!!a.status !== !!b.status) return a.status ? 1 : -1;
+      if (a.status && b.status) return a.driver - b.driver;
+      if (a.gap != null && b.gap != null) return a.gap - b.gap;
+      if (a.gap != null) return -1;
+      if (b.gap != null) return 1;
+      if (a.position != null && b.position != null) return a.position - b.position;
+      if (a.position != null) return -1;
+      if (b.position != null) return 1;
+      return a.driver - b.driver;
     });
     return rows;
-  }, [drivers.data, gapTable, playT, highlight, selectedDriver]);
+  }, [drivers.data, gapTable, positionTable, statusByDriver, playT, highlight, selectedDriver]);
 
   const gapBehind = useMemo(() => {
     const pitDriver = highlight[0] ?? selectedDriver;
@@ -612,6 +680,17 @@ export default function App() {
                         <input type="checkbox" checked={calm} onChange={(e) => playback.setCalm(e.target.checked)} />
                         Calm
                       </label>
+                      <button
+                        className="ghost small"
+                        onClick={() => {
+                          setPausedAt(playT);
+                          const url = window.location.href;
+                          navigator.clipboard?.writeText(url).catch(() => undefined);
+                        }}
+                        title="Copy a link that opens this exact moment"
+                      >
+                        Copy link to this moment
+                      </button>
                       <span className="mono small dim" style={{ marginLeft: "auto" }}>
                         {formatClock(playT)} / {formatClock(dur)}
                       </span>
@@ -696,6 +775,8 @@ export default function App() {
                 drivers={drivers.data ?? []}
                 laps={allLaps}
                 onSeek={(t) => playback.setT(t)}
+                overtakes={overtakes.data?.events ?? []}
+                codes={new Map((drivers.data ?? []).map((d) => [d.driver_number, d.name_acronym]))}
               />
             )}
             {view === "performance" && (
@@ -707,6 +788,8 @@ export default function App() {
                 driverCode={(n) => driverMeta.get(n)?.code ?? `#${n}`}
                 onSeek={(t) => playback.setT(t)}
                 duration={dur}
+                pitSummary={pit.data?.summary ?? []}
+                overtakeCounts={overtakes.data?.counts ?? []}
               />
             )}
             {view === "pit" && sessionKey && (
@@ -719,6 +802,11 @@ export default function App() {
                 gapBehind={gapBehind}
                 lap={Math.max(1, progress.lap)}
                 onSeek={(t) => playback.setT(t)}
+                pitStops={
+                  (pit.data?.summary ?? []).find(
+                    (s) => s.driver_number === (highlight[0] ?? selectedDriver ?? 0),
+                  ) ?? null
+                }
               />
             )}
           </section>
@@ -748,6 +836,15 @@ export default function App() {
                     : null
                 }
                 onClear={() => setSelectedDriver(null)}
+                pit={
+                  (pit.data?.summary ?? []).find((s) => s.driver_number === selectedDriver) ?? null
+                }
+                overtakes={
+                  (overtakes.data?.counts ?? []).find((o) => o.driver_number === selectedDriver) ?? null
+                }
+                result={
+                  (result.data ?? []).find((r) => r.driver_number === selectedDriver) ?? null
+                }
               />
             ) : (
               <>
@@ -756,6 +853,19 @@ export default function App() {
                   {info.data?.date_start.slice(0, 10)}
                   {info.data ? ` · ${info.data.date_start.slice(11, 16)}–${info.data.date_end.slice(11, 16)} UTC` : ""}
                 </p>
+                {(result.data ?? []).length > 0 && (
+                  <p className="small" style={{ marginTop: 0 }}>
+                    <Info
+                      label="Final result"
+                      tip="Official classification from the session result feed: position, points and gap to the winner."
+                    />{" "}
+                    {(result.data ?? [])
+                      .filter((r) => r.position != null)
+                      .slice(0, 3)
+                      .map((r) => `P${r.position} ${driverMeta.get(r.driver_number)?.code ?? `#${r.driver_number}`}`)
+                      .join(" · ")}
+                  </p>
+                )}
                 <dl className="facts">
                   <div>
                     <dt>

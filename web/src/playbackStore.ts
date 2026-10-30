@@ -83,6 +83,12 @@ export function createPlayback(): Playback {
       notify();
     },
     setDur: (d: number) => {
+      // Re-setting the same duration must not rewind the replay: effects that
+      // depend on the payload run again on unrelated re-renders.
+      if (Math.abs(state.dur - d) < 0.05) {
+        state.dur = d;
+        return;
+      }
       state.dur = d;
       state.t = 0;
       state.playing = false;

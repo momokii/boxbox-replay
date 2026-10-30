@@ -6,6 +6,7 @@ import { stintSlope } from "../perf";
 import Info from "./Info";
 import WeatherChart from "./WeatherChart";
 import type { Lap, Stint } from "../types";
+import type { PitStopSummary } from "../api";
 
 interface Props {
   sessionKey: number;
@@ -15,6 +16,8 @@ interface Props {
   driverCode: (n: number) => string;
   onSeek: (t: number) => void;
   duration: number;
+  pitSummary: PitStopSummary[];
+  overtakeCounts: { driver_number: number; made: number; lost: number }[];
 }
 
 interface Feed {
@@ -54,6 +57,11 @@ export default function PerformancePanel(p: Props) {
       (s.lap_end == null || s.lap_end >= s.lap_start),
   );
   const maxLap = Math.max(1, ...stints.map((s) => s.lap_end ?? 0));
+
+  const pitByDriver = new Map<number, number[]>();
+  for (const s of p.pitSummary) pitByDriver.set(s.driver_number, s.laps);
+  const pitByDriverSummary = new Map(p.pitSummary.map((s) => [s.driver_number, s]));
+  const overtakesByDriver = new Map(p.overtakeCounts.map((o) => [o.driver_number, o]));
 
   const byDriver = [...new Set(stints.map((s) => s.driver_number))]
     .sort((x, y) => x - y)
@@ -104,7 +112,7 @@ export default function PerformancePanel(p: Props) {
         <div className="stint-list">
         {byDriver.length ? (
           byDriver.map(({ driver, stints: driverStints }) => (
-            <div key={driver} className="row" style={{ fontSize: "0.8rem", marginBottom: 3 }}>
+            <div key={driver} className="stint-row" style={{ fontSize: "0.8rem" }}>
               <span className="mono" style={{ minWidth: 34 }}>{p.driverCode(driver)}</span>
               <div className="stint-track">
                 {driverStints.map((s, i) => {
@@ -124,10 +132,31 @@ export default function PerformancePanel(p: Props) {
                     />
                   );
                 })}
+                {(pitByDriver.get(driver) ?? []).map((lap) => (
+                  <span
+                    key={`pit-${lap}`}
+                    className="pit-notch"
+                    style={{ left: `${((lap - 1) / maxLap) * 100}%` }}
+                    title={`${p.driverCode(driver)} pit stop after lap ${lap}`}
+                  />
+                ))}
               </div>
               <span className="dim small" style={{ minWidth: 96 }}>
                 {driverStints.length} stint{driverStints.length > 1 ? "s" : ""} ·{" "}
                 {[...new Set(driverStints.map((s) => s.compound ?? "?"))].join("/")}
+              </span>
+              <span className="dim small" style={{ minWidth: 190 }}>
+                {(() => {
+                  const pit = pitByDriverSummary.get(driver);
+                  const ov = overtakesByDriver.get(driver);
+                  const stopText = pit
+                    ? `${pit.stops} stop${pit.stops > 1 ? "s" : ""}${
+                        pit.best_stop_s != null ? ` · best ${pit.best_stop_s.toFixed(1)}s` : ""
+                      }`
+                    : "no stops recorded";
+                  const ovText = ov ? `${ov.made} overtakes · ${ov.lost} lost` : "";
+                  return [stopText, ovText].filter(Boolean).join(" · ");
+                })()}
               </span>
             </div>
           ))

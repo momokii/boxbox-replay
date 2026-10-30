@@ -969,3 +969,30 @@ button.ghost {
 .delta-bars button.delta-row:hover {
   background: var(--panel-2);
 }
+
+.tower-pos {
+  width: 16px;
+  text-align: right;
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--dim);
+  flex-shrink: 0;
+}
+
+.pit-notch {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.stint-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}

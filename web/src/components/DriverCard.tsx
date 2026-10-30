@@ -1,6 +1,7 @@
 import { compoundColor } from "../format";
 import Info from "./Info";
 import type { Driver, Lap, Stint } from "../types";
+import type { PitStopSummary, SessionResultRow } from "../api";
 
 interface Props {
   driver: Driver;
@@ -11,6 +12,9 @@ interface Props {
   laps: Lap[];
   bestLap: Lap | null;
   onClear: () => void;
+  pit: PitStopSummary | null;
+  overtakes: { made: number; lost: number } | null;
+  result: SessionResultRow | null;
 }
 
 /** Everything needed to understand who this driver is and what they're doing. */
@@ -96,6 +100,35 @@ export default function DriverCard(p: Props) {
             <Info label="Laps run" tip="Number of laps with a measured time for this driver." />
           </dt>
           <dd>{own.length}</dd>
+        </div>
+        <div>
+          <dt>
+            <Info
+              label="Pit stops"
+              tip="Stops recorded in the pit feed, with the fastest stationary time in seconds."
+            />
+          </dt>
+          <dd>
+            {p.pit ? `${p.pit.stops}${p.pit.best_stop_s != null ? ` · best ${p.pit.best_stop_s.toFixed(1)}s` : ""}` : "—"}
+          </dd>
+        </div>
+        <div>
+          <dt>
+            <Info label="Overtakes" tip="On-track passes recorded by the timing feed: made and lost." />
+          </dt>
+          <dd>{p.overtakes ? `${p.overtakes.made} made · ${p.overtakes.lost} lost` : "—"}</dd>
+        </div>
+        <div>
+          <dt>
+            <Info label="Result" tip="Official final classification for this session." />
+          </dt>
+          <dd>
+            {p.result
+              ? p.result.dnf
+                ? "DNF"
+                : `P${p.result.position ?? "—"}${p.result.points ? ` · ${p.result.points} pts` : ""}`
+              : "—"}
+          </dd>
         </div>
       </dl>
 

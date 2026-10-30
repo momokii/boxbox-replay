@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { buildGapTable, formatClock, gapAt, indexAt, lapAt, posAt, trailAt } from "./session";
+import {
+  buildGapTable,
+  buildPositionTable,
+  formatClock,
+  gapAt,
+  indexAt,
+  lapAt,
+  posAt,
+  positionAt,
+  trailAt,
+} from "./session";
 import type { ReplayDriver } from "./types";
 
 const drv: ReplayDriver = {
@@ -91,5 +101,26 @@ describe("formatClock", () => {
     expect(formatClock(0)).toBe("0:00");
     expect(formatClock(95)).toBe("1:35");
     expect(formatClock(3725)).toBe("1:02:05");
+  });
+});
+
+
+describe("official positions", () => {
+  const rows = [
+    { driver_number: 1, t: 0, position: 3 },
+    { driver_number: 1, t: 100, position: 1 },
+    { driver_number: 2, t: 50, position: 4 },
+  ];
+  const table = buildPositionTable(rows);
+
+  it("reads the latest official position", () => {
+    expect(positionAt(table, 1, 60)).toBe(3);
+    expect(positionAt(table, 1, 150)).toBe(1);
+    expect(positionAt(table, 2, 60)).toBe(4);
+  });
+
+  it("is null before a driver's first sample", () => {
+    expect(positionAt(table, 2, 10)).toBeNull();
+    expect(positionAt(new Map(), 1, 10)).toBeNull();
   });
 });

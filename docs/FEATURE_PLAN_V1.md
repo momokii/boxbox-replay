@@ -52,3 +52,14 @@ session; both need the same clamping/time-zeroing as the rest of the feeds.
 - `pytest` + `ruff` for the API, `vitest` + `tsc` for the web.
 - Screenshots of every touched screen, night and day, 1440 px and 390 px.
 - Playback frame-timing check after UI work (must stay at 60 fps).
+
+
+## Finding while implementing (important)
+
+`/position` and `/intervals` disagree on purpose: the position feed follows
+**physical track order**, while `gap_to_leader` is **classification** order. A
+car that has just pitted is physically ahead of cars yet classified behind. The
+tower therefore stays **ordered by classification gap** (matching the gaps it
+prints) and numbers itself, with the position feed used only as a tie-break when
+a driver has no gap. Retired cars are classified last and labelled DNF, never
+sorted by a stale gap.

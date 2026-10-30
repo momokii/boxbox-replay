@@ -4,6 +4,7 @@ import { formatLapTime } from "../format";
 import { freshTyrePace, greenLaps, median, stintSlope } from "../perf";
 import Info from "./Info";
 import type { Lap, Stint } from "../types";
+import type { PitStopSummary } from "../api";
 
 interface Props {
   sessionKey: number;
@@ -14,6 +15,7 @@ interface Props {
   gapBehind: number | null;
   lap: number;
   onSeek: (t: number) => void;
+  pitStops: PitStopSummary | null;
 }
 
 interface Call {
@@ -232,7 +234,16 @@ export default function PitPanel(p: Props) {
             </tbody>
           </table>
 
-          <h3 style={{ marginTop: 16 }}>What this model ignores</h3>
+          {p.pitStops && p.pitStops.stops > 0 && (
+        <p className="dim small">
+          Measured this race: {p.pitStops.stops} stop{p.pitStops.stops > 1 ? "s" : ""}
+          {p.pitStops.best_stop_s != null ? `, fastest ${p.pitStops.best_stop_s.toFixed(1)}s` : ""}
+          {p.pitStops.total_stop_s != null ? `, ${p.pitStops.total_stop_s.toFixed(1)}s in total` : ""}
+          {" — "}use that to sanity-check the pit-loss slider.
+        </p>
+      )}
+
+      <h3 style={{ marginTop: 16 }}>What this model ignores</h3>
           <ul className="pit-assumptions">
             <li>Rivals: everyone keeps their current pace. No safety car, no overtakes, no weather change.</li>
             <li>Tyres: wear is linear; a fresh set is assumed to return to the measured fresh-tyre pace.</li>

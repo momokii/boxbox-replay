@@ -120,3 +120,29 @@ export function formatClock(seconds: number): string {
   const mm = String(m).padStart(h ? 2 : 1, "0");
   return `${h ? `${h}:` : ""}${mm}:${String(sec).padStart(2, "0")}`;
 }
+
+export interface PositionSeries {
+  t: number[];
+  position: number[];
+}
+
+/** Build per-driver official-position series from /session/positions. */
+export function buildPositionTable(rows: { driver_number: number; t: number; position: number }[]): Map<number, PositionSeries> {
+  const out = new Map<number, PositionSeries>();
+  for (const r of rows) {
+    if (r.position == null) continue;
+    const entry = out.get(r.driver_number) ?? { t: [], position: [] };
+    entry.t.push(r.t);
+    entry.position.push(r.position);
+    out.set(r.driver_number, entry);
+  }
+  return out;
+}
+
+/** Official position for a driver at time t; null before their first sample. */
+export function positionAt(table: Map<number, PositionSeries>, driver: number, t: number): number | null {
+  const entry = table.get(driver);
+  if (!entry || !entry.t.length) return null;
+  const i = indexAt(entry.t, t);
+  return i < 0 ? null : entry.position[i];
+}

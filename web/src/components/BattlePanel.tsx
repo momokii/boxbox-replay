@@ -12,6 +12,8 @@ interface Props {
   drivers: Driver[];
   laps: Lap[];
   onSeek: (t: number) => void;
+  overtakes: { t: number; overtaking_driver_number: number; overtaken_driver_number: number; position: number | null }[];
+  codes: Map<number, string>;
 }
 
 const H = 190;
@@ -138,6 +140,42 @@ export default function BattlePanel(p: Props) {
         ) : (
           <p className="dim small">No laps completed by both drivers in this session.</p>
         )}
+      </div>
+
+      <div className="panel">
+        <h3>
+          <Info
+            label="Overtakes involving these two"
+            tip="Passes recorded by the timing feed where either driver was the passer or the passed. Click a row to jump the replay there."
+          />
+        </h3>
+        {(() => {
+          const rel = p.overtakes
+            .filter(
+              (o) =>
+                o.overtaking_driver_number === driverA ||
+                o.overtaken_driver_number === driverA ||
+                o.overtaking_driver_number === driverB ||
+                o.overtaken_driver_number === driverB,
+            )
+            .sort((x, y) => x.t - y.t)
+            .slice(0, 8);
+          if (!rel.length) return <p className="dim small">None recorded between these two drivers.</p>;
+          return (
+            <div className="event-list">
+              {rel.map((o, i) => (
+                <button key={i} className="event-row rc" onClick={() => p.onSeek(o.t)}>
+                  <span className="mono dim">{formatClock(o.t)}</span>
+                  <span className="small">
+                    {p.codes.get(o.overtaking_driver_number) ?? `#${o.overtaking_driver_number}`} passed{" "}
+                    {p.codes.get(o.overtaken_driver_number) ?? `#${o.overtaken_driver_number}`}
+                    {o.position != null ? ` for P${o.position}` : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="panel">

@@ -85,6 +85,16 @@ export const api = {
     get<SessionGaps>(`/session/gaps?session_key=${sessionKey}`),
   sessionSpeed: (sessionKey: number, driver: number) =>
     get<SpeedPoint[]>(`/session/speed?session_key=${sessionKey}&driver_number=${driver}`),
+  sessionPit: (sessionKey: number) =>
+    get<{ summary: PitStopSummary[]; stops: PitStop[] }>(`/session/pit?session_key=${sessionKey}`),
+  sessionPositions: (sessionKey: number) =>
+    get<PositionRow[]>(`/session/positions?session_key=${sessionKey}`),
+  sessionOvertakes: (sessionKey: number) =>
+    get<{ counts: { driver_number: number; made: number; lost: number }[]; events: OvertakeRow[] }>(
+      `/session/overtakes?session_key=${sessionKey}`,
+    ),
+  sessionResult: (sessionKey: number) =>
+    get<SessionResultRow[]>(`/session/result?session_key=${sessionKey}`),
   cornerLoss: (body: {
     session_key: number;
     ref: { driver: number; lap: number };
@@ -130,3 +140,43 @@ export const tyreAtLap = (
   }
   return null;
 };
+
+export interface PitStopSummary {
+  driver_number: number;
+  stops: number;
+  best_stop_s: number | null;
+  total_stop_s: number | null;
+  laps: number[];
+}
+
+export interface PitStop {
+  driver_number: number;
+  t: number;
+  lap_number: number | null;
+  stop_duration: number | null;
+  pit_duration: number | null;
+}
+
+export interface PositionRow {
+  driver_number: number;
+  t: number;
+  position: number;
+}
+
+export interface OvertakeRow {
+  t: number;
+  overtaking_driver_number: number;
+  overtaken_driver_number: number;
+  position: number | null;
+}
+
+export interface SessionResultRow {
+  position: number | null;
+  driver_number: number;
+  points: number | null;
+  dnf: boolean;
+  dns: boolean;
+  dsq: boolean;
+  duration: number | null;
+  gap_text: string | null;
+}
