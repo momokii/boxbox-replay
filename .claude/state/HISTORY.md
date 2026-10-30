@@ -201,3 +201,16 @@ rewritten around its question with assumptions + provenance. Weather is now a
 whole-session chart; degradation "whole field" lists everything; radio/RC show
 all events with counts and click-to-seek; per-driver telemetry loading states.
 50 pytest, 27 vitest, verified on Monaco with numeric alignment checks.
+
+## 2026-10-30 — U6 session availability + brand mark
+
+Fixed "no replay data" for Monaco 2026: transient feed errors no longer read as
+missing data (retry button forces a rebuild), a single driver's location
+failure can't sink the build (per-driver isolation + drivers_included/expected),
+and geometry chooses the fastest lap that actually has positions. Race length
+now comes from the lap clock, never from position coverage; positions_end_s
+drives a shaded timeline region and an explanatory sentence. Dropped x=y=0
+placeholders. New brand mark (timing bars) replaces the Vite default across
+favicon.svg, 32/180/192/512 PNGs, maskable icon, web manifest and the header.
+Verified: Monaco 2026 renders (22/22 drivers, 1:30:50, position coverage note),
+Monaco/Suzuka 2024 unaffected, 50 pytest + 27 vitest.

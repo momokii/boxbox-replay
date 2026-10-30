@@ -52,6 +52,25 @@ function useAsync<T>(key: string, fn: () => Promise<T>): { data: T | null; error
   return { data, error };
 }
 
+function ReplayFailure(p: { error: string; onRetry: () => void }) {
+  const missing = p.error.includes("404");
+  return (
+    <div className="empty">
+      {missing ? (
+        <p>This session has no position data in the timing feed, so there is nothing to replay.</p>
+      ) : (
+        <>
+          <p>Couldn't load this session — the timing feed did not answer in time.</p>
+          <p className="dim small">This is usually temporary. Nothing is lost; the data is fetched again.</p>
+          <button className="primary" onClick={p.onRetry} style={{ marginTop: 8 }}>
+            Try again
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function bestLap(laps: Lap[]): { driver: number; lap: number } | null {
   let best: { driver: number; lap: number; t: number } | null = null;
   for (const l of laps) {
@@ -153,8 +172,9 @@ export default function App() {
       ? api.sessionGeometry(sessionKey).catch(() => ({ ...EMPTY_GEO, driver: 0, lap: 0 }))
       : Promise.resolve({ ...EMPTY_GEO, driver: 0, lap: 0 }),
   );
-  const replay = useAsync(`replay:${sessionKey ?? "none"}`, () =>
-    sessionKey ? api.sessionReplay(sessionKey) : Promise.resolve(null),
+  const [replayRetry, setReplayRetry] = useState(0);
+  const replay = useAsync(`replay:${sessionKey ?? "none"}:${replayRetry}`, () =>
+    sessionKey ? api.sessionReplay(sessionKey, replayRetry > 0) : Promise.resolve(null),
   );
   const gaps = useAsync(`gaps:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionGaps(sessionKey) : Promise.resolve(null as unknown as SessionGaps),
@@ -341,7 +361,16 @@ export default function App() {
   return (
     <>
       <header className="topbar">
-        <h1>BoxBox Replay</h1>
+        <h1>
+          <svg className="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <rect width="32" height="32" rx="7.5" fill="var(--panel-2)" />
+            <rect x="6.9" y="15.2" width="4.6" height="9.4" rx="1.7" fill="var(--dim)" />
+            <rect x="13.7" y="8.4" width="4.6" height="16.2" rx="1.7" fill="var(--amber)" />
+            <rect x="20.5" y="12.1" width="4.6" height="12.5" rx="1.7" fill="var(--ink)" />
+            <rect x="6.9" y="25.4" width="18.2" height="1.5" rx="0.75" fill="var(--line)" />
+          </svg>
+          BoxBox Replay
+        </h1>
         <span className="sub">
           {gpName}
           {sessName ? ` · ${sessName}` : ""}
@@ -478,7 +507,19 @@ export default function App() {
                     <div className="loading-bar"><span /></div>
                   </div>
                 )}
-                {replay.error && <div className="empty">This session has no replay data. Try another one.</div>}
+                {replay.error && <ReplayFailure error={replay.error} onRetry={() => setReplayRetry((n) => n + 1)} />}
+                {replay.data && replay.data.positions_end_s < replay.data.duration_s - 10 && (
+                  <p className="dim small">
+                    Car positions in this feed end at {formatClock(replay.data.positions_end_s)} — after that
+                    the map holds each car's last known position. Lap times and gaps keep going.
+                  </p>
+                )}
+                {replay.data && replay.data.drivers_included < replay.data.drivers_expected && (
+                  <p className="dim small">
+                    Showing {replay.data.drivers_included} of {replay.data.drivers_expected} drivers — the
+                    timing feed had no position data for the rest.
+                  </p>
+                )}
                 {replay.data && geo.data && (
                   <>
                     <div className="map-frame">
@@ -523,7 +564,12 @@ export default function App() {
                       </span>
                     </div>
 
-                    <Timeline playback={playback} markers={lapMarkers} onSeek={(t) => playback.setT(t)} />
+                    <Timeline
+                      playback={playback}
+                      markers={lapMarkers}
+                      onSeek={(t) => playback.setT(t)}
+                      coverageEnd={replay.data?.positions_end_s ?? null}
+                    />
 
                     {geo.data?.corners?.length ? (
                       <div className="row" aria-label="Corners">

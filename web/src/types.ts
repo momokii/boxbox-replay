@@ -133,6 +133,9 @@ export interface ReplayPayload {
   hz: number;
   laps: { lap_number: number; index: number; t: number }[];
   drivers: ReplayDriver[];
+  drivers_included: number;
+  drivers_expected: number;
+  positions_end_s: number;
 }
 
 export interface SessionGap {

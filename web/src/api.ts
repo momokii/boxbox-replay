@@ -18,9 +18,19 @@ import type {
 
 const BASE = "/api";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+  if (!res.ok) throw new ApiError(`${path} -> ${res.status}`, res.status);
   return res.json() as Promise<T>;
 }
 
@@ -69,8 +79,8 @@ export const api = {
   sessionInfo: (sessionKey: number) => get<SessionInfoFull>(`/session/info?session_key=${sessionKey}`),
   sessionGeometry: (sessionKey: number) =>
     get<Geometry & { driver: number; lap: number }>(`/session/geometry?session_key=${sessionKey}`),
-  sessionReplay: (sessionKey: number) =>
-    get<ReplayPayload>(`/session/replay?session_key=${sessionKey}`),
+  sessionReplay: (sessionKey: number, refresh = false) =>
+    get<ReplayPayload>(`/session/replay?session_key=${sessionKey}${refresh ? "&refresh=1" : ""}`),
   sessionGaps: (sessionKey: number) =>
     get<SessionGaps>(`/session/gaps?session_key=${sessionKey}`),
   sessionSpeed: (sessionKey: number, driver: number) =>

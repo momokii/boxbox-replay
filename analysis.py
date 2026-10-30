@@ -100,9 +100,9 @@ def clean_track_points(trace: pd.DataFrame, ax: str, ay: str) -> pd.DataFrame:
         return df
     pts = df[[ax, ay]].to_numpy(dtype=float)
     steps = np.linalg.norm(np.diff(pts, axis=0), axis=1)
-    finite = steps[np.isfinite(steps)]
+    finite = steps[np.isfinite(steps) & (steps > 0)]
     if not len(finite):
-        return df
+        return df.iloc[:1].reset_index(drop=True)
     limit = float(np.median(finite)) * 6.0
     keep = [0]
     for i in range(1, len(df)):

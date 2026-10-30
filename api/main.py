@@ -236,6 +236,33 @@ def stints(session_key: int):
     return records(data_loader.get_stints(session_key))
 
 
+def _session_clock(session_key: int):
+    """(start, end, markers, duration_s) — the single source of replay time.
+
+    Lap starts outside the session window are ignored (some feeds carry them),
+    markers are zeroed at lights out, and the race duration can never exceed
+    the scheduled session window.
+    """
+    start, end = data_loader.session_window(session_key)
+    laps = data_loader.list_laps(session_key)
+    if not laps.empty:
+        stamps = data_loader.to_dt(laps["date_start"])
+        laps = laps[(stamps >= start) & (stamps <= end)]
+    markers = analysis.lap_markers(laps, start)
+    window_s = (end - start).total_seconds()
+    if markers.empty:
+        return start, end, markers, window_s
+    t0 = float(markers["t"].min())
+    markers = markers.assign(t=(markers["t"] - t0).round(1))
+    markers = markers[markers["t"] >= 0].reset_index(drop=True)
+    timed = laps.dropna(subset=["lap_duration"]) if not laps.empty else laps
+    tail = 90.0
+    if not timed.empty:
+        tail = float(pd.to_numeric(timed["lap_duration"], errors="coerce").median())
+    duration = min(window_s, float(markers["t"].max()) + tail)
+    return start, end, markers, duration
+
+
 def _with_session_time(df: pd.DataFrame, session_key: int) -> pd.DataFrame:
     """Attach t (seconds from lights out) to event rows; drop pre-session rows."""
     if df.empty or "date" not in df.columns:
@@ -272,19 +299,9 @@ def weather(session_key: int):
 @app.get("/session/info")
 def session_info(session_key: int) -> dict:
     """Session clock + race distance: the numbers the UI should show."""
-    start, end = data_loader.session_window(session_key)
+    start, end, _markers, race_duration = _session_clock(session_key)
     info = data_loader.get_session(session_key)
     laps = data_loader.list_laps(session_key)
-    markers = analysis.lap_markers(laps, start)
-    t0 = float(markers["t"].min()) if not markers.empty else 0.0
-    timed = laps.dropna(subset=["lap_duration"]) if not laps.empty else laps
-    typical = 90.0
-    if not timed.empty:
-        typical = float(pd.to_numeric(timed["lap_duration"], errors="coerce").median())
-    if markers.empty:
-        race_duration = (end - start).total_seconds()
-    else:
-        race_duration = float(markers["t"].max()) - t0 + typical
     total = pd.to_numeric(laps["lap_number"], errors="coerce").max() if not laps.empty else 0
     return {
         "session_key": session_key,
@@ -306,9 +323,43 @@ def session_geometry(session_key: int, driver_number: int | None = None) -> dict
     timed = laps.dropna(subset=["lap_duration"])
     if timed.empty:
         raise HTTPException(404, "no timed laps")
-    ref = timed.sort_values("lap_duration").iloc[0]
-    drv = int(driver_number or ref["driver_number"])
-    lap = int(ref["lap_number"])
+    # Some feeds only cover part of the session, so the fastest lap may have no
+    # positions at all. Cover the candidates with actual location data, then
+    # pick the fastest of those.
+    coverage: dict[int, tuple[pd.Timestamp, pd.Timestamp]] = {}
+    for num in sorted(timed["driver_number"].unique()):
+        loc_n = data_loader.get_location(session_key, int(num))
+        if loc_n.empty:
+            continue
+        stamps_n = data_loader.to_dt(loc_n["date"])
+        moving = loc_n[(loc_n["x"] != 0) | (loc_n["y"] != 0)]
+        if moving.empty:
+            continue
+        moving_stamps = data_loader.to_dt(moving["date"])
+        coverage[int(num)] = (moving_stamps.min(), moving_stamps.max())
+        del stamps_n
+    if not coverage:
+        raise HTTPException(404, "no position data in this feed")
+
+    chosen = None
+    for row in timed.sort_values("lap_duration").itertuples():
+        drv_c, lap_c = int(row.driver_number), int(row.lap_number)
+        if drv_c not in coverage:
+            continue
+        st_c, en_c = data_loader.lap_window(
+            data_loader.list_laps(session_key, driver_number=drv_c), lap_c
+        )
+        if st_c is None:
+            continue
+        end_c = en_c if en_c is not None else st_c + pd.Timedelta(seconds=150)
+        c_min, c_max = coverage[drv_c]
+        if end_c < c_min or st_c > c_max:
+            continue
+        chosen = (drv_c, lap_c)
+        break
+    if chosen is None:
+        raise HTTPException(404, "no lap has position data in this feed")
+    drv, lap = chosen
     loc = data_loader.get_location(session_key, drv)
     if loc.empty:
         raise HTTPException(404, "no location data")
@@ -357,23 +408,22 @@ def session_geometry(session_key: int, driver_number: int | None = None) -> dict
 
 
 @app.get("/session/replay")
-def session_replay(session_key: int, hz: int | None = None) -> dict:
+def session_replay(session_key: int, hz: int | None = None, refresh: bool = False) -> dict:
     """Whole-session positions for every driver, zeroed at lights-out.
 
     t = 0 is the leader's first lap (not the session window start, which
     includes pre-race). Everything else in the UI uses the same origin.
     """
-    start, end = data_loader.session_window(session_key)
+    start, end, markers, _ = _session_clock(session_key)
     duration = (end - start).total_seconds()
     rate = hz or (2 if duration <= 1800 else 1)
+    if refresh:
+        cache = data_loader._session_cache(session_key, f"session_pos_{rate}hz.parquet")
+        cache.unlink(missing_ok=True)
     df = data_loader.build_session_replay(session_key, hz=rate)
     if df.empty:
         raise HTTPException(404, "no telemetry for this session")
-    laps = data_loader.list_laps(session_key)
-    markers = analysis.lap_markers(laps, start)
     t0 = float(markers["t"].min()) if not markers.empty else 0.0
-    markers = markers.assign(t=(markers["t"] - t0).round(1))
-    markers = markers[markers["t"] >= 0]
     drivers = []
     max_t = 0.0
     for num, group in df.sort_values("t").groupby("driver_number"):
@@ -391,12 +441,9 @@ def session_replay(session_key: int, hz: int | None = None) -> dict:
                 "y": g["y"].tolist(),
             }
         )
-    if markers.empty:
-        race_duration = max_t
-    else:
-        last_lap = laps.dropna(subset=["lap_duration"])
-        tail = float(last_lap["lap_duration"].max()) if not last_lap.empty else 90.0
-        race_duration = min(max_t, float(markers["t"].max()) + tail)
+    # Race length comes from the lap clock, never from position coverage.
+    race_duration = _session_clock(session_key)[3]
+    expected = len(data_loader.list_drivers(session_key))
     return {
         "start": str(start),
         "end": str(end),
@@ -404,15 +451,16 @@ def session_replay(session_key: int, hz: int | None = None) -> dict:
         "hz": rate,
         "laps": markers.to_dict(orient="records"),
         "drivers": drivers,
+        "drivers_included": len(drivers),
+        "drivers_expected": expected,
+        "positions_end_s": round(max_t, 1),
     }
 
 
 @app.get("/session/speed")
 def session_speed(session_key: int, driver_number: int, hz: int = 1) -> list[dict]:
     """Whole-session speed for one driver, zeroed at lights-out."""
-    start, _ = data_loader.session_window(session_key)
-    laps = data_loader.list_laps(session_key)
-    markers = analysis.lap_markers(laps, start)
+    start, _end, markers, _dur = _session_clock(session_key)
     t0 = float(markers["t"].min()) if not markers.empty else 0.0
     df = data_loader.session_speed(session_key, driver_number, hz=hz)
     if df.empty:
@@ -427,9 +475,8 @@ def session_gaps(session_key: int) -> dict:
 
     Times are zeroed at lights-out, matching /session/replay.
     """
-    start, _ = data_loader.session_window(session_key)
+    start, _end, markers, _dur = _session_clock(session_key)
     laps = data_loader.list_laps(session_key)
-    markers = analysis.lap_markers(laps, start)
     t0 = float(markers["t"].min()) if not markers.empty else 0.0
     df = data_loader.get_intervals(session_key)
     if not df.empty and "gap_to_leader" in df.columns and df["gap_to_leader"].notna().any():

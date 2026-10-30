@@ -6,6 +6,8 @@ interface Props {
   playback: Playback;
   markers: LapMarker[];
   onSeek: (t: number) => void;
+  /** Session time where car positions stop, when the feed is truncated. */
+  coverageEnd?: number | null;
 }
 
 const H = 44;
@@ -62,6 +64,18 @@ export default function Timeline(p: Props) {
     ctx.moveTo(0, baseY);
     ctx.lineTo(X(p.playback.state.t), baseY);
     ctx.stroke();
+
+    // Shade the stretch where the feed has no car positions.
+    if (p.coverageEnd != null && p.coverageEnd < dur - 5) {
+      const x0 = X(p.coverageEnd);
+      ctx.fillStyle = line;
+      ctx.globalAlpha = 0.35;
+      ctx.fillRect(x0, baseY - 12, w - x0, 20);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = dim;
+      ctx.font = "9px 'Barlow', system-ui, sans-serif";
+      ctx.fillText("no car positions", x0 + 4, baseY - 14);
+    }
 
     // Lap ticks: every lap, labelled every 10.
     ctx.font = "10px 'Barlow', system-ui, sans-serif";

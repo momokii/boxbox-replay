@@ -136,3 +136,29 @@ amber darkened to `#A86A00` for contrast on light. Data colors unchanged.
 - **Radio / race control** show every event with counts and click-to-seek.
 - **Per-driver loading**: while a driver's speed is in flight the panel shows a
   spinner naming the drivers, and tower gaps render dimmed until timing exists.
+
+
+## Pass 5 — session availability + identity
+
+- **"This session has no replay data"** had three separate causes:
+  1. A transient feed failure surfaced as that sentence. Failures are now split:
+     404 means the session truly has no positions; anything else says the feed
+     did not answer and offers **Try again** (which forces a rebuild).
+  2. A single driver's `/location` failing aborted the entire build; drivers
+     are now fetched independently, and the response reports
+     `drivers_included / drivers_expected`.
+  3. Geometry picked the fastest lap of the session — which, in feeds that only
+     cover part of the session (Monaco 2026), has no positions at all. It now
+     prefers the fastest lap that is inside that driver's position coverage.
+- **Race length can no longer shrink** because a feed stopped sending
+  positions. Duration comes from the lap clock (bounded by the scheduled
+  window); `positions_end_s` reports where positions stop, the timeline shades
+  that stretch ("no car positions"), and a sentence explains that the map
+  holds last known positions while lap times and gaps continue.
+- OpenF1 emits `x=y=0` placeholders before a car has a position fix; they are
+  dropped so cars no longer pile up at the origin.
+- **Identity**: a real mark replaces the Vite default — three timing bars
+  (dim / amber / ink) on the pit-wall charcoal tile, which reads at 16 px and
+  echoes the delta bars in the UI. Shipped as SVG + 32/180/192/512 PNGs + a
+  maskable variant, wired into `favicon`, `apple-touch-icon`, a web manifest
+  (`application/manifest+json`) and the in-app header lockup.

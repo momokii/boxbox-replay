@@ -367,12 +367,22 @@ def build_session_replay(session_key: int, hz: int = 2) -> pd.DataFrame:
     drivers = list_drivers(session_key)
     frames: list[pd.DataFrame] = []
     for num in [int(n) for n in drivers.get("driver_number", [])]:
-        loc = clamp_to_session(get_location(session_key, num), session_key)
+        try:
+            raw = get_location(session_key, num)
+        except RuntimeError:
+            # One driver's feed failing must not sink the whole session.
+            continue
+        loc = clamp_to_session(raw, session_key)
         if loc.empty:
             continue
         loc = loc.copy()
         loc["date"] = to_dt(loc["date"])
         loc = loc.sort_values("date").reset_index(drop=True)
+        # OpenF1 emits x=y=0 placeholders before a car has a position fix;
+        # keeping them piles every car on the origin.
+        loc = loc[~((loc["x"] == 0) & (loc["y"] == 0))]
+        if loc.empty:
+            continue
         loc["t"] = (loc["date"] - start_ts).dt.total_seconds()
         loc = downsample_by_time(loc, hz, time_col="t")
         frames.append(

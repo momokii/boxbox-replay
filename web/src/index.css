@@ -85,11 +85,21 @@ h3 {
 }
 
 .topbar h1 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 1.05rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin: 0;
   white-space: nowrap;
+}
+
+.brand-mark {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  display: block;
 }
 
 .topbar .sub {
