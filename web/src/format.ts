@@ -38,3 +38,19 @@ export function teamColor(raw: string | null | undefined): string {
   const hex = (raw ?? "").replace("#", "");
   return hex.length === 6 ? `#${hex}` : "#8A94A6";
 }
+
+/** "Max VERSTAPPEN" -> "Verstappen" (title-cased surname) for compact tables. */
+export function surnameOf(fullName: string | null | undefined): string {
+  if (!fullName) return "";
+  const parts = fullName.trim().split(/\s+/);
+  const surname = parts[parts.length - 1] ?? "";
+  const lower = surname.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+/** Compact driver label used across tables: "VER · Verstappen". */
+export function driverLabel(code: string | null | undefined, fullName?: string | null): string {
+  const c = (code ?? "").toUpperCase();
+  const s = surnameOf(fullName);
+  return s ? `${c} · ${s}` : c;
+}

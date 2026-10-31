@@ -14,6 +14,7 @@ interface Props {
   onSeek: (t: number) => void;
   overtakes: { t: number; overtaking_driver_number: number; overtaken_driver_number: number; position: number | null }[];
   codes: Map<number, string>;
+  labels: Map<number, string>;
 }
 
 const H = 190;
@@ -82,12 +83,13 @@ export default function BattlePanel(p: Props) {
       </div>
 
       <p className="small">
-        <strong>#{driverA}</strong> vs <strong>#{driverB}</strong> —{" "}
+        <strong>{p.labels.get(driverA) ?? `#${driverA}`}</strong> vs{" "}
+        <strong>{p.labels.get(driverB) ?? `#${driverB}`}</strong> —{" "}
         {relative == null
           ? "relative gap unavailable at this moment."
           : relative <= 0
-            ? `#${driverA} is ${Math.abs(relative).toFixed(3)}s ahead of #${driverB}.`
-            : `#${driverB} is ${relative.toFixed(3)}s ahead of #${driverA}.`}
+            ? `${p.labels.get(driverA) ?? `#${driverA}`} is ${Math.abs(relative).toFixed(3)}s ahead of ${p.labels.get(driverB) ?? `#${driverB}`}.`
+            : `${p.labels.get(driverB) ?? `#${driverB}`} is ${relative.toFixed(3)}s ahead of ${p.labels.get(driverA) ?? `#${driverA}`}.`}
       </p>
 
       <div className="panel">
@@ -184,8 +186,8 @@ export default function BattlePanel(p: Props) {
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>#{driverA}</th>
-              <th>#{driverB}</th>
+              <th>{p.labels.get(driverA) ?? `#${driverA}`}</th>
+              <th>{p.labels.get(driverB) ?? `#${driverB}`}</th>
             </tr>
           </thead>
           <tbody>

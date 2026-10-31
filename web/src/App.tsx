@@ -12,7 +12,7 @@ import Tower from "./components/Tower";
 import DriverCard from "./components/DriverCard";
 import Info from "./components/Info";
 import { formatClock } from "./session";
-import { formatLapTime, teamColor } from "./format";
+import { driverLabel, formatLapTime, teamColor } from "./format";
 import {
   buildGapTable,
   buildPositionTable,
@@ -289,10 +289,18 @@ export default function App() {
   );
 
   const driverMeta = useMemo(() => {
-    const m = new Map<number, { code: string; color: string }>();
-    for (const d of drivers.data ?? []) m.set(d.driver_number, { code: d.name_acronym, color: teamColor(d.team_colour) });
+    const m = new Map<number, { code: string; color: string; label: string }>();
+    for (const d of drivers.data ?? []) {
+      m.set(d.driver_number, {
+        code: d.name_acronym,
+        color: teamColor(d.team_colour),
+        label: driverLabel(d.name_acronym, d.full_name),
+      });
+    }
     return m;
   }, [drivers.data]);
+
+  const driverMetaLabel = (n: number) => driverMeta.get(n)?.label ?? `#${n}`;
 
   // Speed for chosen drivers only, fetched on demand.
   const [speedByDriver, setSpeedByDriver] = useState<Map<number, SpeedPoint[]>>(new Map());
@@ -804,6 +812,7 @@ export default function App() {
                 onSeek={(t) => playback.setT(t)}
                 overtakes={overtakes.data?.events ?? []}
                 codes={new Map((drivers.data ?? []).map((d) => [d.driver_number, d.name_acronym]))}
+                labels={new Map((drivers.data ?? []).map((d) => [d.driver_number, driverMetaLabel(d.driver_number)]))}
               />
             )}
             {view === "performance" && (
@@ -981,7 +990,7 @@ export default function App() {
                     return (
                       <tr key={`${l.driver_number}-${l.lap_number}`} onClick={() => seekToLap(l.lap_number)}>
                         <td>{l.lap_number}</td>
-                        <td>#{l.driver_number}</td>
+                        <td>{driverMetaLabel(l.driver_number)}</td>
                         <td>{formatLapTime(l.lap_duration)}</td>
                         <td className={cls(l.s1)}>{formatLapTime(l.duration_sector_1)}</td>
                         <td className={cls(l.s2)}>{formatLapTime(l.duration_sector_2)}</td>

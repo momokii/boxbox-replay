@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compoundColor, formatGap, formatLapTime, teamColor } from "./format";
+import { compoundColor, driverLabel, formatGap, formatLapTime, surnameOf, teamColor } from "./format";
 
 describe("formatLapTime", () => {
   it("renders M:SS.mmm with 3 decimals", () => {
@@ -28,5 +28,17 @@ describe("colors", () => {
   it("normalizes team colors", () => {
     expect(teamColor("3671C6")).toBe("#3671C6");
     expect(teamColor("")).toBe("#8A94A6");
+  });
+});
+
+describe("driver labels", () => {
+  it("extracts a title-cased surname", () => {
+    expect(surnameOf("Max VERSTAPPEN")).toBe("Verstappen");
+    expect(surnameOf("Sergio PEREZ")).toBe("Perez");
+    expect(surnameOf(null)).toBe("");
+  });
+  it("builds a compact label", () => {
+    expect(driverLabel("VER", "Max VERSTAPPEN")).toBe("VER · Verstappen");
+    expect(driverLabel("VER", null)).toBe("VER");
   });
 });
