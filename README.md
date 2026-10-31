@@ -47,6 +47,9 @@ why this stack replaced the original Streamlit prototype.
   transcripts, none invented), race-control flags, pit-stop and overtake totals.
 - **Share a moment**: "Copy link to this moment" captures `?t=` so a replay
   reopens at the same frame.
+- **Full views**: lap times, lap pace and stint degradation open in a dialog
+  (keyboard accessible: Escape closes, focus is trapped) with charts and the
+  complete tables — the inline versions stay compact.
 - **Pit wall** (tab): what-if model (stay vs pit on linear deg + traffic check),
   bannered **TOY MODEL**, grounded in live pace/deg/gaps.
 - **Driver card**: click a car or tower row for full name, team, gap, tyre age,

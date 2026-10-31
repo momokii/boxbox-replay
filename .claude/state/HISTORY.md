@@ -276,3 +276,13 @@ FeedAuthRequired error, a 503 JSON response that names OPENF1_API_KEY, optional
 feeds that degrade to empty instead of 500, and support for sending the key as
 Bearer + api_key. Cached sessions keep every feature; uncached ones show an
 actionable message. Docs and .env.example updated.
+
+## 2026-10-30 — U11 depth-on-demand UI pass
+
+Fixed detached tooltips inside tables (portal + measured position), replaced
+bare driver numbers with `VER · Verstappen` labels, added a reusable accessible
+Modal and used it for lap times (driver chips + pace chart), lap pace (delta
+chart scaled to p95 + table) and stint degradation (lap chart + full table).
+Degradation is now a visual bar per stint sorted worst-first; the driver card
+gained a team band, badges, a five-lap strip and per-stat tooltips. 54 pytest +
+36 vitest; verified with screenshots of each new surface.

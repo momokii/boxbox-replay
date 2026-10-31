@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { beginDraw, themeColors, useCanvasSize } from "../chart";
 import { formatClock, gapAt, type GapTable } from "../session";
 import Info from "./Info";
+import Modal from "./Modal";
+import BattleFullView from "./BattleFullView";
 import { formatLapTime } from "../format";
 import type { Driver, Lap } from "../types";
 
@@ -15,6 +17,7 @@ interface Props {
   overtakes: { t: number; overtaking_driver_number: number; overtaken_driver_number: number; position: number | null }[];
   codes: Map<number, string>;
   labels: Map<number, string>;
+  colors: Map<number, string>;
 }
 
 const H = 190;
@@ -26,6 +29,7 @@ const H = 190;
 export default function BattlePanel(p: Props) {
   const [a, setA] = useState<number | null>(null);
   const [b, setB] = useState<number | null>(null);
+  const [paceModal, setPaceModal] = useState(false);
   const now = p.playback.state.t;
 
   const ordered = [...p.drivers].sort(
@@ -113,6 +117,11 @@ export default function BattlePanel(p: Props) {
             tip="Each row is one lap both drivers completed. The bar shows how much slower B was than A on that lap (right = B slower, left = B faster). Click a row to move the replay to that lap."
           />
         </h3>
+        <div className="row" style={{ justifyContent: "flex-end", marginBottom: 6 }}>
+          <button className="disclosure" onClick={() => setPaceModal(true)} disabled={!deltas.length}>
+            Full view
+          </button>
+        </div>
         {deltas.length ? (
           <div className="delta-bars">
             {deltas.map((d) => {
@@ -179,6 +188,24 @@ export default function BattlePanel(p: Props) {
           );
         })()}
       </div>
+
+      <Modal
+        open={paceModal}
+        onClose={() => setPaceModal(false)}
+        title={`Lap pace — ${p.labels.get(driverA) ?? `#${driverA}`} vs ${p.labels.get(driverB) ?? `#${driverB}`}`}
+        subtitle="Every lap both drivers completed, with the difference per lap."
+        size="wide"
+      >
+        <BattleFullView
+          laps={p.laps}
+          a={driverA}
+          b={driverB}
+          labelA={p.labels.get(driverA) ?? `#${driverA}`}
+          labelB={p.labels.get(driverB) ?? `#${driverB}`}
+          colorA={p.colors.get(driverA) ?? "#8A94A6"}
+          colorB={p.colors.get(driverB) ?? "#8A94A6"}
+        />
+      </Modal>
 
       <div className="panel">
         <h3>Head to head</h3>

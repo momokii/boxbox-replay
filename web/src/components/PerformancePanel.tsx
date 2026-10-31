@@ -6,6 +6,7 @@ import { stintSlope } from "../perf";
 import Info from "./Info";
 import WeatherChart from "./WeatherChart";
 import LapChart from "./LapChart";
+import Modal from "./Modal";
 import type { Playback } from "../playbackStore";
 import type { Lap, Stint } from "../types";
 import type { PitStopSummary } from "../api";
@@ -35,6 +36,7 @@ interface Feed {
 export default function PerformancePanel(p: Props) {
   const [feed, setFeed] = useState<Feed | null>(null);
   const [scope, setScope] = useState<"focus" | "all">("all");
+  const [degModal, setDegModal] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -195,43 +197,55 @@ export default function PerformancePanel(p: Props) {
         <h3>
           <Info
             label="Degradation"
-            tip="Seconds lost per lap as the tyres wear, fitted on the stint's timed laps only (pit and red-flag laps excluded)."
+            tip="Seconds lost per lap as a tyre ages, fitted on the timed laps of each stint (pit and red-flag laps excluded). A longer bar means the tyres fall off faster."
           />{" "}
-          · seconds per lap
+          · seconds per lap, one bar per stint
         </h3>
-        <div className="table-scroll">
-        <table className="laps mono" style={{ fontSize: "0.82rem" }}>
-          <thead>
-            <tr>
-              <th>Driver</th>
-              <th>Compound</th>
-              <th>Laps</th>
-              <th>Slope</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="row" style={{ justifyContent: "flex-end", marginBottom: 6 }}>
+          <button className="disclosure" onClick={() => setDegModal(true)}>
+            Full view
+          </button>
+        </div>
+        {slopeRows.filter(({ stint }) => (stint.lap_end ?? 0) > (stint.lap_start ?? 0)).length ? (
+          <div className="deg-bars">
             {slopeRows
               .filter(({ stint }) => (stint.lap_end ?? 0) > (stint.lap_start ?? 0))
-              .map(({ stint, slope }) => (
-              <tr key={`${stint.driver_number}-${stint.lap_start}`}>
-                <td>{p.driverCode(stint.driver_number)}</td>
-                <td>{stint.compound ?? "?"}</td>
-                <td>
-                  {stint.lap_start ?? "?"}–{stint.lap_end ?? "?"}
-                </td>
-                <td>{slope == null ? "not enough laps" : `+${slope.toFixed(3)}s`}</td>
-              </tr>
-            ))}
-            {slopeRows.some(({ stint }) => (stint.lap_end ?? 0) <= (stint.lap_start ?? 0)) && (
-              <tr>
-                <td colSpan={4} className="dim small">
-                  One-lap stints are hidden — a slope needs at least two timed laps.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-        </div>
+              .sort((x, y) => (y.slope ?? -1) - (x.slope ?? -1))
+              .slice(0, scope === "all" ? 12 : 40)
+              .map(({ stint, slope }) => {
+                const width = slope == null ? 0 : Math.min(100, (Math.max(0, slope) / 0.6) * 100);
+                return (
+                  <div key={`${stint.driver_number}-${stint.lap_start}`} className="deg-row">
+                    <span className="mono small">{p.driverCode(stint.driver_number)}</span>
+                    <span className="row" style={{ gap: 5 }}>
+                      <i className="tower-chip" style={{ background: compoundColor(stint.compound) }} />
+                      <span className="dim small">{stint.compound ?? "?"}</span>
+                    </span>
+                    <span className="deg-track">
+                      <span
+                        className="deg-bar"
+                        style={{
+                          width: `${slope == null ? 0 : Math.max(2, width)}%`,
+                          background: compoundColor(stint.compound),
+                          opacity: slope == null ? 0.25 : 0.85,
+                        }}
+                      />
+                    </span>
+                    <span className="mono small" style={{ textAlign: "right" }}>
+                      {slope == null ? "too few laps" : `+${slope.toFixed(3)}s`}
+                    </span>
+                  </div>
+                );
+              })}
+            <p className="dim small" style={{ marginTop: 6 }}>
+              Bar length is the wear rate (axis to 0.6s per lap); the lap range is in the middle.
+              {scope === "all" &&
+                ` Showing the ${Math.min(12, slopeRows.length)} highest-wear stints of ${slopeRows.length} — Full view lists them all.`}
+            </p>
+          </div>
+        ) : (
+          <p className="dim small">No stint has enough timed laps to measure wear.</p>
+        )}
       </section>
 
       <section className="panel">
@@ -325,6 +339,51 @@ export default function PerformancePanel(p: Props) {
           </div>
         </section>
       </div>
+
+      <Modal
+        open={degModal}
+        onClose={() => setDegModal(false)}
+        title="Stint degradation"
+        subtitle="Lap times per stint with the fitted wear rate"
+        size="wide"
+      >
+        <LapChart
+          playback={p.playback}
+          laps={p.laps}
+          drivers={shownDrivers}
+          codes={new Map(p.towerOrder.map((d) => [d, p.driverCode(d)]))}
+          colors={p.colors}
+          totalLaps={p.totalLaps}
+        />
+        <div className="laps-wrap" style={{ maxHeight: "32vh", marginTop: 12 }}>
+          <table className="laps mono" style={{ fontSize: "0.82rem" }}>
+            <thead>
+              <tr>
+                <th>Driver</th>
+                <th>Compound</th>
+                <th>Laps</th>
+                <th>Wear</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slopeRows.map(({ stint, slope }) => (
+                <tr key={`${stint.driver_number}-${stint.lap_start}`}>
+                  <td>{p.driverCode(stint.driver_number)}</td>
+                  <td>{stint.compound ?? "?"}</td>
+                  <td>
+                    {stint.lap_start ?? "?"}–{stint.lap_end ?? "?"}
+                  </td>
+                  <td>{slope == null ? "too few laps" : `+${slope.toFixed(3)}s/lap`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="dim small">
+          The chart plots every timed lap; a rising line within one compound is the tyre going off. Single-lap
+          spikes are traffic, mistakes or in/out laps, not wear.
+        </p>
+      </Modal>
     </div>
   );
 }

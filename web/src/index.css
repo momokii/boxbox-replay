@@ -1152,3 +1152,34 @@ button.ghost {
   border-radius: 3px;
   opacity: 0.85;
 }
+
+.deg-bars {
+  display: grid;
+  gap: 4px;
+}
+
+.deg-row {
+  display: grid;
+  grid-template-columns: 40px 100px 1fr 70px;
+  align-items: center;
+  gap: 8px;
+}
+
+.deg-track {
+  height: 9px;
+  background: var(--panel-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.deg-bar {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+  .deg-row {
+    grid-template-columns: 36px 84px 1fr 64px;
+  }
+}

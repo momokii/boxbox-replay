@@ -816,6 +816,7 @@ export default function App() {
                 overtakes={overtakes.data?.events ?? []}
                 codes={new Map((drivers.data ?? []).map((d) => [d.driver_number, d.name_acronym]))}
                 labels={new Map((drivers.data ?? []).map((d) => [d.driver_number, driverMetaLabel(d.driver_number)]))}
+                colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
               />
             )}
             {view === "performance" && (

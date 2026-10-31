@@ -225,3 +225,27 @@ amber darkened to `#A86A00` for contrast on light. Data colors unchanged.
   totals, the verdict, a full breakdown table and what the model ignores.
 - Battle "Head to head" gained tooltips (gap now = to the race leader, plus a
   "between them" row); the relative-gap axis labels were corrected.
+
+
+## Pass 9 — depth on demand (modals, names, visual wear)
+
+- **Tooltips were detached inside tables**: the bubble was an absolutely
+  positioned child, so scroll containers clipped it and table cells pushed it to
+  the page edge. It is now rendered in a portal on `<body>`, positioned from the
+  measured term and flipped above when there is no room below; it closes on
+  scroll/resize.
+- **No more bare numbers**: lap tables and the head-to-head header show
+  `VER · Verstappen`, not `#1`. A shared `driverLabel()` helper keeps it
+  consistent, with tests.
+- **Depth on demand**: a reusable `Modal` (role=dialog, focus trap, Escape,
+  scroll lock, focus restore) hosts full views. Lap times get a wide modal with
+  driver chips and a pace chart for the chosen driver; lap pace gets a modal
+  chart of per-lap deltas (scaled to the 95th percentile so one pit-stop lap
+  cannot flatten it) plus the full table; degradation gets a modal with the lap
+  chart and every stint's fitted rate.
+- **Degradation became visual**: one bar per stint, length = wear rate, colour =
+  compound, sorted worst-first and capped at 12 in the inline view with a note
+  pointing to the full view.
+- **Driver card rebuilt**: team colour band, number badge, badges for position /
+  gap / tyre age / result, a five-lap strip (fastest highlighted) and a facts
+  list where every row is explained on hover.
