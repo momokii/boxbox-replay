@@ -10,6 +10,8 @@ import SpeedChart, { type SpeedSeries } from "./components/SpeedChart";
 import Timeline from "./components/Timeline";
 import Tower from "./components/Tower";
 import DriverCard from "./components/DriverCard";
+import Modal from "./components/Modal";
+import LapTimesModal from "./components/LapTimesModal";
 import Info from "./components/Info";
 import { formatClock } from "./session";
 import { driverLabel, formatLapTime, teamColor } from "./format";
@@ -123,6 +125,7 @@ export default function App() {
   const [selectedCorner, setSelectedCorner] = useState<string | null>(null);
   const [view, setView] = useState<"replay" | "battle" | "performance" | "pit">("replay");
   const [showLaps, setShowLaps] = useState(false);
+  const [lapsModal, setLapsModal] = useState(false);
   const year = yearSel ?? years.data?.[years.data.length - 1] ?? null;
 
   const meetings = useAsync(`meetings:${year ?? "none"}`, () =>
@@ -965,11 +968,32 @@ export default function App() {
         </main>
       )}
 
+      <Modal
+        open={lapsModal}
+        onClose={() => setLapsModal(false)}
+        title="Lap times"
+        subtitle={`${gpName}${sessName ? ` · ${sessName}` : ""} · every timed lap`}
+        size="wide"
+      >
+        <LapTimesModal
+          laps={tableRows}
+          drivers={drivers.data ?? []}
+          totalLaps={info.data?.total_laps ?? 0}
+          colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
+          playback={playback}
+        />
+      </Modal>
+
       {sessionKey && !sessionBlocked && (
         <section className="laps-section">
-          <button className="disclosure" onClick={() => setShowLaps((v) => !v)} aria-expanded={showLaps}>
-            {showLaps ? "Hide lap times" : `Show lap times (${tableRows.length})`}
-          </button>
+          <div className="row">
+            <button className="disclosure" onClick={() => setShowLaps((v) => !v)} aria-expanded={showLaps}>
+              {showLaps ? "Hide lap times" : `Show lap times (${tableRows.length})`}
+            </button>
+            <button className="disclosure" onClick={() => setLapsModal(true)}>
+              Full view
+            </button>
+          </div>
           {showLaps && (
             <div className="laps-wrap">
               <table className="laps mono">
