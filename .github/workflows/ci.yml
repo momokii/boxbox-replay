@@ -7,6 +7,10 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  security-events: write # required to upload the Trivy SARIF report
+
 jobs:
   api:
     name: API (python)
@@ -18,7 +22,8 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: ruff check .
-      - run: pytest
+      # `python -m` keeps the repo root importable regardless of pytest config.
+      - run: python -m pytest
 
   web:
     name: Web (node)
@@ -68,7 +73,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t boxbox-replay-api:ci .
-      - uses: aquasecurity/trivy-action@0.32.0
+      - uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: boxbox-replay-api:ci
           format: sarif

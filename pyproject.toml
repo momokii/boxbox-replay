@@ -9,3 +9,6 @@ ignore = []
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# Put the repo root on sys.path so the console-script `pytest` (used in CI)
+# resolves top-level modules such as analysis.py and data_loader.py.
+pythonpath = ["."]
