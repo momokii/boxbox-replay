@@ -12,6 +12,7 @@ import Tower from "./components/Tower";
 import DriverCard from "./components/DriverCard";
 import Modal from "./components/Modal";
 import LapTimesModal from "./components/LapTimesModal";
+import DriverDetails from "./components/DriverDetails";
 import Info from "./components/Info";
 import { formatClock } from "./session";
 import { driverLabel, formatLapTime, teamColor } from "./format";
@@ -126,6 +127,7 @@ export default function App() {
   const [view, setView] = useState<"replay" | "battle" | "performance" | "pit">("replay");
   const [showLaps, setShowLaps] = useState(false);
   const [lapsModal, setLapsModal] = useState(false);
+  const [driverDetail, setDriverDetail] = useState<"stints" | "laps" | "overtakes" | "pits" | null>(null);
   const year = yearSel ?? years.data?.[years.data.length - 1] ?? null;
 
   const meetings = useAsync(`meetings:${year ?? "none"}`, () =>
@@ -888,6 +890,7 @@ export default function App() {
                 result={
                   (result.data ?? []).find((r) => r.driver_number === selectedDriver) ?? null
                 }
+                onOpen={(kind) => setDriverDetail(kind)}
               />
             ) : (
               <>
@@ -967,6 +970,33 @@ export default function App() {
             )}
           </section>
         </main>
+      )}
+
+      {selectedDriver != null && (
+        <DriverDetails
+          kind={driverDetail}
+          onClose={() => setDriverDetail(null)}
+          driver={(drivers.data ?? []).find((d) => d.driver_number === selectedDriver)!}
+          label={driverMetaLabel(selectedDriver)}
+          lap={Math.max(1, progress.lap)}
+          laps={allLaps}
+          stints={stints.data ?? []}
+          overtakeEvents={overtakes.data?.events ?? []}
+          overtakeCounts={
+            (overtakes.data?.counts ?? []).find((o) => o.driver_number === selectedDriver) ?? null
+          }
+          pitStops={pit.data?.stops ?? []}
+          pitSummary={(pit.data?.summary ?? []).find((s) => s.driver_number === selectedDriver) ?? null}
+          color={driverMeta.get(selectedDriver)?.color ?? "#8A94A6"}
+          colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
+          playback={playback}
+          totalLaps={info.data?.total_laps ?? 0}
+          onSeek={(t) => {
+            playback.setT(t);
+            setDriverDetail(null);
+          }}
+          codes={new Map((drivers.data ?? []).map((d) => [d.driver_number, d.name_acronym]))}
+        />
       )}
 
       <Modal

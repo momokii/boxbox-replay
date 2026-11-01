@@ -16,6 +16,7 @@ interface Props {
   pit: PitStopSummary | null;
   overtakes: { made: number; lost: number } | null;
   result: SessionResultRow | null;
+  onOpen: (kind: "stints" | "laps" | "overtakes" | "pits") => void;
 }
 
 /** Everything needed to understand who this driver is and what they're doing. */
@@ -23,8 +24,11 @@ export default function DriverCard(p: Props) {
   const own = p.laps
     .filter((l) => l.driver_number === p.driver.driver_number && l.lap_duration != null)
     .sort((a, b) => a.lap_number - b.lap_number);
-  const last = own.length ? own[own.length - 1] : null;
-  const recent = own.slice(-5);
+  // "Most recent" means most recent at the replay clock, not at the end of the
+  // session: scrub back and these follow.
+  const upToNow = own.filter((l) => l.lap_number <= p.lap);
+  const last = upToNow.length ? upToNow[upToNow.length - 1] : null;
+  const recent = upToNow.slice(-5);
   const fastestRecent = recent.length ? Math.min(...recent.map((l) => l.lap_duration as number)) : null;
   const slowestRecent = recent.length ? Math.max(...recent.map((l) => l.lap_duration as number)) : null;
   const tyreAge = p.stint?.lap_start != null ? Math.max(1, p.lap - p.stint.lap_start + 1) : null;
@@ -59,17 +63,17 @@ export default function DriverCard(p: Props) {
           <strong>{p.gap == null ? "—" : `+${p.gap.toFixed(3)}`}</strong>
         </span>
         {p.stint && (
-          <span className="badge">
+          <button className="badge" onClick={() => p.onOpen("stints")} title="Open stints and wear">
             <i className="tower-chip" style={{ background: compoundColor(p.stint.compound) }} />
             <Info
               label="Tyre"
-              tip="Compound fitted for this stint and how many laps it has run. F1 colours: red soft, yellow medium, white hard."
+              tip="Compound on the car at the replay clock, and how many laps it has run at that point. Scrubbing the replay changes it."
             />
             <strong>
               {p.stint.compound ?? "?"}
               {tyreAge != null ? ` · ${tyreAge}L` : ""}
             </strong>
-          </span>
+          </button>
         )}
         {p.result && (
           <span className="badge">
@@ -117,15 +121,15 @@ export default function DriverCard(p: Props) {
       <dl className="facts">
         <div>
           <dt>
-            <Info label="Last lap" tip="The driver's most recent completed lap in the session data." />
+            <Info label="Last lap" tip="The most recent lap completed at the replay clock, not at the end of the session." />
           </dt>
           <dd>{last ? `${formatLapTime(last.lap_duration)} (L${last.lap_number})` : "—"}</dd>
         </div>
         <div>
           <dt>
-            <Info label="Best lap" tip="The driver's fastest lap of the session." />
+            <Info label="Best lap" tip="The driver's fastest lap of the whole session, with the lap it happened on." />
           </dt>
-          <dd>{p.bestLap ? formatLapTime(p.bestLap.lap_duration) : "—"}</dd>
+          <dd>{p.bestLap ? `${formatLapTime(p.bestLap.lap_duration)} (L${p.bestLap.lap_number})` : "—"}</dd>
         </div>
         <div>
           <dt>
@@ -153,6 +157,13 @@ export default function DriverCard(p: Props) {
           <dd>{p.overtakes ? `${p.overtakes.made} made · ${p.overtakes.lost} lost` : "—"}</dd>
         </div>
       </dl>
+
+      <div className="detail-actions">
+        <button className="chip" onClick={() => p.onOpen("stints")}>Stints &amp; wear</button>
+        <button className="chip" onClick={() => p.onOpen("laps")}>All laps</button>
+        <button className="chip" onClick={() => p.onOpen("overtakes")}>Overtakes</button>
+        <button className="chip" onClick={() => p.onOpen("pits")}>Pit stops</button>
+      </div>
 
       <p className="dim small">
         {p.driver.name_acronym} is the three-letter timing abbreviation for{" "}

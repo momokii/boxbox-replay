@@ -1183,3 +1183,19 @@ button.ghost {
     grid-template-columns: 36px 84px 1fr 64px;
   }
 }
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+
+button.badge {
+  background: transparent;
+  cursor: pointer;
+}
+
+button.badge:hover {
+  border-color: var(--amber);
+}
