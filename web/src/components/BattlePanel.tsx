@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { beginDraw, themeColors, useCanvasSize } from "../chart";
+import { formatLapTime } from "../format";
 import { formatClock, gapAt, type GapTable } from "../session";
 import Info from "./Info";
 import Modal from "./Modal";
 import BattleFullView from "./BattleFullView";
-import { formatLapTime } from "../format";
 import type { Driver, Lap } from "../types";
+import type { OvertakeRow } from "../api";
 
 interface Props {
   playback: { state: { t: number; dur: number; rev: number } };
@@ -14,164 +15,206 @@ interface Props {
   drivers: Driver[];
   laps: Lap[];
   onSeek: (t: number) => void;
-  overtakes: { t: number; overtaking_driver_number: number; overtaken_driver_number: number; position: number | null }[];
+  overtakes: OvertakeRow[];
   codes: Map<number, string>;
   labels: Map<number, string>;
   colors: Map<number, string>;
 }
 
 const H = 190;
+const MAX = 3;
 
 /**
- * Battle view: two drivers, their relative gap across the WHOLE session and a
- * lap-by-lap pace comparison. The playhead is shared with the replay clock.
+ * Battle view. One driver is the anchor; up to two challengers are compared
+ * against it, so every chart keeps a single, readable reference.
  */
 export default function BattlePanel(p: Props) {
-  const [a, setA] = useState<number | null>(null);
-  const [b, setB] = useState<number | null>(null);
+  const [picked, setPicked] = useState<(number | null)[]>([null, null, null]);
   const [paceModal, setPaceModal] = useState(false);
   const now = p.playback.state.t;
 
   const ordered = [...p.drivers].sort(
     (x, y) => (gapAt(p.table, x.driver_number, now) ?? 1e9) - (gapAt(p.table, y.driver_number, now) ?? 1e9),
   );
-  const driverA = a ?? ordered[0]?.driver_number ?? 0;
-  const driverB = b ?? ordered[1]?.driver_number ?? 0;
+  const anchor = picked[0] ?? ordered[0]?.driver_number ?? 0;
+  const challengers = [picked[1] ?? ordered[1]?.driver_number ?? null, picked[2] ?? null].filter(
+    (d): d is number => d != null && d !== anchor,
+  );
 
-  const gapA = gapAt(p.table, driverA, now);
-  const gapB = gapAt(p.table, driverB, now);
-  const relative = gapA != null && gapB != null ? gapA - gapB : null;
+  const gapOf = (d: number) => gapAt(p.table, d, now);
+  const gapAnchor = gapOf(anchor);
 
   const lapsOf = (d: number) =>
     p.laps.filter((l) => l.driver_number === d && l.lap_duration != null).sort((x, y) => x.lap_number - y.lap_number);
-  const lapsA = lapsOf(driverA);
-  const lapsB = lapsOf(driverB);
-  const best = (ls: Lap[]) => (ls.length ? Math.min(...ls.map((l) => l.lap_duration as number)) : null);
-  const bestA = best(lapsA);
-  const bestB = best(lapsB);
+  const lapsAnchor = lapsOf(anchor);
+  const bestOf = (d: number) => {
+    const ls = lapsOf(d);
+    return ls.length ? Math.min(...ls.map((l) => l.lap_duration as number)) : null;
+  };
 
-  const deltas = useMemo(
-    () =>
-      lapsA
-        .map((la) => {
-          const lb = lapsB.find((l) => l.lap_number === la.lap_number);
-          if (!lb) return null;
-          return { lap: la.lap_number, delta: (lb.lap_duration as number) - (la.lap_duration as number) };
-        })
-        .filter((x): x is { lap: number; delta: number } => x != null),
-    [lapsA, lapsB],
-  );
-  const maxAbs = Math.max(0.3, ...deltas.map((d) => Math.abs(d.delta)));
+  const setSlot = (i: number, value: number | null) =>
+    setPicked((prev) => prev.map((v, idx) => (idx === i ? value : v)));
+
+  const pairRows = useMemo(() => {
+    const all = [anchor, ...challengers];
+    const rows: { a: number; b: number; between: number | null }[] = [];
+    for (let i = 0; i < all.length; i += 1) {
+      for (let j = i + 1; j < all.length; j += 1) {
+        const ga = gapOf(all[i]);
+        const gb = gapOf(all[j]);
+        rows.push({ a: all[i], b: all[j], between: ga != null && gb != null ? Math.abs(ga - gb) : null });
+      }
+    }
+    return rows;
+  }, [anchor, challengers, p.table, now]);
 
   return (
     <div>
-      <div className="row" style={{ marginBottom: 8 }}>
-        {[0, 1].map((slot) => {
-          const current = slot === 0 ? driverA : driverB;
-          return (
-            <label key={slot} className="dim small">
-              {slot === 0 ? "Driver A" : "Driver B"}{" "}
-              <select
-                value={current}
-                onChange={(e) => (slot === 0 ? setA(Number(e.target.value)) : setB(Number(e.target.value)))}
-              >
-                {p.drivers.map((d) => (
+      <div className="row" style={{ marginBottom: 8, gap: 12 }}>
+        <label className="dim small">
+          Anchor{" "}
+          <select value={anchor} onChange={(e) => setSlot(0, Number(e.target.value))}>
+            {p.drivers.map((d) => (
+              <option key={d.driver_number} value={d.driver_number}>
+                #{d.driver_number} {d.name_acronym}
+              </option>
+            ))}
+          </select>
+        </label>
+        {[1, 2].map((slot) => (
+          <label key={slot} className="dim small">
+            {slot === 1 ? "Compare" : "Compare (optional)"}{" "}
+            <select
+              value={picked[slot] ?? ""}
+              onChange={(e) => setSlot(slot, e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">—</option>
+              {p.drivers
+                .filter(
+                  (d) =>
+                    d.driver_number !== anchor &&
+                    !picked.some((v, idx) => idx !== slot && v === d.driver_number),
+                )
+                .map((d) => (
                   <option key={d.driver_number} value={d.driver_number}>
                     #{d.driver_number} {d.name_acronym}
                   </option>
                 ))}
-              </select>
-            </label>
-          );
-        })}
+            </select>
+          </label>
+        ))}
+        <span className="dim small">Up to {MAX} drivers — all comparisons are against the anchor.</span>
       </div>
 
       <p className="small">
-        <strong>{p.labels.get(driverA) ?? `#${driverA}`}</strong> vs{" "}
-        <strong>{p.labels.get(driverB) ?? `#${driverB}`}</strong> —{" "}
-        {relative == null
-          ? "relative gap unavailable at this moment."
-          : relative <= 0
-            ? `${p.labels.get(driverA) ?? `#${driverA}`} is ${Math.abs(relative).toFixed(3)}s ahead of ${p.labels.get(driverB) ?? `#${driverB}`}.`
-            : `${p.labels.get(driverB) ?? `#${driverB}`} is ${relative.toFixed(3)}s ahead of ${p.labels.get(driverA) ?? `#${driverA}`}.`}
+        <strong>{p.labels.get(anchor) ?? `#${anchor}`}</strong>
+        {challengers.length === 0 && " — pick at least one driver to compare."}
+        {challengers.map((d) => {
+          const g = gapOf(d);
+          const diff = g != null && gapAnchor != null ? g - gapAnchor : null;
+          return (
+            <span key={d}>
+              {" · "}
+              <strong>{p.labels.get(d) ?? `#${d}`}</strong>{" "}
+              {diff == null ? "(gap unavailable)" : diff <= 0 ? `${Math.abs(diff).toFixed(3)}s ahead` : `${diff.toFixed(3)}s behind`}
+            </span>
+          );
+        })}
       </p>
 
       <div className="panel">
         <h3>
           <Info
             label="Relative gap over the session"
-            tip="For each moment, A's gap to the leader minus B's. Above the line means A is behind; below the line means A is ahead. Hover the chart for exact values."
+            tip="Each line is a challenger's gap to the leader minus the anchor's. Above the line means that driver is behind the anchor; below means ahead. Hover for values."
           />
         </h3>
-        <RelativeGap playback={p.playback} table={p.table} a={driverA} b={driverB} />
+        <RelativeGap playback={p.playback} table={p.table} anchor={anchor} challengers={challengers} colors={p.colors} labels={p.labels} />
         <p className="dim small">
-          Difference between their gaps to the leader across the whole session. The dashed line is zero — the
-          moment they are side by side.
+          Dashed line is zero — the moment they are side by side. One line per challenger, measured against the
+          anchor.
         </p>
       </div>
 
       <div className="panel">
         <h3>
           <Info
-            label="Lap pace, A vs B"
-            tip="Each row is one lap both drivers completed. The bar shows how much slower B was than A on that lap (right = B slower, left = B faster). Click a row to move the replay to that lap."
+            label="Lap pace vs anchor"
+            tip="Each row is a lap the anchor completed. Bars show how much slower each challenger was on the same lap (right = slower, left = faster). Click a row to jump the replay there."
           />
         </h3>
         <div className="row" style={{ justifyContent: "flex-end", marginBottom: 6 }}>
-          <button className="disclosure" onClick={() => setPaceModal(true)} disabled={!deltas.length}>
+          <button className="disclosure" onClick={() => setPaceModal(true)} disabled={!challengers.length}>
             Full view
           </button>
         </div>
-        {deltas.length ? (
+        {challengers.length ? (
           <div className="delta-bars">
-            {deltas.map((d) => {
-              const width = (Math.abs(d.delta) / maxAbs) * 50;
+            {lapsAnchor.map((la) => {
+              const deltas = challengers.map((d) => {
+                const lb = lapsOf(d).find((l) => l.lap_number === la.lap_number);
+                return lb ? (lb.lap_duration as number) - (la.lap_duration as number) : null;
+              });
+              const visible = deltas.filter((v): v is number => v != null);
+              if (!visible.length) return null;
+              const worst = Math.max(...visible.map(Math.abs));
               return (
                 <button
-                  key={d.lap}
+                  key={la.lap_number}
                   className="delta-row"
-                  title={`Lap ${d.lap}: ${d.delta >= 0 ? "B slower" : "B faster"} by ${Math.abs(d.delta).toFixed(3)}s`}
-                  onClick={() => p.onSeek((d.lap / Math.max(1, lapsA.length)) * p.playback.state.dur)}
+                  title={challengers
+                    .map((d, i) =>
+                      deltas[i] == null
+                        ? `${p.codes.get(d)}: no lap`
+                        : `${p.codes.get(d)} ${deltas[i]! >= 0 ? "+" : "−"}${Math.abs(deltas[i]!).toFixed(3)}s`,
+                    )
+                    .join(" · ")}
+                  onClick={() => p.onSeek((la.lap_number / Math.max(1, lapsAnchor.length)) * p.playback.state.dur)}
                 >
-                  <span className="dim">L{d.lap}</span>
+                  <span className="dim">L{la.lap_number}</span>
                   <span className="delta-track">
-                    <span
-                      className={d.delta >= 0 ? "delta-b b-slower" : "delta-b b-faster"}
-                      style={{ width: `${width}%` }}
-                    />
+                    {challengers.map((d, i) => {
+                      const v = deltas[i];
+                      if (v == null) return null;
+                      return (
+                        <span
+                          key={d}
+                          className={v >= 0 ? "delta-b b-slower" : "delta-b b-faster"}
+                          style={{
+                            width: `${(Math.abs(v) / Math.max(0.3, worst)) * 50}%`,
+                            background: p.colors.get(d),
+                            opacity: 0.85,
+                          }}
+                        />
+                      );
+                    })}
                   </span>
                   <span className="mono small">
-                    {d.delta >= 0 ? "+" : "−"}
-                    {Math.abs(d.delta).toFixed(3)}
+                    {deltas[0] == null ? "—" : `${deltas[0] >= 0 ? "+" : "−"}${Math.abs(deltas[0]).toFixed(3)}`}
                   </span>
                 </button>
               );
             })}
           </div>
         ) : (
-          <p className="dim small">No laps completed by both drivers in this session.</p>
+          <p className="dim small">Pick a challenger to compare lap pace.</p>
         )}
       </div>
 
       <div className="panel">
         <h3>
           <Info
-            label="Overtakes involving these two"
-            tip="Passes recorded by the timing feed where either driver was the passer or the passed. Click a row to jump the replay there."
+            label="Overtakes involving these drivers"
+            tip="Passes recorded by the timing feed where one of the selected drivers was the passer or the passed. Click a row to jump the replay there."
           />
         </h3>
         {(() => {
+          const all = [anchor, ...challengers];
           const rel = p.overtakes
-            .filter(
-              (o) =>
-                o.overtaking_driver_number === driverA ||
-                o.overtaken_driver_number === driverA ||
-                o.overtaking_driver_number === driverB ||
-                o.overtaken_driver_number === driverB,
-            )
+            .filter((o) => all.includes(o.overtaking_driver_number) || all.includes(o.overtaken_driver_number))
             .sort((x, y) => x.t - y.t)
             .slice(0, 8);
-          if (!rel.length) return <p className="dim small">None recorded between these two drivers.</p>;
+          if (!rel.length) return <p className="dim small">None recorded involving these drivers.</p>;
           return (
             <div className="event-list">
               {rel.map((o, i) => (
@@ -192,18 +235,16 @@ export default function BattlePanel(p: Props) {
       <Modal
         open={paceModal}
         onClose={() => setPaceModal(false)}
-        title={`Lap pace — ${p.labels.get(driverA) ?? `#${driverA}`} vs ${p.labels.get(driverB) ?? `#${driverB}`}`}
-        subtitle="Every lap both drivers completed, with the difference per lap."
+        title={`Lap pace — ${p.labels.get(anchor) ?? `#${anchor}`} as anchor`}
+        subtitle="Every lap the anchor completed, with the difference for each challenger."
         size="wide"
       >
         <BattleFullView
           laps={p.laps}
-          a={driverA}
-          b={driverB}
-          labelA={p.labels.get(driverA) ?? `#${driverA}`}
-          labelB={p.labels.get(driverB) ?? `#${driverB}`}
-          colorA={p.colors.get(driverA) ?? "#8A94A6"}
-          colorB={p.colors.get(driverB) ?? "#8A94A6"}
+          anchor={anchor}
+          challengers={challengers}
+          labels={p.labels}
+          colors={p.colors}
         />
       </Modal>
 
@@ -212,42 +253,31 @@ export default function BattlePanel(p: Props) {
         <table className="laps mono" style={{ fontSize: "0.82rem" }}>
           <thead>
             <tr>
-              <th>&nbsp;</th>
-              <th>{p.labels.get(driverA) ?? `#${driverA}`}</th>
-              <th>{p.labels.get(driverB) ?? `#${driverB}`}</th>
+              <th>Pair</th>
+              <th>
+                <Info label="Between them" tip="Distance between the two drivers at the replay clock." />
+              </th>
+              <th>
+                <Info label="Best laps" tip="Each driver's fastest lap of the session." />
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>
-                <Info label="Best lap" tip="Each driver's fastest measured lap of the session." />
-              </td>
-              <td>{bestA ? formatLapTime(bestA) : "—"}</td>
-              <td>{bestB ? formatLapTime(bestB) : "—"}</td>
-            </tr>
-            <tr>
-              <td>
-                <Info label="Laps measured" tip="Laps with a timing value. Missing laps mean the feed has no time for them." />
-              </td>
-              <td>{lapsA.length}</td>
-              <td>{lapsB.length}</td>
-            </tr>
-            <tr>
-              <td>
-                <Info
-                  label="Gap now"
-                  tip="Seconds behind the RACE LEADER at the replay clock — not the gap between these two drivers. The line above the chart gives their gap to each other."
-                />
-              </td>
-              <td>{gapA == null ? "—" : `+${gapA.toFixed(3)}`}</td>
-              <td>{gapB == null ? "—" : `+${gapB.toFixed(3)}`}</td>
-            </tr>
-            <tr>
-              <td>
-                <Info label="Between them" tip="The gap from one driver to the other at the replay clock." />
-              </td>
-              <td colSpan={2}>{relative == null ? "—" : `${Math.abs(relative).toFixed(3)}s`}</td>
-            </tr>
+            {pairRows.map((r) => {
+              const ba = bestOf(r.a);
+              const bb = bestOf(r.b);
+              return (
+                <tr key={`${r.a}-${r.b}`}>
+                  <td>
+                    {p.labels.get(r.a) ?? `#${r.a}`} vs {p.labels.get(r.b) ?? `#${r.b}`}
+                  </td>
+                  <td>{r.between == null ? "—" : `${r.between.toFixed(3)}s`}</td>
+                  <td>
+                    {ba ? formatLapTime(ba) : "—"} / {bb ? formatLapTime(bb) : "—"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -258,33 +288,37 @@ export default function BattlePanel(p: Props) {
 function RelativeGap(p: {
   playback: { state: { t: number; dur: number; rev: number } };
   table: GapTable;
-  a: number;
-  b: number;
+  anchor: number;
+  challengers: number[];
+  colors: Map<number, string>;
+  labels: Map<number, string>;
 }) {
   const { canvasRef, wrapRef, width, dpr } = useCanvasSize(H);
   const [hoverT, setHoverT] = useState<number | null>(null);
   const dur = Math.max(1, p.playback.state.dur);
 
-  const samples = useMemo(() => {
-    const out: { t: number; d: number; ga: number; gb: number }[] = [];
-    const step = Math.max(1, dur / 900);
-    for (let t = 0; t <= dur; t += step) {
-      const ga = gapAt(p.table, p.a, t);
-      const gb = gapAt(p.table, p.b, t);
-      if (ga == null || gb == null) continue;
-      out.push({ t, d: ga - gb, ga, gb });
-    }
-    return out;
-  }, [p.table, p.a, p.b, dur]);
+  const series = useMemo(() => {
+    const step = Math.max(1, dur / 700);
+    return p.challengers.map((d) => {
+      const pts: { t: number; d: number; ga: number; gb: number }[] = [];
+      for (let t = 0; t <= dur; t += step) {
+        const ga = gapAt(p.table, p.anchor, t);
+        const gb = gapAt(p.table, d, t);
+        if (ga == null || gb == null) continue;
+        pts.push({ t, d: gb - ga, ga, gb });
+      }
+      return { driver: d, pts };
+    });
+  }, [p.table, p.anchor, p.challengers, dur]);
 
-  const maxAbs = Math.max(1, ...samples.map((s) => Math.abs(s.d)));
+  const maxAbs = Math.max(1, ...series.flatMap((s) => s.pts.map((q) => Math.abs(q.d))));
   const padL = 44;
   const padB = 18;
   const padT = 12;
   const mid = (H - padB + padT) / 2;
   const amp = (H - padB - padT) / 2 - 6;
   const X = (t: number, w: number) => padL + (t / dur) * (w - padL - 8);
-  const Y = (d: number) => mid - (d / maxAbs) * amp;
+  const Y = (v: number) => mid - (v / maxAbs) * amp;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -317,20 +351,26 @@ function RelativeGap(p: {
     ctx.fillText(`+${maxAbs.toFixed(1)}s`, 2, padT + 6);
     ctx.fillText("0", 2, mid + 3);
     ctx.fillText(`−${maxAbs.toFixed(1)}s`, 2, h - padB);
-    ctx.fillText("B ahead", padL + 4, padT + 10);
-    ctx.fillText("A ahead", padL + 4, h - padB - 4);
+    ctx.fillText("behind anchor", padL + 4, padT + 10);
+    ctx.fillText("ahead of anchor", padL + 4, h - padB - 4);
     ctx.fillText(formatClock(dur), w - 46, h - 3);
 
-    if (!samples.length) {
-      ctx.fillText("Gap data unavailable for one of these drivers.", padL + 8, 40);
+    if (!series.length || series.every((s) => !s.pts.length)) {
+      ctx.fillText("Gap data unavailable for these drivers.", padL + 8, mid - 10);
       return;
     }
 
-    ctx.strokeStyle = c.amber;
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    samples.forEach((s, i) => (i ? ctx.lineTo(X(s.t, w), Y(s.d)) : ctx.moveTo(X(s.t, w), Y(s.d))));
-    ctx.stroke();
+    const dashes = [[], [5, 3], [2, 3]];
+    series.forEach((s, idx) => {
+      if (s.pts.length < 2) return;
+      ctx.strokeStyle = p.colors.get(s.driver) ?? c.amber;
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash(dashes[idx % dashes.length]);
+      ctx.beginPath();
+      s.pts.forEach((q, i) => (i ? ctx.lineTo(X(q.t, w), Y(q.d)) : ctx.moveTo(X(q.t, w), Y(q.d))));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
 
     if (hoverT != null) {
       ctx.strokeStyle = c.ink;
@@ -341,11 +381,17 @@ function RelativeGap(p: {
       ctx.lineTo(X(hoverT, w), h - padB);
       ctx.stroke();
       ctx.globalAlpha = 1;
-      const near = samples.reduce((best, s) => (Math.abs(s.t - hoverT) < Math.abs(best.t - hoverT) ? s : best), samples[0]);
-      ctx.fillStyle = c.amber;
-      ctx.beginPath();
-      ctx.arc(X(near.t, w), Y(near.d), 3.2, 0, Math.PI * 2);
-      ctx.fill();
+      for (const s of series) {
+        const near = s.pts.reduce(
+          (best, q) => (Math.abs(q.t - hoverT) < Math.abs(best.t - hoverT) ? q : best),
+          s.pts[0] ?? null,
+        );
+        if (!near) continue;
+        ctx.fillStyle = p.colors.get(s.driver) ?? c.amber;
+        ctx.beginPath();
+        ctx.arc(X(near.t, w), Y(near.d), 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     const px = X(Math.min(dur, p.playback.state.t), w);
@@ -357,11 +403,18 @@ function RelativeGap(p: {
     ctx.lineTo(px, h - padB);
     ctx.stroke();
     ctx.globalAlpha = 1;
-  }, [canvasRef, width, dpr, samples, hoverT, dur, maxAbs, mid, amp, padB, padT, p.playback.state.t]);
+  }, [canvasRef, width, dpr, series, hoverT, dur, maxAbs, padB, padT, mid, amp, p.anchor, p.challengers, p.colors, p.playback.state.t]);
 
-  const hover = hoverT == null
-    ? null
-    : samples.reduce((best, s) => (Math.abs(s.t - hoverT) < Math.abs(best.t - hoverT) ? s : best), samples[0]);
+  const hoverRows =
+    hoverT == null
+      ? []
+      : series.flatMap((s) => {
+          const near = s.pts.reduce(
+            (best, q) => (Math.abs(q.t - hoverT) < Math.abs(best.t - hoverT) ? q : best),
+            s.pts[0] ?? null,
+          );
+          return near ? [{ driver: s.driver, d: near.d, at: near.t }] : [];
+        });
 
   return (
     <div ref={wrapRef} style={{ position: "relative" }}>
@@ -373,13 +426,26 @@ function RelativeGap(p: {
         }}
         onMouseLeave={() => setHoverT(null)}
       />
-      {hover && (
-        <div className="chart-tip" style={{ left: Math.min(Math.max(X(hover.t, width) + 10, 8), Math.max(8, width - 160)) }}>
-          <strong>{formatClock(hover.t)}</strong>
-          <div>#{p.a} ahead by {Math.abs(hover.d).toFixed(3)}s</div>
-          <div className="dim">#{p.a} +{hover.ga.toFixed(3)} · #{p.b} +{hover.gb.toFixed(3)} to leader</div>
+      {hoverT != null && hoverRows.length > 0 && (
+        <div className="chart-tip" style={{ left: Math.min(Math.max(X(hoverT, width) + 10, 8), Math.max(8, width - 170)) }}>
+          <strong>{formatClock(hoverT)}</strong>
+          {hoverRows.map((r) => (
+            <div key={r.driver}>
+              <i style={{ background: p.colors.get(r.driver) }} />
+              {p.labels.get(r.driver) ?? `#${r.driver}`} ·{" "}
+              {r.d <= 0 ? `${Math.abs(r.d).toFixed(3)}s ahead` : `${r.d.toFixed(3)}s behind`}
+            </div>
+          ))}
         </div>
       )}
+      <div className="legend">
+        {series.map((s) => (
+          <span key={s.driver}>
+            <i style={{ background: p.colors.get(s.driver) }} />
+            {p.labels.get(s.driver) ?? `#${s.driver}`}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

@@ -5,45 +5,43 @@ import type { Lap } from "../types";
 
 interface Props {
   laps: Lap[];
-  a: number;
-  b: number;
-  labelA: string;
-  labelB: string;
-  colorA: string;
-  colorB: string;
+  anchor: number;
+  challengers: number[];
+  labels: Map<number, string>;
+  colors: Map<number, string>;
 }
 
 const H = 260;
 
-/** Larger, readable lap-pace comparison: delta per lap plus both lap times. */
+/** Larger lap-pace comparison: deltas to the anchor, plus every lap time. */
 export default function BattleFullView(p: Props) {
   const { canvasRef, wrapRef, width, dpr } = useCanvasSize(H);
   const [hover, setHover] = useState<{ lap: number; x: number } | null>(null);
 
-  const deltas = useMemo(() => {
-    const of = (d: number) =>
-      p.laps.filter((l) => l.driver_number === d && l.lap_duration != null).sort((x, y) => x.lap_number - y.lap_number);
-    const a = of(p.a);
-    const b = of(p.b);
-    return a
-      .map((la) => {
-        const lb = b.find((l) => l.lap_number === la.lap_number);
-        if (!lb) return null;
+  const rows = useMemo(() => {
+    const anchorLaps = p.laps
+      .filter((l) => l.driver_number === p.anchor && l.lap_duration != null)
+      .sort((x, y) => x.lap_number - y.lap_number);
+    return anchorLaps.map((la) => {
+      const values = p.challengers.map((d) => {
+        const lb = p.laps.find(
+          (l) => l.driver_number === d && l.lap_number === la.lap_number && l.lap_duration != null,
+        );
         return {
-          lap: la.lap_number,
-          ta: la.lap_duration as number,
-          tb: lb.lap_duration as number,
-          delta: (lb.lap_duration as number) - (la.lap_duration as number),
+          driver: d,
+          time: lb ? (lb.lap_duration as number) : null,
+          delta: lb ? (lb.lap_duration as number) - (la.lap_duration as number) : null,
         };
-      })
-      .filter((x): x is { lap: number; ta: number; tb: number; delta: number } => x != null);
-  }, [p.laps, p.a, p.b]);
+      });
+      return { lap: la.lap_number, ta: la.lap_duration as number, values };
+    });
+  }, [p.laps, p.anchor, p.challengers]);
 
-  const maxLap = Math.max(1, ...deltas.map((d) => d.lap));
-  // Scale to the 95th percentile so one pit-stop lap cannot flatten the rest.
-  const sortedAbs = [...deltas.map((d) => Math.abs(d.delta))].sort((x, y) => x - y);
+  const maxLap = Math.max(1, ...rows.map((r) => r.lap));
+  const flat = rows.flatMap((r) => r.values.map((v) => v.delta)).filter((v): v is number => v != null).map(Math.abs);
+  const sortedAbs = [...flat].sort((x, y) => x - y);
   const p95 = sortedAbs.length ? sortedAbs[Math.floor(sortedAbs.length * 0.95)] : 0.5;
-  const maxAbs = Math.max(0.5, Math.min(Math.max(...deltas.map((d) => Math.abs(d.delta))), p95 * 1.1));
+  const maxAbs = Math.max(0.5, Math.min(Math.max(...flat, 0.5), p95 * 1.1));
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -83,72 +81,64 @@ export default function BattleFullView(p: Props) {
     ctx.fillText(`+${maxAbs.toFixed(1)}s`, 2, padT + 6);
     ctx.fillText("0", 2, mid + 3);
     ctx.fillText(`−${maxAbs.toFixed(1)}s`, 2, h - padB);
-    ctx.fillText(`${p.labelB} slower`, padL + 4, padT + 10);
-    ctx.fillText(`scale ±${maxAbs.toFixed(1)}s`, w - 92, padT + 10);
-    ctx.fillText(`${p.labelA} slower`, padL + 4, h - padB - 4);
-    for (let lap = 10; lap <= maxLap; lap += 10) {
-      ctx.fillText(String(lap), X(lap) - 5, h - 6);
-    }
+    ctx.fillText("challenger slower", padL + 4, padT + 10);
+    ctx.fillText("challenger faster", padL + 4, h - padB - 4);
+    for (let lap = 10; lap <= maxLap; lap += 10) ctx.fillText(String(lap), X(lap) - 5, h - 6);
 
-    if (!deltas.length) {
-      ctx.fillText("No laps completed by both drivers.", padL + 8, mid - 10);
+    if (!rows.length) {
+      ctx.fillText("No laps completed by the anchor.", padL + 8, mid - 10);
       return;
     }
 
-    // Zero line bars: above = B slower, below = A slower.
-    deltas.forEach((d) => {
-      const x = X(d.lap);
-      const clamped = Math.max(-maxAbs, Math.min(maxAbs, d.delta));
-      const y = Y(clamped);
-      ctx.strokeStyle = d.delta >= 0 ? c.amber : c.green;
-      ctx.globalAlpha = 0.7;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x, mid);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = d.delta >= 0 ? c.amber : c.green;
-      ctx.beginPath();
-      ctx.arc(x, y, 1.8, 0, Math.PI * 2);
-      ctx.fill();
+    rows.forEach((r) => {
+      r.values.forEach((v) => {
+        if (v.delta == null) return;
+        const clamped = Math.max(-maxAbs, Math.min(maxAbs, v.delta));
+        const x = X(r.lap);
+        const y = Y(clamped);
+        ctx.strokeStyle = p.colors.get(v.driver) ?? c.amber;
+        ctx.globalAlpha = 0.75;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, mid);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = p.colors.get(v.driver) ?? c.amber;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
     });
 
     if (hover) {
-      const d = deltas.find((x) => x.lap === hover.lap);
-      if (d) {
+      const r = rows.find((x) => x.lap === hover.lap);
+      if (r) {
         ctx.strokeStyle = c.ink;
         ctx.globalAlpha = 0.4;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(X(d.lap), padT);
-        ctx.lineTo(X(d.lap), h - padB);
+        ctx.moveTo(X(r.lap), padT);
+        ctx.lineTo(X(r.lap), h - padB);
         ctx.stroke();
         ctx.globalAlpha = 1;
-        ctx.fillStyle = c.amber;
-        ctx.beginPath();
-        ctx.arc(X(d.lap), Y(d.delta), 3.4, 0, Math.PI * 2);
-        ctx.fill();
       }
     }
-  }, [canvasRef, width, dpr, deltas, hover, maxLap, maxAbs, p.labelA, p.labelB, p.a, p.b]);
+  }, [canvasRef, width, dpr, rows, hover, maxLap, maxAbs, p.colors]);
 
-  const hovered = hover ? deltas.find((d) => d.lap === hover.lap) : null;
+  const hovered = hover ? rows.find((r) => r.lap === hover.lap) : null;
 
   return (
     <div>
       <div className="row" style={{ gap: 16, marginBottom: 8 }}>
-        <span className="small">
-          <i className="tower-chip" style={{ background: p.colorA, display: "inline-block", marginRight: 6 }} />
-          {p.labelA}
-        </span>
-        <span className="small">
-          <i className="tower-chip" style={{ background: p.colorB, display: "inline-block", marginRight: 6 }} />
-          {p.labelB}
-        </span>
-        <span className="dim small">
-          Bars above the line mean {p.labelB} was slower on that lap; below means {p.labelA} was.
-        </span>
+        {[p.anchor, ...p.challengers].map((d) => (
+          <span key={d} className="small">
+            <i className="tower-chip" style={{ background: p.colors.get(d), display: "inline-block", marginRight: 6 }} />
+            {p.labels.get(d) ?? `#${d}`}
+            {d === p.anchor ? " (anchor)" : ""}
+          </span>
+        ))}
+        <span className="dim small">Bars above the line: that challenger was slower than the anchor on the lap.</span>
       </div>
 
       <div ref={wrapRef} style={{ position: "relative" }}>
@@ -162,17 +152,19 @@ export default function BattleFullView(p: Props) {
           onMouseLeave={() => setHover(null)}
         />
         {hovered && (
-          <div className="chart-tip" style={{ left: Math.min(Math.max(hover!.x + 10, 8), Math.max(8, width - 190)) }}>
+          <div className="chart-tip" style={{ left: Math.min(Math.max(hover!.x + 10, 8), Math.max(8, width - 200)) }}>
             <strong>Lap {hovered.lap}</strong>
             <div>
-              <i style={{ background: p.colorA }} /> {p.labelA} {formatLapTime(hovered.ta)}
+              <i style={{ background: p.colors.get(p.anchor) }} /> {p.labels.get(p.anchor) ?? `#${p.anchor}`}{" "}
+              {formatLapTime(hovered.ta)}
             </div>
-            <div>
-              <i style={{ background: p.colorB }} /> {p.labelB} {formatLapTime(hovered.tb)}
-            </div>
-            <div className="dim">
-              {hovered.delta >= 0 ? p.labelB : p.labelA} slower by {Math.abs(hovered.delta).toFixed(3)}s
-            </div>
+            {hovered.values.map((v) => (
+              <div key={v.driver}>
+                <i style={{ background: p.colors.get(v.driver) }} /> {p.labels.get(v.driver) ?? `#${v.driver}`}{" "}
+                {v.time == null ? "no lap" : formatLapTime(v.time)}
+                {v.delta != null ? ` (${v.delta >= 0 ? "+" : "−"}${Math.abs(v.delta).toFixed(3)})` : ""}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -182,21 +174,22 @@ export default function BattleFullView(p: Props) {
           <thead>
             <tr>
               <th>Lap</th>
-              <th>{p.labelA}</th>
-              <th>{p.labelB}</th>
-              <th>Delta</th>
+              <th>{p.labels.get(p.anchor) ?? `#${p.anchor}`}</th>
+              {p.challengers.map((d) => (
+                <th key={d}>{p.labels.get(d) ?? `#${d}`}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {deltas.map((d) => (
-              <tr key={d.lap}>
-                <td>{d.lap}</td>
-                <td>{formatLapTime(d.ta)}</td>
-                <td>{formatLapTime(d.tb)}</td>
-                <td className={d.delta >= 0 ? "" : "sector-personal"}>
-                  {d.delta >= 0 ? "+" : "−"}
-                  {Math.abs(d.delta).toFixed(3)}
-                </td>
+            {rows.map((r) => (
+              <tr key={r.lap}>
+                <td>{r.lap}</td>
+                <td>{formatLapTime(r.ta)}</td>
+                {r.values.map((v) => (
+                  <td key={v.driver} className={v.delta != null && v.delta < 0 ? "sector-personal" : ""}>
+                    {v.time == null ? "—" : formatLapTime(v.time)}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
