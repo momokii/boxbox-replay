@@ -190,6 +190,7 @@ export default function App() {
   );
   const [replayRetry, setReplayRetry] = useState(0);
   const [pausedAt, setPausedAt] = useState(0);
+  const [linkCopied, setLinkCopied] = useState(false);
   const autoRetried = useRef<Set<number>>(new Set());
 
   const replay = useAsync(`replay:${sessionKey ?? "none"}:${replayRetry}`, () =>
@@ -239,6 +240,24 @@ export default function App() {
   // their own; the page around them only needs ~8 updates a second.
   useThrottledTick(playback, 120);
   const { t: playT, dur, playing, speed, calm } = playback.state;
+
+  // Respect the OS "reduce motion" preference on first load.
+  const calmInitialised = useRef(false);
+  useEffect(() => {
+    if (calmInitialised.current) return;
+    calmInitialised.current = true;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) playback.setCalm(true);
+  }, [playback]);
+
+  /** Absolute URL for the current frame — built from state, not from location. */
+  const momentUrl = () => {
+    const q = new URLSearchParams();
+    if (year) q.set("year", String(year));
+    if (meetingKey) q.set("meeting", String(meetingKey));
+    if (sessionKey) q.set("session", String(sessionKey));
+    q.set("t", playT.toFixed(1));
+    return `${window.location.origin}${window.location.pathname}?${q.toString()}`;
+  };
 
   const restoredMoment = useRef(false);
   useEffect(() => {
@@ -532,8 +551,28 @@ export default function App() {
           {progress.total ? ` · LAP ${Math.max(1, progress.lap)}/${progress.total}` : ""}
         </span>
         <span className="clock">{formatClock(playT)}</span>
-        <button className="theme-toggle" onClick={toggle} aria-label="Switch theme">
-          {theme === "night" ? "Day" : "Night"}
+        <button
+          className="theme-toggle"
+          onClick={toggle}
+          aria-label={theme === "night" ? "Switch to light theme" : "Switch to dark theme"}
+          title={theme === "night" ? "Light theme" : "Dark theme"}
+        >
+          {theme === "night" ? (
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="4.2" fill="currentColor" />
+              <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2" />
+                <path d="M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6" />
+              </g>
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <path
+                d="M20 14.6A8.4 8.4 0 0 1 9.4 4a8.4 8.4 0 1 0 10.6 10.6z"
+                fill="currentColor"
+              />
+            </svg>
+          )}
         </button>
       </header>
 
@@ -716,20 +755,36 @@ export default function App() {
                           </button>
                         ))}
                       </div>
-                      <label className="dim small row">
-                        <input type="checkbox" checked={calm} onChange={(e) => playback.setCalm(e.target.checked)} />
-                        Calm
+                      <label className="dim small row" title="Stops auto-advance so you can scrub frame by frame">
+                        <input
+                          type="checkbox"
+                          checked={calm}
+                          onChange={(e) => playback.setCalm(e.target.checked)}
+                        />
+                        <Info
+                          label="Reduce motion"
+                          tip="Pauses automatic playback and keeps the playhead still until you scrub. It starts switched on if your system asks for reduced motion. Keyboard: Space still toggles play."
+                        />
                       </label>
                       <button
                         className="ghost small"
                         onClick={() => {
+                          const url = momentUrl();
                           setPausedAt(playT);
-                          const url = window.location.href;
-                          navigator.clipboard?.writeText(url).catch(() => undefined);
+                          window.history.replaceState(null, "", url);
+                          const done = () => {
+                            setLinkCopied(true);
+                            window.setTimeout(() => setLinkCopied(false), 1600);
+                          };
+                          navigator.clipboard?.writeText(url).then(done).catch(() => {
+                            // Clipboard blocked (http, permissions): show it instead of pretending.
+                            window.prompt("Copy this link", url);
+                          });
                         }}
-                        title="Copy a link that opens this exact moment"
+                        disabled={playT < 0.5}
+                        title="Copy a link that reopens the replay at this exact moment"
                       >
-                        Copy link to this moment
+                        {linkCopied ? "Link copied" : "Copy link to this moment"}
                       </button>
                       <span className="mono small dim" style={{ marginLeft: "auto" }}>
                         {formatClock(playT)} / {formatClock(dur)}

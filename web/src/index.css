@@ -119,9 +119,19 @@ h3 {
 }
 
 .theme-toggle {
-  padding: 6px 12px;
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   border-radius: 999px;
+  color: var(--ink);
+}
+
+.theme-toggle:hover {
+  border-color: var(--amber);
+  color: var(--amber);
 }
 
 .pickers {
