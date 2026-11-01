@@ -1,5 +1,7 @@
 import { useEffect, useReducer } from "react";
 
+import { createThrottler } from "./throttle";
+
 export interface PlayState {
   t: number;
   dur: number;
@@ -115,13 +117,14 @@ export function useThrottledTick(
 ): number {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
-    let last = 0;
-    return playback.subscribe(() => {
-      const now = performance.now();
-      if (now - last < minIntervalMs) return;
-      last = now;
-      bump();
-    });
+    // Trailing-edge: the last event of a burst (pause, seek) must not be dropped,
+    // otherwise the button can stay stuck on "Pause" after playback stops.
+    const throttler = createThrottler(minIntervalMs, bump);
+    const unsubscribe = playback.subscribe(throttler.notify);
+    return () => {
+      unsubscribe();
+      throttler.cancel();
+    };
   }, [playback, minIntervalMs]);
   return playback.state.rev;
 }
