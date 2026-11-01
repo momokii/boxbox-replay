@@ -296,3 +296,13 @@ anchor plus two challengers with per-challenger gap lines and a pairwise
 head-to-head. Degradation is grouped per driver with a "how to read" guide.
 Tables sort via accessible headers (aria-sort, stable ordering, 5 new tests).
 54 pytest + 41 vitest; 60 fps preserved.
+
+## 2026-10-30 — U13 multi-driver lap comparison + grouped wear modal
+
+Lap-times full view is now a multi-select: chips toggle any number of drivers,
+the chart overlays them with a legend, and rows carry a team-colour dot, a 3px
+inset edge and a tint so mixed tables stay readable; default sort is by lap.
+The degradation full view now reuses the grouped-by-driver list from the
+overview (every driver, every stint) instead of repeating a driver per row, and
+its chart is limited to the six highest-wear drivers with a legend and a note.
+54 pytest + 41 vitest, lint clean, verified with screenshots.

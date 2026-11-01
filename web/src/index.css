@@ -1262,3 +1262,14 @@ button.badge:hover {
 th[aria-sort="none"] .sort-btn {
   color: var(--dim);
 }
+
+.driver-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+tr.driver-marked td {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}

@@ -64,3 +64,17 @@ plus a frame-timing check to confirm playback still runs at 60 fps.
 
 Measured after the work: playback still holds 60 fps (p50 16.7 ms, p95 16.8 ms)
 and no page errors on any of the new surfaces.
+
+
+## Follow-up after review
+
+- **Lap times can compare any number of drivers.** The chips are a multi-select
+  (empty = all drivers); the chart draws one line per selection and names them in
+  a legend. Rows are differentiated by a team-colour dot, a 3px inset edge and a
+  subtle row tint, so a mixed table is readable. Default order is by lap, and any
+  column still sorts.
+- **Degradation full view uses the same grouped layout as the overview**, just
+  complete (every driver, every stint) instead of a flat table where a driver
+  appeared once per stint. The chart above it is limited to the six
+  highest-wear drivers so it stays legible, with a legend and a note saying the
+  list below covers everyone.

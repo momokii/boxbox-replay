@@ -11,6 +11,7 @@ interface Props {
   codes: Map<number, string>;
   colors: Map<number, string>;
   totalLaps: number;
+  labels?: Map<number, string>;
 }
 
 const H = 200;
@@ -125,6 +126,16 @@ export default function LapChart(p: Props) {
               <i style={{ background: p.colors.get(r.driver) }} />
               {r.code} · {formatLapTime(r.t)}
             </div>
+          ))}
+        </div>
+      )}
+      {series.length > 0 && (
+        <div className="legend">
+          {series.map((s) => (
+            <span key={s.driver}>
+              <i style={{ background: p.colors.get(s.driver) }} />
+              {p.labels?.get(s.driver) ?? p.codes.get(s.driver) ?? `#${s.driver}`}
+            </span>
           ))}
         </div>
       )}

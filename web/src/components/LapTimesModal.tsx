@@ -20,27 +20,37 @@ interface Props {
 }
 
 /**
- * Full lap-time view: filter to one driver (or all), read every sector, and see
- * the pace chart above the same rows.
+ * Full lap-time view.
+ *
+ * Pick any number of drivers: the chart compares them, and every row carries the
+ * driver's colour so a mixed table stays readable.
  */
 export default function LapTimesModal(p: Props) {
-  const [driver, setDriver] = useState<number | "all">("all");
-  const { state, toggle } = useSort();
+  const [selected, setSelected] = useState<number[]>([]);
+  // Lap order by default: it is the axis people compare on.
+  const { state, toggle } = useSort({ key: "lap", dir: "asc" });
+
+  const active = selected;
+  const toggleDriver = (n: number) =>
+    setSelected((cur) => (cur.includes(n) ? cur.filter((x) => x !== n) : [...cur, n]));
 
   const base = useMemo(
-    () => (driver === "all" ? p.laps : p.laps.filter((l) => l.driver_number === driver)),
-    [p.laps, driver],
+    () => (active.length ? p.laps.filter((l) => active.includes(l.driver_number)) : p.laps),
+    [p.laps, active],
   );
-  const rows = useSortedRows(base, (l, key) => {
-    if (key === "driver") return l.driver_number;
-    if (key === "lap") return l.lap_number;
-    if (key === "time") return l.lap_duration;
-    if (key === "s1") return l.duration_sector_1;
-    if (key === "s2") return l.duration_sector_2;
-    if (key === "s3") return l.duration_sector_3;
-    return l.lap_number;
-  }, state).slice(0, 1200);
-  const chartDrivers = driver === "all" ? [] : [driver];
+  const rows = useSortedRows(
+    base,
+    (l, key) => {
+      if (key === "driver") return l.driver_number;
+      if (key === "lap") return l.lap_number;
+      if (key === "time") return l.lap_duration;
+      if (key === "s1") return l.duration_sector_1;
+      if (key === "s2") return l.duration_sector_2;
+      if (key === "s3") return l.duration_sector_3;
+      return l.lap_number;
+    },
+    state,
+  ).slice(0, 1500);
 
   const meta = useMemo(() => {
     const m = new Map<number, Driver>();
@@ -52,49 +62,64 @@ export default function LapTimesModal(p: Props) {
     const d = meta.get(n);
     return driverLabel(d?.name_acronym, d?.full_name);
   };
+  const colour = (n: number) => p.colors.get(n) ?? "#8A94A6";
 
   return (
     <div>
       <div className="row" style={{ marginBottom: 10 }}>
-        <button className={driver === "all" ? "chip on" : "chip"} onClick={() => setDriver("all")}>
+        <button className={active.length === 0 ? "chip on" : "chip"} onClick={() => setSelected([])}>
           All drivers
         </button>
-        {p.drivers.map((d) => (
-          <button
-            key={d.driver_number}
-            className={driver === d.driver_number ? "chip on" : "chip"}
-            onClick={() => setDriver(d.driver_number)}
-          >
-            <i style={{ background: p.colors.get(d.driver_number) }} />
-            {d.name_acronym}
-          </button>
-        ))}
+        {p.drivers.map((d) => {
+          const on = active.includes(d.driver_number);
+          return (
+            <button
+              key={d.driver_number}
+              className={on ? "chip on" : "chip"}
+              aria-pressed={on}
+              onClick={() => toggleDriver(d.driver_number)}
+            >
+              <i style={{ background: colour(d.driver_number) }} />
+              {d.name_acronym}
+            </button>
+          );
+        })}
       </div>
 
-      {chartDrivers.length > 0 && (
+      {active.length > 0 && (
         <div className="panel" style={{ marginBottom: 12 }}>
-          <h3>Lap times over the race · {label(chartDrivers[0])}</h3>
+          <h3>
+            Lap times over the race ·{" "}
+            {active.map((n) => meta.get(n)?.name_acronym ?? `#${n}`).join(" vs ")}
+          </h3>
           <LapChart
             playback={p.playback}
             laps={p.laps}
-            drivers={chartDrivers}
+            drivers={active}
             codes={new Map(p.drivers.map((d) => [d.driver_number, d.name_acronym]))}
             colors={p.colors}
             totalLaps={p.totalLaps}
           />
+          <p className="dim small">
+            One line per selected driver, every timed lap. Compare the shape: a line that sits lower is faster; a
+            spike is traffic, a mistake or a pit lap.
+          </p>
         </div>
       )}
 
       <p className="dim small">
         {rows.length} laps shown
-        {driver === "all" ? " — pick a driver to see their pace chart above." : "."}
+        {active.length === 0
+          ? " — pick one or more drivers to compare their pace above."
+          : active.length === 1
+            ? ` — ${label(active[0])} only. Add another driver to compare.`
+            : ` — comparing ${active.length} drivers.`}
       </p>
 
       <div className="laps-wrap" style={{ maxHeight: "46vh" }}>
         <table className="laps mono">
           <thead>
             <tr>
-              {/* Fastest-first is what people come for, so these open ascending. */}
               <SortHeader label="Lap" column="lap" state={state} onSort={toggle} />
               <SortHeader label="Driver" column="driver" state={state} onSort={toggle} />
               <SortHeader label="Time" column="time" state={state} onSort={toggle} />
@@ -107,10 +132,20 @@ export default function LapTimesModal(p: Props) {
             {rows.map((l) => {
               const cls = (f: string) =>
                 f === "session" ? "sector-session" : f === "personal" ? "sector-personal" : "";
+              const on = active.includes(l.driver_number);
               return (
-                <tr key={`${l.driver_number}-${l.lap_number}`}>
+                <tr
+                  key={`${l.driver_number}-${l.lap_number}`}
+                  className={on ? "driver-marked" : undefined}
+                  style={on ? { boxShadow: `inset 3px 0 0 ${colour(l.driver_number)}` } : undefined}
+                >
                   <td>{l.lap_number}</td>
-                  <td>{label(l.driver_number)}</td>
+                  <td>
+                    <span className="driver-cell">
+                      <i className="tower-chip" style={{ background: colour(l.driver_number) }} />
+                      {label(l.driver_number)}
+                    </span>
+                  </td>
                   <td>{formatLapTime(l.lap_duration)}</td>
                   <td className={cls(l.s1)}>{formatLapTime(l.duration_sector_1)}</td>
                   <td className={cls(l.s2)}>{formatLapTime(l.duration_sector_2)}</td>

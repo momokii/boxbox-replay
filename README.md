@@ -54,6 +54,9 @@ why this stack replaced the original Streamlit prototype.
   pace are always measured against the anchor, with a pairwise head-to-head.
 - **Sortable tables**: click any header (time, sectors, wear, pit stops) — the
   sort state is exposed to screen readers via `aria-sort`.
+- **Compare any number of drivers**: in the lap-times view, pick as many drivers
+  as you like — the chart overlays them and each row carries a team-colour dot
+  and edge.
 - **Driver drill-downs**: from the card, open that driver's stints and wear, all
   laps, overtakes or pit stops.
 - **Pit wall** (tab): what-if model (stay vs pit on linear deg + traffic check),
