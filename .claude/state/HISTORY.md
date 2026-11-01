@@ -306,3 +306,13 @@ The degradation full view now reuses the grouped-by-driver list from the
 overview (every driver, every stint) instead of repeating a driver per row, and
 its chart is limited to the six highest-wear drivers with a legend and a note.
 54 pytest + 41 vitest, lint clean, verified with screenshots.
+
+## 2026-10-30 — U14 pre-v1 polish
+
+Fixed the stuck Play/Pause (trailing-edge throttle; the dropped trailing event
+left the button on Pause) with unit tests; fixed the share link to build the URL
+from state and confirm; renamed Calm to Reduce motion (auto-on for OS reduced
+motion); icon theme toggle; inline lap-table driver filter; per-driver wear bar
+scaling with team colours; race-control full view with search and category
+counts; pit wall how-to and clearer verdict; mobile player wrapping. 54 pytest +
+45 vitest, lint clean, 60 fps, mobile has no overflow.

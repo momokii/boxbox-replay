@@ -78,3 +78,30 @@ and no page errors on any of the new surfaces.
   appeared once per stint. The chart above it is limited to the six
   highest-wear drivers so it stays legible, with a legend and a note saying the
   list below covers everyone.
+
+
+## Polish pass (pre-v1)
+
+- **Play/Pause could stick.** The page re-renders were throttled with a
+  drop-if-too-soon policy, so the *last* event of a burst (pause, seek) was
+  discarded and the button stayed on "Pause". Replaced with a trailing-edge
+  throttler, unit-tested (a burst now always delivers a final fire).
+- **Share link copied the wrong URL**: it read `location.href` before `?t=` was
+  written. It now builds the URL from state, updates the address bar, disables
+  below 0.5 s, confirms with "Copied", and falls back to a prompt when the
+  clipboard is blocked.
+- **"Calm" was opaque.** Renamed to **Reduce motion**, explained on hover, and
+  switched on automatically when the OS asks for reduced motion.
+- **Theme toggle is an icon** (sun/moon) with an accessible label and tooltip.
+- **Inline lap table gets the full view's driver filter** (chips above the
+  table, "All drivers" reset), so the bottom-of-replay table is filterable.
+- **Wear bars fill the space**: scaled per driver (their steepest stint fills
+  the width) with the absolute rate printed and stated explicitly, because one
+  outlier stint used to flatten every other bar.
+- **Race control has a full view**: search, category chips with counts, every
+  message, click a row to jump the replay.
+- **Pit wall explains itself**: what the two totals are, a four-step how-to,
+  what each bar means, the verdict with a per-lap delta, and the provenance and
+  assumptions below.
+- **Mobile player** wraps to two rows with shorter labels; no horizontal
+  overflow at 390 px.

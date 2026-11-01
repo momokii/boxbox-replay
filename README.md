@@ -45,8 +45,8 @@ why this stack replaced the original Streamlit prototype.
 - **Performance** (tab): stint timeline with pit-stop markers, degradation
   slopes, lap-time evolution, weather, team radio (audio links — the API has no
   transcripts, none invented), race-control flags, pit-stop and overtake totals.
-- **Share a moment**: "Copy link to this moment" captures `?t=` so a replay
-  reopens at the same frame.
+- **Share a moment**: "Copy link" captures `?t=` so a replay reopens at the same
+  frame (it builds the URL from the current state, not the address bar).
 - **Full views**: lap times, lap pace and stint degradation open in a dialog
   (keyboard accessible: Escape closes, focus is trapped) with charts and the
   complete tables — the inline versions stay compact.
