@@ -1160,9 +1160,10 @@ button.ghost {
 
 .deg-row {
   display: grid;
-  grid-template-columns: 40px 100px 1fr 70px;
+  grid-template-columns: 82px 74px 1fr 76px;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .deg-track {
@@ -1180,7 +1181,7 @@ button.ghost {
 
 @media (max-width: 768px) {
   .deg-row {
-    grid-template-columns: 36px 84px 1fr 64px;
+    grid-template-columns: 72px 64px 1fr 70px;
   }
 }
 
@@ -1198,4 +1199,66 @@ button.badge {
 
 button.badge:hover {
   border-color: var(--amber);
+}
+
+.deg-group {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.deg-group:last-of-type {
+  border-bottom: none;
+}
+
+.deg-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.how-to {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--dim);
+}
+
+.how-to summary {
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.how-to ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.how-to strong {
+  color: var(--ink);
+}
+
+.sort-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.sort-btn:hover {
+  color: var(--ink);
+}
+
+.sort-mark {
+  color: var(--amber);
+  font-size: 0.7rem;
+}
+
+th[aria-sort="none"] .sort-btn {
+  color: var(--dim);
 }

@@ -4,6 +4,8 @@ import { stintSlope } from "../perf";
 import type { Lap, Stint } from "../types";
 import type { OvertakeRow, PitStop } from "../api";
 import Modal from "./Modal";
+import SortHeader from "./SortHeader";
+import { useSort, useSortedRows } from "../sort";
 import LapTimesModal from "./LapTimesModal";
 import type { Driver, Playback } from "../types";
 
@@ -56,6 +58,7 @@ export default function DriverDetails(p: Props) {
     [p.overtakeEvents, p.driver.driver_number],
   );
 
+  const { state: pitSort, toggle: pitToggle } = useSort();
   const myStops = useMemo(
     () => p.pitStops.filter((s) => s.driver_number === p.driver.driver_number).sort((a, b) => a.t - b.t),
     [p.pitStops, p.driver.driver_number],
@@ -169,14 +172,25 @@ export default function DriverDetails(p: Props) {
             <table className="laps mono" style={{ fontSize: "0.82rem" }}>
               <thead>
                 <tr>
-                  <th>Lap</th>
-                  <th>Stop time</th>
-                  <th>In pit lane</th>
-                  <th>When</th>
+                  <SortHeader label="Lap" column="lap" state={pitSort} onSort={pitToggle} />
+                  <SortHeader label="Stop time" column="stop" state={pitSort} onSort={pitToggle} />
+                  <SortHeader label="In pit lane" column="lane" state={pitSort} onSort={pitToggle} />
+                  <SortHeader label="When" column="when" state={pitSort} onSort={pitToggle} />
                 </tr>
               </thead>
               <tbody>
-                {myStops.map((s, i) => (
+                {useSortedRows(
+                  myStops,
+                  (s, key) =>
+                    key === "lap"
+                      ? s.lap_number
+                      : key === "stop"
+                        ? s.stop_duration
+                        : key === "lane"
+                          ? s.pit_duration
+                          : s.t,
+                  pitSort,
+                ).map((s, i) => (
                   <tr key={i}>
                     <td>{s.lap_number ?? "—"}</td>
                     <td>{s.stop_duration != null ? `${s.stop_duration.toFixed(1)}s` : "—"}</td>

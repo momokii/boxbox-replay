@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { driverLabel, formatLapTime } from "../format";
 import type { Driver, Lap, Playback } from "../types";
 import LapChart from "./LapChart";
+import SortHeader from "./SortHeader";
+import { useSort, useSortedRows } from "../sort";
 
 interface FlaggedLap extends Lap {
   s1: string;
@@ -23,12 +25,21 @@ interface Props {
  */
 export default function LapTimesModal(p: Props) {
   const [driver, setDriver] = useState<number | "all">("all");
+  const { state, toggle } = useSort();
 
-  const rows = useMemo(
-    () =>
-      (driver === "all" ? p.laps : p.laps.filter((l) => l.driver_number === driver)).slice(0, 1200),
+  const base = useMemo(
+    () => (driver === "all" ? p.laps : p.laps.filter((l) => l.driver_number === driver)),
     [p.laps, driver],
   );
+  const rows = useSortedRows(base, (l, key) => {
+    if (key === "driver") return l.driver_number;
+    if (key === "lap") return l.lap_number;
+    if (key === "time") return l.lap_duration;
+    if (key === "s1") return l.duration_sector_1;
+    if (key === "s2") return l.duration_sector_2;
+    if (key === "s3") return l.duration_sector_3;
+    return l.lap_number;
+  }, state).slice(0, 1200);
   const chartDrivers = driver === "all" ? [] : [driver];
 
   const meta = useMemo(() => {
@@ -83,12 +94,13 @@ export default function LapTimesModal(p: Props) {
         <table className="laps mono">
           <thead>
             <tr>
-              <th>Lap</th>
-              <th>Driver</th>
-              <th>Time</th>
-              <th>S1</th>
-              <th>S2</th>
-              <th>S3</th>
+              {/* Fastest-first is what people come for, so these open ascending. */}
+              <SortHeader label="Lap" column="lap" state={state} onSort={toggle} />
+              <SortHeader label="Driver" column="driver" state={state} onSort={toggle} />
+              <SortHeader label="Time" column="time" state={state} onSort={toggle} />
+              <SortHeader label="S1" column="s1" state={state} onSort={toggle} />
+              <SortHeader label="S2" column="s2" state={state} onSort={toggle} />
+              <SortHeader label="S3" column="s3" state={state} onSort={toggle} />
             </tr>
           </thead>
           <tbody>

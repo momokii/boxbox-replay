@@ -7,6 +7,8 @@ import Info from "./Info";
 import WeatherChart from "./WeatherChart";
 import LapChart from "./LapChart";
 import Modal from "./Modal";
+import SortHeader from "./SortHeader";
+import { useSort, useSortedRows } from "../sort";
 import type { Playback } from "../playbackStore";
 import type { Lap, Stint } from "../types";
 import type { PitStopSummary } from "../api";
@@ -37,6 +39,7 @@ export default function PerformancePanel(p: Props) {
   const [feed, setFeed] = useState<Feed | null>(null);
   const [scope, setScope] = useState<"focus" | "all">("all");
   const [degModal, setDegModal] = useState(false);
+  const { state: degSort, toggle: degToggle } = useSort();
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -93,6 +96,20 @@ export default function PerformancePanel(p: Props) {
     }
     return { stint: s, slope };
   });
+
+  const degGroups = (() => {
+    const valid = slopeRows.filter(({ stint }) => (stint.lap_end ?? 0) > (stint.lap_start ?? 0));
+    const byDriver = new Map<number, { driver: number; rows: typeof valid }>();
+    for (const row of valid) {
+      const entry = byDriver.get(row.stint.driver_number) ?? { driver: row.stint.driver_number, rows: [] };
+      entry.rows.push(row);
+      byDriver.set(row.stint.driver_number, entry);
+    }
+    return [...byDriver.values()]
+      .map((g) => ({ ...g, rows: g.rows.sort((x, y) => (y.slope ?? -1) - (x.slope ?? -1)) }))
+      .sort((x, y) => (y.rows[0]?.slope ?? -1) - (x.rows[0]?.slope ?? -1));
+  })();
+
 
   return (
     <div>
@@ -206,46 +223,81 @@ export default function PerformancePanel(p: Props) {
             Full view
           </button>
         </div>
-        {slopeRows.filter(({ stint }) => (stint.lap_end ?? 0) > (stint.lap_start ?? 0)).length ? (
+        {degGroups.length ? (
           <div className="deg-bars">
-            {slopeRows
-              .filter(({ stint }) => (stint.lap_end ?? 0) > (stint.lap_start ?? 0))
-              .sort((x, y) => (y.slope ?? -1) - (x.slope ?? -1))
-              .slice(0, scope === "all" ? 12 : 40)
-              .map(({ stint, slope }) => {
-                const width = slope == null ? 0 : Math.min(100, (Math.max(0, slope) / 0.6) * 100);
-                return (
-                  <div key={`${stint.driver_number}-${stint.lap_start}`} className="deg-row">
-                    <span className="mono small">{p.driverCode(stint.driver_number)}</span>
-                    <span className="row" style={{ gap: 5 }}>
-                      <i className="tower-chip" style={{ background: compoundColor(stint.compound) }} />
-                      <span className="dim small">{stint.compound ?? "?"}</span>
-                    </span>
-                    <span className="deg-track">
-                      <span
-                        className="deg-bar"
-                        style={{
-                          width: `${slope == null ? 0 : Math.max(2, width)}%`,
-                          background: compoundColor(stint.compound),
-                          opacity: slope == null ? 0.25 : 0.85,
-                        }}
-                      />
-                    </span>
-                    <span className="mono small" style={{ textAlign: "right" }}>
-                      {slope == null ? "too few laps" : `+${slope.toFixed(3)}s`}
+            {degGroups.slice(0, scope === "all" ? 10 : 40).map((g) => {
+              const worst = Math.max(...g.rows.map((r) => r.slope ?? 0));
+              return (
+                <div key={g.driver} className="deg-group">
+                  <div className="deg-group-head">
+                    <span className="mono" style={{ fontSize: "0.84rem" }}>{p.driverCode(g.driver)}</span>
+                    <span className="dim small">
+                      {g.rows.length} stint{g.rows.length > 1 ? "s" : ""} · steepest +{worst.toFixed(3)}s/lap
                     </span>
                   </div>
-                );
-              })}
+                  {g.rows.map(({ stint, slope }) => {
+                    const width = slope == null ? 0 : Math.min(100, (Math.max(0, slope) / 0.6) * 100);
+                    return (
+                      <div key={`${stint.driver_number}-${stint.lap_start}`} className="deg-row">
+                        <span className="row" style={{ gap: 5 }}>
+                          <i className="tower-chip" style={{ background: compoundColor(stint.compound) }} />
+                          <span className="dim small">{stint.compound ?? "?"}</span>
+                        </span>
+                        <span className="dim small mono">
+                          L{stint.lap_start ?? "?"}–{stint.lap_end ?? "?"}
+                        </span>
+                        <span className="deg-track">
+                          <span
+                            className="deg-bar"
+                            style={{
+                              width: `${slope == null ? 0 : Math.max(2, width)}%`,
+                              background: compoundColor(stint.compound),
+                              opacity: slope == null ? 0.25 : 0.85,
+                            }}
+                          />
+                        </span>
+                        <span className="mono small" style={{ textAlign: "right" }}>
+                          {slope == null ? "too few laps" : `+${slope.toFixed(3)}s`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
             <p className="dim small" style={{ marginTop: 6 }}>
-              Bar length is the wear rate (axis to 0.6s per lap); the lap range is in the middle.
-              {scope === "all" &&
-                ` Showing the ${Math.min(12, slopeRows.length)} highest-wear stints of ${slopeRows.length} — Full view lists them all.`}
+              Bars are wear rate (axis 0–0.6s/lap), grouped by driver — one bar per stint.
+              {scope === "all" && ` Showing the ${Math.min(10, degGroups.length)} highest-wear drivers of ${degGroups.length}.`}
             </p>
           </div>
         ) : (
           <p className="dim small">No stint has enough timed laps to measure wear.</p>
         )}
+        <details className="how-to">
+          <summary>How to read this</summary>
+          <ul>
+            <li>
+              <strong>Wear rate</strong> is the slope of lap time against lap number inside one stint: +0.100s
+              means the car loses a tenth per lap as that tyre ages.
+            </li>
+            <li>
+              <strong>Only one stint is compared to itself.</strong> Different compounds, fuel loads and traffic
+              make cross-stint comparisons unreliable, so each bar stands alone.
+            </li>
+            <li>
+              <strong>Bigger is worse.</strong> 0.05–0.15s/lap is normal for a long stint; above 0.3s/lap usually
+              means the tyre is finished or the driver is managing a problem.
+            </li>
+            <li>
+              <strong>"Too few laps"</strong> means the stint has fewer than two timed laps after removing pit and
+              red-flag laps, so no honest slope exists.
+            </li>
+            <li>
+              Laps marked in and out of the pits are excluded, which is why a stint can cover more laps than its
+              slope does.
+            </li>
+          </ul>
+        </details>
       </section>
 
       <section className="panel">
@@ -359,14 +411,24 @@ export default function PerformancePanel(p: Props) {
           <table className="laps mono" style={{ fontSize: "0.82rem" }}>
             <thead>
               <tr>
-                <th>Driver</th>
-                <th>Compound</th>
-                <th>Laps</th>
-                <th>Wear</th>
+                <SortHeader label="Driver" column="driver" state={degSort} onSort={degToggle} numeric />
+                <SortHeader label="Compound" column="compound" state={degSort} onSort={degToggle} />
+                <SortHeader label="Laps" column="laps" state={degSort} onSort={degToggle} numeric />
+                <SortHeader label="Wear" column="wear" state={degSort} onSort={degToggle} numeric />
               </tr>
             </thead>
             <tbody>
-              {slopeRows.map(({ stint, slope }) => (
+              {useSortedRows(
+                slopeRows,
+                (row, key) => {
+                  if (key === "driver") return row.stint.driver_number;
+                  if (key === "compound") return row.stint.compound ?? "";
+                  if (key === "laps") return (row.stint.lap_end ?? 0) - (row.stint.lap_start ?? 0);
+                  if (key === "wear") return row.slope;
+                  return 0;
+                },
+                degSort,
+              ).map(({ stint, slope }) => (
                 <tr key={`${stint.driver_number}-${stint.lap_start}`}>
                   <td>{p.driverCode(stint.driver_number)}</td>
                   <td>{stint.compound ?? "?"}</td>
