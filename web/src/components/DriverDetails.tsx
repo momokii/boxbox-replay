@@ -5,7 +5,7 @@ import type { Lap, Stint } from "../types";
 import type { OvertakeRow, PitStop } from "../api";
 import Modal from "./Modal";
 import SortHeader from "./SortHeader";
-import { useSort, useSortedRows } from "../sort";
+import { sortRows, useSort } from "../sort";
 import LapTimesModal from "./LapTimesModal";
 import type { Driver, Playback } from "../types";
 
@@ -59,9 +59,21 @@ export default function DriverDetails(p: Props) {
   );
 
   const { state: pitSort, toggle: pitToggle } = useSort();
-  const myStops = useMemo(
+  const stopsForDriver = useMemo(
     () => p.pitStops.filter((s) => s.driver_number === p.driver.driver_number).sort((a, b) => a.t - b.t),
     [p.pitStops, p.driver.driver_number],
+  );
+  // A red flag shows up as a 20-minute "pit lane" entry; only plausible stops count.
+  const myStops = stopsForDriver.filter(
+    (s) => (s.stop_duration != null && s.stop_duration <= 120) || (s.pit_duration != null && s.pit_duration <= 300),
+  );
+  const ignoredStops = stopsForDriver.length - myStops.length;
+
+  const sortedStops = sortRows(
+    myStops,
+    (s, key) =>
+      key === "lap" ? s.lap_number : key === "stop" ? s.stop_duration : key === "lane" ? s.pit_duration : s.t,
+    pitSort,
   );
 
   const title =
@@ -179,18 +191,7 @@ export default function DriverDetails(p: Props) {
                 </tr>
               </thead>
               <tbody>
-                {useSortedRows(
-                  myStops,
-                  (s, key) =>
-                    key === "lap"
-                      ? s.lap_number
-                      : key === "stop"
-                        ? s.stop_duration
-                        : key === "lane"
-                          ? s.pit_duration
-                          : s.t,
-                  pitSort,
-                ).map((s, i) => (
+                {sortedStops.map((s, i) => (
                   <tr key={i}>
                     <td>{s.lap_number ?? "—"}</td>
                     <td>{s.stop_duration != null ? `${s.stop_duration.toFixed(1)}s` : "—"}</td>
@@ -206,6 +207,12 @@ export default function DriverDetails(p: Props) {
             </table>
           ) : (
             <p className="dim small">No pit stops recorded for this driver.</p>
+          )}
+          {ignoredStops > 0 && (
+            <p className="dim small">
+              {ignoredStops} pit-lane event{ignoredStops > 1 ? "s" : ""} ignored — a red flag records a 20-minute
+              stop that is not a pit stop.
+            </p>
           )}
           <p className="dim small">
             Stop time is the stationary time; "in pit lane" includes the drive-through and can be much longer.

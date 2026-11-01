@@ -286,3 +286,13 @@ chart scaled to p95 + table) and stint degradation (lap chart + full table).
 Degradation is now a visual bar per stint sorted worst-first; the driver card
 gained a team band, badges, a five-lap strip and per-stat tooltips. 54 pytest +
 36 vitest; verified with screenshots of each new surface.
+
+## 2026-10-30 — U12 per-driver depth, 3-way battle, sorted tables
+
+Driver card now follows the playhead (last five laps ending at the playhead),
+names the best lap, and drills into four modals (stints/wear, all laps,
+overtakes, pit stops with red-flag artifacts filtered). Battle supports an
+anchor plus two challengers with per-challenger gap lines and a pairwise
+head-to-head. Degradation is grouped per driver with a "how to read" guide.
+Tables sort via accessible headers (aria-sort, stable ordering, 5 new tests).
+54 pytest + 41 vitest; 60 fps preserved.

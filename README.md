@@ -50,6 +50,12 @@ why this stack replaced the original Streamlit prototype.
 - **Full views**: lap times, lap pace and stint degradation open in a dialog
   (keyboard accessible: Escape closes, focus is trapped) with charts and the
   complete tables — the inline versions stay compact.
+- **Battle up to three drivers**: pick an anchor plus two challengers; gaps and
+  pace are always measured against the anchor, with a pairwise head-to-head.
+- **Sortable tables**: click any header (time, sectors, wear, pit stops) — the
+  sort state is exposed to screen readers via `aria-sort`.
+- **Driver drill-downs**: from the card, open that driver's stints and wear, all
+  laps, overtakes or pit stops.
 - **Pit wall** (tab): what-if model (stay vs pit on linear deg + traffic check),
   bannered **TOY MODEL**, grounded in live pace/deg/gaps.
 - **Driver card**: click a car or tower row for full name, team, gap, tyre age,

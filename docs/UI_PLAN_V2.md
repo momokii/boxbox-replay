@@ -51,3 +51,16 @@
 
 `pytest`, `vitest`, `tsc`, `oxlint`, and screenshots of every new surface,
 plus a frame-timing check to confirm playback still runs at 60 fps.
+
+
+## Shipped (verified)
+
+| Step | What landed |
+|---|---|
+| 1 | Driver card laps follow the playhead (L21–L25 at lap 25), best lap names its lap (L50), tyre badge says the lap it refers to, and four drill-downs: stints & wear, all laps, overtakes, pit stops (red-flag "stops" filtered with a note) |
+| 2 | Battle takes an anchor plus up to two challengers; relative-gap chart draws one line per challenger, pace deltas are measured against the anchor, and head-to-head became a pairwise matrix |
+| 3 | Degradation grouped per driver (header with stint count and steepest rate), one bar per stint, scale 0–0.6 s/lap, plus a "How to read this" guide explaining slope, comparison, thresholds and "too few laps" |
+| 4 | Sortable tables with real buttons and `aria-sort`: lap times (lap, driver, time, S1–S3 — fastest first), degradation in the modal, pit stops; stable ordering, empties always last, 5 new unit tests |
+
+Measured after the work: playback still holds 60 fps (p50 16.7 ms, p95 16.8 ms)
+and no page errors on any of the new surfaces.

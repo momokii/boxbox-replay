@@ -8,7 +8,7 @@ import WeatherChart from "./WeatherChart";
 import LapChart from "./LapChart";
 import Modal from "./Modal";
 import SortHeader from "./SortHeader";
-import { useSort, useSortedRows } from "../sort";
+import { sortRows, useSort } from "../sort";
 import type { Playback } from "../playbackStore";
 import type { Lap, Stint } from "../types";
 import type { PitStopSummary } from "../api";
@@ -96,6 +96,18 @@ export default function PerformancePanel(p: Props) {
     }
     return { stint: s, slope };
   });
+
+  const sortedSlopeRows = sortRows(
+    slopeRows,
+    (row, key) => {
+      if (key === "driver") return row.stint.driver_number;
+      if (key === "compound") return row.stint.compound ?? "";
+      if (key === "laps") return (row.stint.lap_end ?? 0) - (row.stint.lap_start ?? 0);
+      if (key === "wear") return row.slope;
+      return 0;
+    },
+    degSort,
+  );
 
   const degGroups = (() => {
     const valid = slopeRows.filter(({ stint }) => (stint.lap_end ?? 0) > (stint.lap_start ?? 0));
@@ -418,17 +430,7 @@ export default function PerformancePanel(p: Props) {
               </tr>
             </thead>
             <tbody>
-              {useSortedRows(
-                slopeRows,
-                (row, key) => {
-                  if (key === "driver") return row.stint.driver_number;
-                  if (key === "compound") return row.stint.compound ?? "";
-                  if (key === "laps") return (row.stint.lap_end ?? 0) - (row.stint.lap_start ?? 0);
-                  if (key === "wear") return row.slope;
-                  return 0;
-                },
-                degSort,
-              ).map(({ stint, slope }) => (
+              {sortedSlopeRows.map(({ stint, slope }) => (
                 <tr key={`${stint.driver_number}-${stint.lap_start}`}>
                   <td>{p.driverCode(stint.driver_number)}</td>
                   <td>{stint.compound ?? "?"}</td>
