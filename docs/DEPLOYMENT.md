@@ -54,6 +54,19 @@ docker compose -f compose.yaml -f compose.prod.yaml down  # stop prod
   only for local overrides — defaults work without it.
 
 
+## First run on a new machine
+
+The first time a session is opened, the API fetches its telemetry (about a
+minute for a race). Everything is cached under the `cache` volume afterwards.
+If you are preparing a demo, open each race once beforehand so the audience only
+sees instant loads.
+
+Watch the API logs while a session builds:
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml logs -f api | grep -E "GET|Error"
+```
+
 ## If the data feed asks for credentials
 
 OpenF1 has, at times, answered `401` for anonymous historical requests. The app
@@ -71,3 +84,17 @@ docker compose -f compose.yaml -f compose.prod.yaml up -d
 ```
 
 The key is sent as `Authorization: Bearer …` and as `api_key=…`, never logged.
+
+
+## What a public deployment needs to know
+
+- **One shared cache.** All visitors read the same parquet cache, so the cost of
+  a race is paid once, not per visitor.
+- **Upstream rate limit.** The app spaces requests to OpenF1 at ~3/s. A very busy
+  instance that opens many *new* sessions concurrently can still hit that limit;
+  the client then sees a clear "feed did not answer" message plus a retry.
+- **Pre-warming.** Opening the races you expect people to visit is the cheapest
+  way to make a public demo feel instantaneous.
+- **No API key is required today.** Anonymous access works; `OPENF1_API_KEY`
+  exists only so a future credential requirement can be met without a code
+  change.

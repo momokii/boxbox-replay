@@ -1,122 +1,219 @@
-# BoxBox Replay — F1 Telemetry Viz + Race Replay + LLM Coach
+# BoxBox Replay
 
-Fun, free, always-updated F1 web app. Pick any Grand Prix with data (2023+),
-watch the **full-field replay** (canvas track map + speed + gaps), highlight any
-drivers you like, dig into battle/performance/pit panels, and ask the LLM race
-engineer about any corner — on trigger, never automatically. Facts only: the
-LLM explains measured numbers and never invents them.
+**Replay any Formula 1 race on a pit-wall timing screen — every driver on track, gaps counting down, and an engineer you can ask about any corner.**
 
-Dark **Night Pit-Wall** design: charcoal chrome, one amber signal accent, driver
-identity in official team colors on lines/dots/labels only, F1-standard
-purple/green sector coloring, tabular numbers, 3-decimal times, mono deltas.
+Free, no account, no live-timing subscription. Data comes from public archives and is cached locally, so a race you have opened once works offline from your own machine.
 
-## Stack
+![BoxBox Replay — race replay](docs/screenshots/01-replay.png)
 
-- **API**: Python 3.12 + FastAPI over `data_loader` / `analysis` / `coach`
-  (throttled, retried, parquet-cached OpenF1 fetch; pure tested analysis)
-- **Web**: React + TypeScript + Vite SPA, hand-rolled canvas (60fps map, synced
-  traces), no chart library, fully responsive
-- **Deploy**: Docker Compose (`api` + `web` behind nginx), one command
-
-## Quickstart
-
-```bash
-./scripts/setup.sh              # build + start dev stack -> http://localhost:8501
-./scripts/setup.sh --build-only # CI/verify: build + compose config check
-./scripts/setup.sh --prod       # production stack (asks for YES first)
-```
-
-Dev runs the API with hot reload at `localhost:8000` and serves the web app at
-port 8501. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for production,
-updates, and Tailnet access. See [docs/UI_RESEARCH.md](docs/UI_RESEARCH.md) for
-why this stack replaced the original Streamlit prototype.
+<sub>Suzuka 2024, lap 25. Timing tower on the left, circuit and playback in the middle, driver card and engineer on the right.</sub>
 
 ## What it does
 
-- **Replay (main)**: the WHOLE session from lights out (e.g. 1:26:08, LAP 26/52),
-  all drivers on the map, trails, corner labels and DRS zones derived from
-  telemetry. Timeline with lap ticks — click or drag to seek. Play/pause,
-  1x–8x, Space, reduce-motion. Click a car to follow it; the tower is ordered by
-  live gap. Day/night theme toggle, remembered between visits.
-- **Battle** (tab): head-to-head speed overlay for two laps + signed delta
-  (below 0.05s is noise).
-- **Speed telemetry**: for the drivers you pick, the speed trace of the lap
-  under the playhead (labelled), never an unexplained changing set.
-- **Performance** (tab): stint timeline with pit-stop markers, degradation
-  slopes, lap-time evolution, weather, team radio (audio links — the API has no
-  transcripts, none invented), race-control flags, pit-stop and overtake totals.
-- **Share a moment**: "Copy link" captures `?t=` so a replay reopens at the same
-  frame (it builds the URL from the current state, not the address bar).
-- **Full views**: lap times, lap pace and stint degradation open in a dialog
-  (keyboard accessible: Escape closes, focus is trapped) with charts and the
-  complete tables — the inline versions stay compact.
-- **Battle up to three drivers**: pick an anchor plus two challengers; gaps and
-  pace are always measured against the anchor, with a pairwise head-to-head.
-- **Sortable tables**: click any header (time, sectors, wear, pit stops) — the
-  sort state is exposed to screen readers via `aria-sort`.
-- **Compare any number of drivers**: in the lap-times view, pick as many drivers
-  as you like — the chart overlays them and each row carries a team-colour dot
-  and edge.
-- **Driver drill-downs**: from the card, open that driver's stints and wear, all
-  laps, overtakes or pit stops.
-- **Pit wall** (tab): what-if model (stay vs pit on linear deg + traffic check),
-  bannered **TOY MODEL**, grounded in live pace/deg/gaps.
-- **Driver card**: click a car or tower row for full name, team, gap, tyre age,
-  last/best lap — with the timing abbreviation explained for newcomers.
-- **Race engineer** (side panel): click a corner, press **Ask engineer** —
-  measured corner loss vs a reference lap, LLM answer in team-radio style with
-  [HIGH/MED/LOW] and a "based on lap X vs ref Y" citation. Cached per query;
-  numbers-only fallback when the LLM is unreachable.
+- **Full-field replay.** All 20+ cars on the circuit at once, moving on the real session clock (lights out to chequered flag). Play, pause, 1×–8×, scrub, or press Space.
+- **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
+- **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
+- **Battle view.** Pick an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
+- **Performance.** Stint timeline with pit-stop notches, wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters.
+- **Driver drill-down.** Click any car or tower row for position, gap, tyre age, result, a five-lap strip, pit stops, overtakes — each opening a full view.
+- **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
+- **Pit strategy toy model.** "Pit now or stay out?" using measured pace and wear, with the breakdown and every assumption shown.
+- **Shareable moments.** "Copy link" stores the exact timestamp, so a link reopens the same frame.
+- **Dark and light themes**, keyboard shortcuts, reduced-motion support, and a layout that stacks on phones.
 
-## Data (free, auto-updating, no auth)
+| Battle | Performance |
+|---|---|
+| ![Battle](docs/screenshots/03-battle.png) | ![Performance](docs/screenshots/04-performance.png) |
 
-- **OpenF1 credential (2026-10-30)**: the feed started answering `401` for
-  anonymous requests mid-session. Set `OPENF1_API_KEY` in `.env` (sent as both a
-  Bearer token and an `api_key` parameter). Everything already cached keeps
-  working without a key; uncached sessions say so plainly in the UI instead of
-  failing.
-- **OpenF1** (`https://api.openf1.org/v1`, primary): car data 3.7Hz,
-  positions, laps, intervals, stints, weather, radio, race control. Historical
-  since 2023; ~3 req/s respected with throttle + retry; 404 means "no data"
-  and renders as empty, never a crash. Parquet cache in `data/cache/`.
-- **Jolpica Ergast memory** (schedule/results context, Streamlit-era reference).
+| Pit wall | Lap times (full view) |
+|---|---|
+| ![Pit wall](docs/screenshots/05-pit-wall.png) | ![Lap times](docs/screenshots/06-lap-times.png) |
 
-## Testing
+| Light theme | Phone |
+|---|---|
+| ![Light theme](docs/screenshots/02-replay-light.png) | ![Mobile](docs/screenshots/07-mobile.png) |
+
+## Architecture
+
+```
+                 browser (React SPA, TypeScript, hand-drawn canvas)
+                ┌───────────────────────────────────────────────────┐
+                │ tower · session map · timeline · charts · coach   │
+                └───────────────▲───────────────────────────────────┘
+                                │  JSON over /api (same origin)
+                ┌───────────────┴───────────────────────────────────┐
+                │ nginx (serves the built SPA, proxies /api)        │
+                └───────────────▲───────────────────────────────────┘
+                                │
+                ┌───────────────┴───────────────────────────────────┐
+                │ FastAPI (api/main.py)                             │
+                │  serialises DataFrames → JSON, clamps windows,    │
+                │  exposes session/replay, gaps, pit, overtakes …   │
+                └───────┬───────────────────────────────┬───────────┘
+                        │                               │
+        ┌───────────────┴──────────────┐   ┌────────────┴─────────────┐
+        │ analysis.py (pure functions) │   │ coach.py (LLM, on ask)   │
+        │ corners, deltas, wear, model │   │ opencode run, grounded   │
+        └───────────────▲──────────────┘   └────────────┬─────────────┘
+                        │                               │
+                ┌───────┴───────────────────────────────▼───────────┐
+                │ data_loader.py                                    │
+                │ 3 req/s throttle · retry · session-window clamp   │
+                │ parquet cache in ./data/cache                     │
+                └───────▲───────────────────────────────▲───────────┘
+                        │                               │
+                ┌───────┴────────┐              ┌───────┴────────────┐
+                │ OpenF1 (chief) │              │ local LLM CLI      │
+                │ sessions, laps │              │ (optional, on ask) │
+                │ location, car… │              └────────────────────┘
+                └────────────────┘
+```
+
+**How a replay is built.** Selecting a session triggers three stages: the lap
+clock (so the timeline, `LAP x/y` and gaps work immediately), the circuit
+geometry from one representative lap, then positions for every driver (streamed
+in, so cars appear progressively). Car telemetry for the drivers you follow is
+fetched on demand. Everything is cached as parquet keyed by session, so the
+first visit to a race takes about a minute and every visit after that is instant.
+
+**Playback model.** One shared store owns the clock. The map, timeline and charts
+subscribe to it directly and redraw on the animation frame; the heavier page
+around them re-renders at ~8 Hz, which keeps playback at 60 fps.
+
+**Honesty rules baked into the code.** Numbers come from the feeds or are
+computed from them; when a feed is missing the UI says so and hides the block
+rather than inventing a value. Retired cars are classified last. The tower is
+ordered by classification gap (what a timing screen shows), not by physical
+track order. The pit model prints its inputs and its assumptions.
+
+More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · UI decisions in
+[`docs/UI_REDESIGN_V2.md`](docs/UI_REDESIGN_V2.md) · data-source research in
+[`docs/UI_RESEARCH.md`](docs/UI_RESEARCH.md).
+
+## Run it
+
+### Docker (recommended)
 
 ```bash
-pytest                          # 49 Python tests, all HTTP mocked
-ruff check .                     # lint
-cd web && npm test              # vitest (17)
-cd web && npm run build         # tsc + vite (type-checks)
-docker compose up -d --build    # boot, then curl localhost:8501/api/healthz
+cp .env.example .env          # optional: defaults work without it
+./scripts/setup.sh            # builds api + web, serves http://localhost:8501
+./scripts/setup.sh --prod     # production stack (asks for confirmation)
 ```
 
-One milestone = one commit (`feat(rX): ...`); tests + lint + build green before
-every commit.
+The stack is two containers: `api` (FastAPI, internal port 8000) and `web`
+(nginx serving the SPA and proxying `/api`). The dev override hot-reloads the API
+and bind-mounts the source; the prod override adds restart policies, resource
+limits and `no-new-privileges`.
 
-## Project layout
+### Local development
 
-```
-api/main.py            FastAPI wrap: feeds, geometry, corner-loss, coach-ask, pit-call
-data_loader.py         OpenF1 fetch: throttle/retry/parquet cache + list_* + telemetry feeds
-analysis.py            Pure analysis: best lap, deltas, corners, deg, pit toy model
-coach.py               Grounded LLM prompts + team-radio rendering
-web/src/               React+TS SPA (api.ts, playback store, canvas map/traces/tower, panels)
-scripts/setup.sh       One-command dev/prod setup
-compose.yaml / compose.override.yaml / compose.prod.yaml   api + web services
-.github/workflows/ci.yml   pytest + ruff + gitleaks + pip-audit + Trivy
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/uvicorn api.main:app --reload --port 8000     # API
+
+cd web && npm install && npm run dev                    # SPA on :5173, proxies /api
 ```
 
 ## Configuration
 
-Copy `.env.example` to `.env` (the setup script does it). All variables
-documented there. `APP_ENV`: `development` | `staging` | `production`
-(fail-closed to production-safe defaults). `BOXBOX_MODEL` optionally overrides
-the coach model; auth uses your existing opencode setup — never keys in the repo.
+| Variable | Default | Purpose |
+|---|---|---|
+| `APP_ENV` | `development` | `development`, `staging` or `production`; unknown values are treated as production for safety |
+| `APP_PORT` | `8501` | Host port for the web container |
+| `OPENF1_BASE_URL` | `https://api.openf1.org/v1` | Data feed base URL |
+| `OPENF1_API_KEY` | empty | Only needed if the feed starts requiring credentials; sent as Bearer and `api_key` |
+| `CACHE_DIR` | `data/cache` | Where parquet caches live |
+| `BOXBOX_MODEL` | empty | Optional model override for the coach (`opencode run -m …`) |
 
-## Security notes
+Every variable is documented with a placeholder in [`.env.example`](.env.example).
+`.env` is gitignored; never commit real values.
 
-- No secrets in code, logs, fixtures, or history (gitleaks in pre-commit + CI).
-- Pinned requirements + lockfile, pip-audit in CI, non-root containers,
-  `no-new-privileges`.
-- See `.claude/SECURITY_STANDARDS.md` for the full standard incl. the Security Gate.
+## API
+
+| Endpoint | Returns |
+|---|---|
+| `GET /years` | Seasons with data |
+| `GET /meetings?year=` | Grands Prix for a season |
+| `GET /sessions?year=&meeting_key=` | Sessions for a meeting |
+| `GET /sessions/status?keys=` | Telemetry availability per session |
+| `GET /drivers?session_key=` | Entry list |
+| `GET /session/info` | Session clock, race distance, entry count |
+| `GET /session/geometry` | Circuit outline, corners, DRS zones, rotation |
+| `GET /session/replay` | Every driver's positions, sampled; lap markers |
+| `GET /session/gaps` | Gaps to leader (live intervals, else derived from lap times) |
+| `GET /session/speed?driver_number=` | One driver's speed for the session |
+| `GET /session/pit` · `/overtakes` · `/result` · `/positions` | Stops, passes, classification, official order |
+| `GET /laps`, `/stints`, `/weather`, `/radio`, `/race-control` | Session feeds |
+| `POST /corner-loss` | Measured time lost at a corner vs a reference lap |
+| `POST /coach/ask` | Grounded engineer answer (or an honest "unavailable") |
+| `POST /pit-call` | Toy pit-strategy comparison |
+
+`GET /api/healthz` is the health probe. Full shapes are in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#api).
+
+## Quality gates
+
+```bash
+pytest                       # 54 Python tests, all HTTP mocked
+ruff check .                 # lint
+cd web && npm test           # 45 frontend tests (vitest)
+cd web && npm run build      # tsc type check + bundle
+docker compose build         # image build
+```
+
+CI runs lint, tests, a secret scan (gitleaks) and a dependency audit
+(`pip-audit`) on every push; see `.github/workflows/ci.yml`. The container runs
+as a non-root user with `no-new-privileges` in production.
+
+## Project layout
+
+```
+api/main.py          FastAPI: endpoints, JSON serialisation, error mapping
+data_loader.py       OpenF1 client: throttle, retry, clamp, parquet cache
+analysis.py          Pure math: corners, deltas, wear, positions, pit model
+coach.py             Grounded LLM prompts and radio-style rendering
+web/src/             React SPA: api client, playback store, canvas map,
+                     charts, panels, modals
+scripts/setup.sh     One-command dev/prod stack
+docs/                Architecture, deployment, design notes, screenshots
+Dockerfile           API image (non-root, healthcheck)
+web/Dockerfile       Multi-stage SPA build → nginx
+compose*.yaml        base / dev override / prod override
+```
+
+## Data sources and limits
+
+- **[OpenF1](https://openf1.org)** — sessions, laps, positions, car telemetry,
+  intervals, stints, weather, radio, race control, pit stops, overtakes,
+  results. Anonymous access is rate-limited; this app spaces requests at 3/s and
+  caches everything it receives.
+- **[Jolpica (Ergast)](https://api.jolpi.ca/ergast/)** — historical schedule and
+  results context.
+
+Known limitations, stated plainly:
+
+- **First open of a race takes ~1 minute** (dozens of telemetry requests), then
+  it is served from cache. Popular sessions can be pre-warmed by opening them.
+- **OpenF1 availability.** If the feed rate-limits or blocks a client, uncached
+  sessions show a clear message and cached ones keep working. If it begins
+  requiring credentials, set `OPENF1_API_KEY`.
+- **Corners are detected**, not official: labels T1…Tn come from curvature, so
+  they are indicative rather than FIA numbering.
+- **The pit model is a toy**, and says so: linear wear, static rivals, a pit
+  loss you choose.
+- **No live timing.** Historical sessions only (a day behind at the earliest),
+  because OpenF1's live window is paid.
+
+This project is not affiliated with Formula 1, the FIA or any team. OpenF1 is an
+unofficial community API.
+
+## Contributing
+
+Issues and pull requests are welcome. Please run the quality gates above before
+opening a PR, keep commits focused, and follow the honesty rule: never fabricate
+a number the feeds do not provide — show an empty state instead.
+
+## License
+
+Not chosen yet — add one before distributing. Until then, treat this as
+all-rights-reserved.
