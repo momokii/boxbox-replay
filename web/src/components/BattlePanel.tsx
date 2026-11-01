@@ -37,7 +37,12 @@ export default function BattlePanel(p: Props) {
     (x, y) => (gapAt(p.table, x.driver_number, now) ?? 1e9) - (gapAt(p.table, y.driver_number, now) ?? 1e9),
   );
   const anchor = picked[0] ?? ordered[0]?.driver_number ?? 0;
-  const challengers = [picked[1] ?? ordered[1]?.driver_number ?? null, picked[2] ?? null].filter(
+  // The first challenger defaults to the next car on track; the select must show
+  // that default instead of an empty "—" while the charts use it.
+  const defaultB = ordered.find((d) => d.driver_number !== anchor)?.driver_number ?? null;
+  const slotB = picked[1] ?? defaultB;
+  const slotC = picked[2] ?? null;
+  const challengers = [slotB, slotC].filter(
     (d): d is number => d != null && d !== anchor,
   );
 
@@ -81,28 +86,28 @@ export default function BattlePanel(p: Props) {
             ))}
           </select>
         </label>
-        {[1, 2].map((slot) => (
-          <label key={slot} className="dim small">
-            {slot === 1 ? "Compare" : "Compare (optional)"}{" "}
-            <select
-              value={picked[slot] ?? ""}
-              onChange={(e) => setSlot(slot, e.target.value ? Number(e.target.value) : null)}
-            >
-              <option value="">—</option>
-              {p.drivers
-                .filter(
-                  (d) =>
-                    d.driver_number !== anchor &&
-                    !picked.some((v, idx) => idx !== slot && v === d.driver_number),
-                )
-                .map((d) => (
-                  <option key={d.driver_number} value={d.driver_number}>
-                    #{d.driver_number} {d.name_acronym}
-                  </option>
-                ))}
-            </select>
-          </label>
-        ))}
+        {[1, 2].map((slot) => {
+          const value = slot === 1 ? (slotB ?? "") : (slotC ?? "");
+          const other = slot === 1 ? slotC : slotB;
+          return (
+            <label key={slot} className="dim small">
+              {slot === 1 ? "Compare" : "Compare (optional)"}{" "}
+              <select
+                value={value}
+                onChange={(e) => setSlot(slot, e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">—</option>
+                {p.drivers
+                  .filter((d) => d.driver_number !== anchor && d.driver_number !== other)
+                  .map((d) => (
+                    <option key={d.driver_number} value={d.driver_number}>
+                      #{d.driver_number} {d.name_acronym}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          );
+        })}
         <span className="dim small">Up to {MAX} drivers — all comparisons are against the anchor.</span>
       </div>
 
