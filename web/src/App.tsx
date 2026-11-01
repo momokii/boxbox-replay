@@ -761,10 +761,13 @@ export default function App() {
                           checked={calm}
                           onChange={(e) => playback.setCalm(e.target.checked)}
                         />
-                        <Info
-                          label="Reduce motion"
-                          tip="Pauses automatic playback and keeps the playhead still until you scrub. It starts switched on if your system asks for reduced motion. Keyboard: Space still toggles play."
-                        />
+                        <span className="hide-sm">
+                          <Info
+                            label="Reduce motion"
+                            tip="Pauses automatic playback and keeps the playhead still until you scrub. It starts switched on if your system asks for reduced motion. Keyboard: Space still toggles play."
+                          />
+                        </span>
+                        <span className="show-sm">Reduce</span>
                       </label>
                       <button
                         className="ghost small"
@@ -784,7 +787,7 @@ export default function App() {
                         disabled={playT < 0.5}
                         title="Copy a link that reopens the replay at this exact moment"
                       >
-                        {linkCopied ? "Link copied" : "Copy link to this moment"}
+                        {linkCopied ? "Copied" : "Copy link"}
                       </button>
                       <span className="mono small dim" style={{ marginLeft: "auto" }}>
                         {formatClock(playT)} / {formatClock(dur)}

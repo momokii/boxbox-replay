@@ -522,10 +522,25 @@ table.laps tbody tr:hover td {
   }
 }
 
+.show-sm {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .player {
     gap: 6px;
     padding: 6px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .hide-sm {
+    display: none;
+  }
+  .show-sm {
+    display: inline;
+  }
+  .player .seg button {
+    padding: 4px 8px;
   }
   .player .seg button {
     padding: 4px 6px;

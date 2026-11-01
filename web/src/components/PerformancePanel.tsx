@@ -140,7 +140,12 @@ export default function PerformancePanel(p: Props) {
         {byDriver.length ? (
           byDriver.map(({ driver, stints: driverStints }) => (
             <div key={driver} className="stint-row" style={{ fontSize: "0.8rem" }}>
-              <span className="mono" style={{ minWidth: 34 }}>{p.driverCode(driver)}</span>
+              <span
+                className="mono"
+                style={{ minWidth: 34, color: p.colors.get(driver) ?? "var(--ink)" }}
+              >
+                {p.driverCode(driver)}
+              </span>
               <div className="stint-track">
                 {driverStints.map((s, i) => {
                   const start = s.lap_start ?? 1;
