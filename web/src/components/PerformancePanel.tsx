@@ -224,10 +224,11 @@ export default function PerformancePanel(p: Props) {
         <DegradationList
           groups={degGroups}
           driverCode={p.driverCode}
+          driverColor={(n) => p.colors.get(n) ?? "var(--ink)"}
           maxGroups={scope === "all" ? 10 : 40}
           note={
             <>
-              Bars are wear rate (axis 0–0.6s/lap), grouped by driver — one bar per stint.
+              Grouped by driver — one bar per stint.
               {scope === "all" &&
                 ` Showing the ${Math.min(10, degGroups.length)} highest-wear drivers of ${degGroups.length}; Full view lists every driver.`}
             </>
@@ -351,7 +352,11 @@ export default function PerformancePanel(p: Props) {
         </p>
         <div style={{ marginTop: 12 }}>
           <h3>Wear by driver · every stint</h3>
-          <DegradationList groups={degGroups} driverCode={p.driverCode} />
+          <DegradationList
+            groups={degGroups}
+            driverCode={p.driverCode}
+            driverColor={(n) => p.colors.get(n) ?? "var(--ink)"}
+          />
         </div>
         <p className="dim small">
           The chart plots every timed lap; a rising line within one compound is the tyre going off. Single-lap

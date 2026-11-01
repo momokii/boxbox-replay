@@ -1079,7 +1079,38 @@ export default function App() {
             <button className="disclosure" onClick={() => setLapsModal(true)}>
               Full view
             </button>
+            {showLaps && (
+              <span className="dim small">
+                {highlight.length ? `${highlight.length} driver${highlight.length > 1 ? "s" : ""} filtered` : "All drivers"}
+              </span>
+            )}
           </div>
+
+          {showLaps && (
+            <div className="chips" role="group" aria-label="Filter lap table by driver" style={{ margin: "8px 0" }}>
+              <button className={highlight.length === 0 ? "chip on" : "chip"} onClick={() => setHighlight([])}>
+                All drivers
+              </button>
+              {(drivers.data ?? []).map((d: Driver) => {
+                const on = highlight.includes(d.driver_number);
+                return (
+                  <button
+                    key={d.driver_number}
+                    className={on ? "chip on" : "chip"}
+                    aria-pressed={on}
+                    onClick={() =>
+                      setHighlight((h) =>
+                        h.includes(d.driver_number) ? h.filter((x) => x !== d.driver_number) : [...h, d.driver_number],
+                      )
+                    }
+                  >
+                    <i style={{ background: teamColor(d.team_colour) }} />
+                    {d.name_acronym}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {showLaps && (
             <div className="laps-wrap">
               <table className="laps mono">
@@ -1112,26 +1143,7 @@ export default function App() {
               </table>
             </div>
           )}
-          <div className="chips" role="group" aria-label="Highlight drivers">
-            {(drivers.data ?? []).map((d: Driver) => {
-              const on = highlight.includes(d.driver_number);
-              return (
-                <button
-                  key={d.driver_number}
-                  aria-pressed={on}
-                  className={on ? "chip on" : "chip"}
-                  onClick={() =>
-                    setHighlight((h) =>
-                      h.includes(d.driver_number) ? h.filter((x) => x !== d.driver_number) : [...h, d.driver_number],
-                    )
-                  }
-                >
-                  <i style={{ background: teamColor(d.team_colour) }} />
-                  {d.name_acronym}
-                </button>
-              );
-            })}
-          </div>
+
         </section>
       )}
     </>
