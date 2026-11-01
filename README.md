@@ -217,6 +217,5 @@ a number the feeds do not provide — show an empty state instead.
 
 ## License
 
-**No license yet.** Without one, the code is all-rights-reserved by default and
-others cannot legally reuse it. Add `LICENSE` (MIT or Apache-2.0 are the usual
-choices for a project like this) before publishing the repository.
+[MIT](LICENSE) © 2026 Kelana Chandra Helyandika — use it, fork it, learn from it.
+Data belongs to its sources; see the credits above.
