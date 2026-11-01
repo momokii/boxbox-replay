@@ -127,9 +127,30 @@ export default function PitPanel(p: Props) {
         <strong>{lapsLeft}</strong> laps?
       </p>
       <p className="dim small" style={{ marginTop: -4 }}>
-        This compares two totals over those laps: staying out on the current {compound.toLowerCase()} tyres versus
-        stopping for fresh ones. Lower total is better.
+        Two scenarios, one sum each: keep the current {compound.toLowerCase()} tyres to the flag, or spend{" "}
+        {pitLoss.toFixed(1)}s in the pit lane and finish on fresh ones. The lower total wins.
       </p>
+      <details className="how-to" style={{ marginBottom: 10 }}>
+        <summary>How to use this</summary>
+        <ul>
+          <li>
+            <strong>1. Pick the driver</strong> in the timing tower (click a row). The model uses that car's
+            measured pace and tyre wear.
+          </li>
+          <li>
+            <strong>2. Set laps left</strong> to the laps you want to model — this is a snapshot, not a strategy
+            plan.
+          </li>
+          <li>
+            <strong>3. Drag pit loss</strong> to match the circuit (20–25s is typical). Watch how much the answer
+            has to change before it flips.
+          </li>
+          <li>
+            <strong>4. Read the verdict</strong>, then check the breakdown below: it shows exactly which pace and
+            wear numbers were used, and what the model ignores.
+          </li>
+        </ul>
+      </details>
 
       <div className="pit-inputs">
         <div className="pit-field">
@@ -166,6 +187,9 @@ export default function PitPanel(p: Props) {
 
       {call && (
         <>
+          <p className="dim small" style={{ marginBottom: 4 }}>
+            Total time over the next {lapsLeft} laps. Shorter bar is better.
+          </p>
           <div className="pit-bars">
             <div className="pit-bar-row">
               <span className="pit-bar-label">Stay out</span>
@@ -186,8 +210,10 @@ export default function PitPanel(p: Props) {
           <p className="pit-answer">{call.recommendation}</p>
           <p className="small">
             {call.recommendation === "STAY OUT"
-              ? `Staying out saves ${diff.toFixed(1)}s over the next ${lapsLeft} laps.`
-              : `Pitting saves ${diff.toFixed(1)}s over the next ${lapsLeft} laps.`}
+              ? `Staying out saves ${diff.toFixed(1)}s over the next ${lapsLeft} laps`
+              : `Pitting saves ${diff.toFixed(1)}s over the next ${lapsLeft} laps`}
+            {" — about "}
+            {(diff / Math.max(1, lapsLeft)).toFixed(2)}s per lap. {call.traffic_on_exit ? "" : "The pit exit is clear."}
           </p>
           {call.traffic_on_exit && (
             <p className="small warn">

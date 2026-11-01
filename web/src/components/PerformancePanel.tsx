@@ -8,6 +8,7 @@ import WeatherChart from "./WeatherChart";
 import LapChart from "./LapChart";
 import Modal from "./Modal";
 import DegradationList from "./DegradationList";
+import RaceControlModal from "./RaceControlModal";
 import type { Playback } from "../playbackStore";
 import type { Lap, Stint } from "../types";
 import type { PitStopSummary } from "../api";
@@ -38,6 +39,7 @@ export default function PerformancePanel(p: Props) {
   const [feed, setFeed] = useState<Feed | null>(null);
   const [scope, setScope] = useState<"focus" | "all">("all");
   const [degModal, setDegModal] = useState(false);
+  const [rcModal, setRcModal] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -70,6 +72,9 @@ export default function PerformancePanel(p: Props) {
   for (const s of p.pitSummary) pitByDriver.set(s.driver_number, s.laps);
   const pitByDriverSummary = new Map(p.pitSummary.map((s) => [s.driver_number, s]));
   const overtakesByDriver = new Map(p.overtakeCounts.map((o) => [o.driver_number, o]));
+
+  // Race control: categories for the filter chips in the full view.
+  const rcCategories = [...new Set(feed.rc.map((r) => String(r.category ?? "Other")))].sort();
 
   const byDriver = [...new Set(stints.map((s) => s.driver_number))]
     .sort((x, y) => x - y)
@@ -303,13 +308,18 @@ export default function PerformancePanel(p: Props) {
           </div>
         </section>
         <section className="panel" style={{ flex: 1, minWidth: 260 }}>
-          <h3>
-            <Info
-              label="Race control"
-              tip="Every steward and race-control message for this session: flags, investigations, penalties. Click a time to jump the replay there."
-            />{" "}
-            · all {feed.rc.length} messages
-          </h3>
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+            <h3>
+              <Info
+                label="Race control"
+                tip="Every steward and race-control message for this session: flags, investigations, penalties. Click a time to jump the replay there."
+              />{" "}
+              · all {feed.rc.length} messages
+            </h3>
+            <button className="disclosure" onClick={() => setRcModal(true)}>
+              Full view
+            </button>
+          </div>
           <div className="event-list">
             {feed.rc.length ? (
               feed.rc.map((r, i) => (
@@ -327,6 +337,14 @@ export default function PerformancePanel(p: Props) {
           </div>
         </section>
       </div>
+
+      <RaceControlModal
+        open={rcModal}
+        onClose={() => setRcModal(false)}
+        rows={feed.rc}
+        categories={rcCategories}
+        onSeek={p.onSeek}
+      />
 
       <Modal
         open={degModal}
