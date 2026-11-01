@@ -134,8 +134,8 @@ offers a retry.
   proxies it).
 - The coach shells out to a local CLI; if it is unavailable the API returns
   `answer: null` and the UI shows the measured numbers only.
-- CI: ruff, pytest, vitest, tsc, gitleaks, pip-audit, plus an advisory container
-  scan.
+- CI: ruff + pytest (API), npm test + tsc + oxlint + vite build (web), gitleaks,
+  pip-audit and npm audit, plus an advisory Trivy scan of the API image.
 
 ## Testing strategy
 

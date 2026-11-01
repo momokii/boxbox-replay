@@ -15,24 +15,25 @@ proxies to the API.
 Production differences are configuration only (`APP_ENV=production`); same image
 shape, no debug ports, no secrets baked in.
 
-## Tailnet access (this host)
+## Reaching it over a private network (e.g. Tailscale)
 
-The host's Tailnet IP is `<host>` (check with
-`ip -4 addr show tailscale0`). The app publishes `8501:8501` on all interfaces,
-so from any device on the same Tailnet:
+The stack publishes `${APP_PORT:-8501}` on all interfaces, so any device that can
+route to the host can open it. On Tailscale, read the host's own address:
 
-```text
-http://<host>:8501
+```bash
+ip -4 addr show tailscale0 | grep -oP 'inet \K[0-9.]+'
+# then, from another device on the same tailnet:
+#   http://<tailnet-ip>:8501
 ```
 
 Verify from the host itself:
 
 ```bash
-curl -sf http://<host>:8501/_stcore/health   # -> ok
+curl -sf http://localhost:8501/api/healthz   # -> {"ok":true}
 ```
 
-If it doesn't load from another device, check Tailnet ACLs allow port 8501
-between your devices (default policy allows all).
+If it does not load from another device, check that your Tailnet ACLs allow the
+port (default policy allows all between your own devices).
 
 ## Operating
 

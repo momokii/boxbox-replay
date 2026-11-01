@@ -1,6 +1,6 @@
-# TASK-002: CI runs tests + lint + secret scan + dep audit on every push/PR.
-# The AppTest smoke (scripts/smoke_app.py) stays a LOCAL gate: it needs network
-# and minutes of OpenF1 fetching, so it runs on demand, not in CI.
+# CI: lint + tests for both stacks, secret scan, dependency audit, container scan.
+# Replay caches and the LLM coach are local-only concerns; nothing here needs
+# network access to OpenF1.
 name: ci
 
 on:
@@ -8,7 +8,8 @@ on:
   pull_request:
 
 jobs:
-  test:
+  api:
+    name: API (python)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,6 +19,25 @@ jobs:
       - run: pip install -r requirements.txt
       - run: ruff check .
       - run: pytest
+
+  web:
+    name: Web (node)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
+
   secrets:
     runs-on: ubuntu-latest
     steps:
@@ -25,6 +45,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2
+
   audit:
     runs-on: ubuntu-latest
     steps:
@@ -34,16 +55,22 @@ jobs:
           python-version: "3.12"
       - run: pip install pip-audit
       - run: pip-audit -r requirements.txt --desc
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm audit --audit-level=high
+        working-directory: web
+
   image:
-    # Advisory for now: slim-bookworm base CVEs are outside our control.
-    # Harden to exit-code 1 once the base image is pinned by digest + monitored.
+    # Advisory: base-image CVEs are outside our control. Harden to exit-code 1
+    # once the base image is pinned by digest and monitored.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t boxbox-replay:ci .
+      - run: docker build -t boxbox-replay-api:ci .
       - uses: aquasecurity/trivy-action@0.32.0
         with:
-          image-ref: boxbox-replay:ci
+          image-ref: boxbox-replay-api:ci
           format: sarif
           output: trivy-results.sarif
           exit-code: "0"

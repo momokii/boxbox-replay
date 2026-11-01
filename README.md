@@ -161,9 +161,11 @@ cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
 
-CI runs lint, tests, a secret scan (gitleaks) and a dependency audit
-(`pip-audit`) on every push; see `.github/workflows/ci.yml`. The container runs
-as a non-root user with `no-new-privileges` in production.
+CI runs both stacks on every push — `ruff`, `pytest`, `npm test`, `tsc`, `oxlint`
+and `vite build` — plus a secret scan (gitleaks), dependency audits (`pip-audit`,
+`npm audit`) and an advisory container scan (Trivy). See
+`.github/workflows/ci.yml`. Containers run as a non-root user with
+`no-new-privileges` in production.
 
 ## Project layout
 
@@ -215,5 +217,6 @@ a number the feeds do not provide — show an empty state instead.
 
 ## License
 
-Not chosen yet — add one before distributing. Until then, treat this as
-all-rights-reserved.
+**No license yet.** Without one, the code is all-rights-reserved by default and
+others cannot legally reuse it. Add `LICENSE` (MIT or Apache-2.0 are the usual
+choices for a project like this) before publishing the repository.
