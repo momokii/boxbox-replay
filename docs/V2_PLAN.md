@@ -9,6 +9,9 @@ step.
 
 ## Order and why
 
+**Status (2026-11-03):** V2.1–V2.4 shipped and verified in production.
+V2.5 deferred with measured reasons (§V2.5). V2.6–V2.7 remain backlog.
+
 | Step | Milestone | Depends on | Why first |
 |---|---|---|---|
 | V2.1 | Rate limiter + single-flight | — | Every new fetch below rides on it; without it concurrent users hit 429 |

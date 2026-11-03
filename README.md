@@ -31,9 +31,13 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 |---|---|
 | ![Pit wall](docs/screenshots/05-pit-wall.png) | ![Lap times](docs/screenshots/06-lap-times.png) |
 
-| Lap duel | Light theme |
+| Lap duel | Driver inputs |
 |---|---|
-| ![Lap duel](docs/screenshots/08-duel.png) | ![Light theme](docs/screenshots/02-replay-light.png) |
+| ![Lap duel](docs/screenshots/08-duel.png) | ![Inputs](docs/screenshots/09-inputs.png) |
+
+| Light theme | |
+|---|---|
+| ![Light theme](docs/screenshots/02-replay-light.png) | |
 
 | Phone | |
 |---|---|
