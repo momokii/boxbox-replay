@@ -73,6 +73,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t boxbox-replay-api:ci .
+      # Import the app inside the image: catches a module that exists in the
+      # repo but is missing from the Dockerfile COPY list.
+      - run: docker run --rm boxbox-replay-api:ci python -c "import api.main"
       - uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: boxbox-replay-api:ci
