@@ -351,3 +351,26 @@ def test_lap_progress_rejects_empty_and_origin_rows():
         }
     )
     assert analysis.lap_progress(only_origin, start, start + pd.Timedelta(seconds=10)).empty
+
+
+def test_clean_track_points_does_not_cascade_after_one_gap():
+    """One telemetry gap must not discard the rest of the lap."""
+    import numpy as np
+
+    # A straight line with a 10x gap in the middle, then the line continues.
+    xs = np.arange(0, 100) * 100.0
+    frame = pd.DataFrame({"x": xs, "y": np.zeros_like(xs)})
+    frame.loc[50, "x"] = 9_999.0  # single outlier between two normal samples
+
+    cleaned = analysis.clean_track_points(frame, "x", "y")
+    assert len(cleaned) == len(frame) - 1
+    assert 9_999.0 not in cleaned["x"].tolist()
+    assert cleaned["x"].iloc[-1] == frame["x"].iloc[-1]
+
+
+def test_clean_track_points_keeps_a_normal_trace():
+    import numpy as np
+
+    xs = np.arange(0, 60) * 100.0
+    frame = pd.DataFrame({"x": xs, "y": np.zeros_like(xs)})
+    assert len(analysis.clean_track_points(frame, "x", "y")) == len(frame)

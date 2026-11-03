@@ -106,10 +106,24 @@ def clean_track_points(trace: pd.DataFrame, ax: str, ay: str) -> pd.DataFrame:
     if not len(finite):
         return df.iloc[:1].reset_index(drop=True)
     limit = float(np.median(finite)) * 6.0
+    # Compare consecutive samples, never against the last *kept* one: a single
+    # gap used to put the running reference far ahead of the car, so every
+    # following sample looked like a glitch and the rest of the lap was thrown
+    # away (a 2026 US GP outline lost 36% of the circuit this way).
+    #
+    # A sample is a spike only when both its neighbouring steps are large and
+    # the path resumes where it left off. A real gap (car keeps moving) is kept.
     keep = [0]
     for i in range(1, len(df)):
-        if float(np.linalg.norm(pts[i] - pts[keep[-1]])) <= limit:
+        incoming = float(np.linalg.norm(pts[i] - pts[i - 1]))
+        if incoming <= limit:
             keep.append(i)
+            continue
+        outgoing = float(np.linalg.norm(pts[i + 1] - pts[i])) if i + 1 < len(df) else 0.0
+        resumes = float(np.linalg.norm(pts[i + 1] - pts[i - 1])) if i + 1 < len(df) else 0.0
+        if outgoing > limit and resumes <= limit * 2:
+            continue
+        keep.append(i)
     return df.iloc[keep].reset_index(drop=True)
 
 
