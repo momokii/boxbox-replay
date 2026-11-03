@@ -11,7 +11,8 @@ DEPLOYED prod, healthy at http://<host>:8501.
 ## In Progress
 - [x] V2.1: OpenF1 3/s + 30/min bucket, single-flight builds (69 pytest)
 - [x] V2.2/V2.3: lap-duel endpoint + view, distance-aligned delta (60 vitest)
-- [ ] V2.4 telemetry traces · V2.5 fight finder · V2.6 pit Gantt · V2.7 share card
+- [x] V2.4 inputs strip (throttle/brake/gear/DRS) + endpoint
+- [ ] V2.6 pit Gantt · V2.7 share card · V2.5 fight finder deferred (feed too noisy)
 - [x] fix: glitch filter no longer truncates a circuit after one telemetry gap
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
 - [x] R2: feature panels (battle, performance, pit toy) as secondary views

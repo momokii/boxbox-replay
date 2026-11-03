@@ -336,3 +336,10 @@ delta starts at 0.000 and closes on the real lap-time difference; fifth tab
 with its own clock. Fixed a v1 map bug found on the way: the glitch filter
 compared every sample to the last kept point, so a single gap truncated 36% of
 the 2026 US GP circuit. 69 pytest + 60 vitest, lint clean.
+
+input lap traces (throttle/brake/gear/DRS) with nulls where 2026 lacks DRS.
+Fight finder prototyped twice and deferred: intervals alone produced 181-593
+candidate runs per race, some lasting 500 s on stale samples; shipping a list
+would have broken the honesty rule. Also fixed two duel edges: stale laps
+across a session switch (useAsync now reports which key its data belongs to)
+and a driver with no timed laps leaving the previous pair on screen.

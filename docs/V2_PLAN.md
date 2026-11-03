@@ -15,7 +15,7 @@ step.
 | V2.2 | Lap Duel (backend) | V2.1 | The signature feature; defines trace/delta shape |
 | V2.3 | Lap Duel (UI) | V2.2 | First visible v2 surface |
 | V2.4 | Telemetry traces | V2.1 | Reuses per-lap `car_data` windows |
-| V2.5 | Fight Finder | V2.1 | Reuses cached `intervals`; cheap visibility |
+| V2.5 | Fight Finder | V2.1 | **Deferred** — the gap feed is too noisy for an honest list (see below) |
 | V2.6 | Pit strategy Gantt | — | Already-cached `stints`/`pit` |
 | V2.7 | Share card PNG | V2.3 | Exports the duel/replay frame |
 
@@ -135,7 +135,23 @@ sample; missing channels hide their row with a reason; tests cover a lap with
 
 ---
 
-## V2.5 — Fight Finder
+## V2.5 — Fight Finder (deferred)
+
+**Status: deferred after measurement, not implemented.** Two definitions were
+prototyped against the 2026 US GP:
+
+- adjacent drivers under 1 s: 593 runs, including dozens of 3–5 s blips caused
+  by asynchronous per-driver samples;
+- sustained `interval < 1 s` per driver: 181 runs, including 500-second
+  "battles" where the feed keeps a stale interval while the car is not actually
+  fighting (traffic, lapped cars, pit stops).
+
+Both are too noisy to show as a list without a real adjacency model: same-lap
+check, pit/blue-flag exclusion, and a requirement that the gap actually moves.
+Fabricating a list would break the honesty rule the rest of the app follows.
+Revisit with positions plus intervals, not intervals alone.
+
+## V2.5 (original contract, kept for the future)
 
 **Endpoint.** `GET /session/fights?session_key=`
 
