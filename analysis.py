@@ -23,6 +23,8 @@ __all__ = [
     "leader_progress",
     "derive_gaps",
     "pit_toy_model",
+    "lap_progress",
+    "duel_delta",
     "NOISE_THRESHOLD",
     "CORNER_LOSS_THRESHOLD",
 ]
@@ -577,3 +579,84 @@ def position_at(positions: pd.DataFrame, t: float) -> dict[int, int]:
         for r in latest.itertuples()
         if pd.notna(r.position)
     }
+
+
+def lap_progress(
+    loc: pd.DataFrame, start, end, points: int = 600, duration: float | None = None
+) -> pd.DataFrame:
+    """Resample one lap's positions onto an evenly spaced progress grid.
+
+    `f` runs 0..1 by distance along the lap; `t` is seconds from lap start.
+    Distance (not time) is the axis because two laps have different durations:
+    aligning on distance is what makes a per-position delta meaningful. Pure.
+
+    Returns columns f, x, y, t — empty when the window holds too few points.
+    """
+    import numpy as np
+
+    empty = pd.DataFrame(columns=["f", "x", "y", "t"])
+    if loc.empty or not {"date", "x", "y"}.issubset(loc.columns) or points < 2:
+        return empty
+
+    # A lap boundary from the next lap's start can run past the flag when the
+    # feed is missing the following lap; clamp to the measured lap duration so
+    # the trace ends at the line instead of somewhere down the straight.
+    if duration is not None and duration > 0:
+        measured_end = start + pd.Timedelta(seconds=float(duration))
+        end = min(pd.Timestamp(end), measured_end)
+
+    stamps = pd.to_datetime(loc["date"], format="mixed", utc=True)
+    win = loc.loc[(stamps >= start) & (stamps < end)]
+    if len(win) < 3:
+        return empty
+    win = win.sort_values("date", kind="stable") if "date" in win.columns else win
+
+    x = pd.to_numeric(win["x"], errors="coerce").to_numpy(dtype=float)
+    y = pd.to_numeric(win["y"], errors="coerce").to_numpy(dtype=float)
+    t = (pd.to_datetime(win["date"], format="mixed", utc=True) - start).dt.total_seconds()
+    t = t.to_numpy(dtype=float)
+
+    finite = np.isfinite(x) & np.isfinite(y) & np.isfinite(t)
+    # OpenF1 emits x=y=0 before a car has a fix; keeping them piles the trace
+    # on the origin and corrupts the distance axis.
+    finite &= ~((x == 0) & (y == 0))
+    x, y, t = x[finite], y[finite], t[finite]
+    if len(x) < 3:
+        return empty
+
+    # Anchor the sampled trace to the official lap clock: start at 0, end at the
+    # measured duration. Positions arrive at ~3.7 Hz, so the first sample lands
+    # a fraction of a second after the line; without this the delta would start
+    # at a non-zero value and the two ends would disagree with official timing.
+    t = t - t[0]
+    if duration is not None and duration > 0 and t[-1] > 0:
+        scale = float(duration) / t[-1]
+        if 0.9 <= scale <= 1.1:  # truncated trace: do not stretch it
+            t = t * scale
+
+    dist = np.concatenate([[0.0], np.cumsum(np.hypot(np.diff(x), np.diff(y)))])
+    keep = np.concatenate([[True], np.diff(dist) > 0])
+    x, y, t, dist = x[keep], y[keep], t[keep], dist[keep]
+    if len(dist) < 3 or dist[-1] <= 0:
+        return empty
+
+    grid = np.linspace(0.0, dist[-1], points)
+    return pd.DataFrame(
+        {
+            "f": np.round(grid / dist[-1], 6),
+            "x": np.interp(grid, dist, x),
+            "y": np.interp(grid, dist, y),
+            "t": np.interp(grid, dist, t),
+        }
+    )
+
+
+def duel_delta(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
+    """Time lost by A against B at equal track progress.
+
+    Positive means A is behind (A reached that point later). At f=1 this is the
+    lap-time difference, which is the invariant the tests pin. Pure.
+    """
+    if a.empty or b.empty or len(a) != len(b):
+        return pd.DataFrame(columns=["f", "dt"])
+    return pd.DataFrame({"f": a["f"].to_numpy(), "dt": b["t"].to_numpy() - a["t"].to_numpy()})

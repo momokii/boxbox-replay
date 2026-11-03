@@ -225,6 +225,59 @@ def geometry(session_key: int, driver_number: int, lap: int) -> dict:
     }
 
 
+def _trace_rows(trace: pd.DataFrame) -> list[list[float]]:
+    """Trace rows as [progress, x, y, seconds] with stable decimal places."""
+    return [
+        [round(float(r.f), 4), round(float(r.x), 1), round(float(r.y), 1), round(float(r.t), 3)]
+        for r in trace.itertuples()
+    ]
+
+
+@app.get("/session/duel")
+def session_duel(
+    session_key: int, a_driver: int, a_lap: int, b_driver: int, b_lap: int
+) -> dict:
+    """Two laps aligned by distance, plus the time delta at equal progress.
+
+    Both traces share one 600-point grid, so the client can interpolate both
+    cars by progress and never has to align anything itself.
+    """
+    sides: dict[str, dict] = {}
+    for label, driver, lap in (("a", a_driver, a_lap), ("b", b_driver, b_lap)):
+        laps_df = data_loader.list_laps(session_key, driver_number=driver)
+        start, end = data_loader.lap_window(laps_df, lap)
+        if start is None:
+            raise HTTPException(404, f"lap {lap} not found for driver {driver}")
+        row = laps_df[laps_df.get("lap_number") == lap].tail(1)
+        duration = None
+        if not row.empty and "lap_duration" in row.columns:
+            value = row["lap_duration"].iloc[0]
+            if pd.notna(value):
+                duration = float(value)
+        end_ts = end if end is not None else start + pd.Timedelta(seconds=duration or 150)
+        loc = data_loader.get_location(session_key, driver)
+        trace = analysis.lap_progress(loc, start, end_ts, duration=duration)
+        if trace.empty:
+            raise HTTPException(404, f"no position data for driver {driver} lap {lap}")
+        sides[label] = {
+            "driver_number": driver,
+            "lap": lap,
+            "lap_duration": duration,
+            "trace": trace,
+        }
+
+    a, b = sides["a"]["trace"], sides["b"]["trace"]
+    delta = analysis.duel_delta(a, b)
+    points = len(a)
+    return {
+        "points": points,
+        "a": {k: v for k, v in sides["a"].items() if k != "trace"},
+        "b": {k: v for k, v in sides["b"].items() if k != "trace"},
+        "traces": {"a": _trace_rows(a), "b": _trace_rows(b)},
+        "delta": [[round(float(r.f), 4), round(float(r.dt), 3)] for r in delta.itertuples()],
+    }
+
+
 def _lap_merged_car_loc(session_key: int, driver_number: int, start, end_ts) -> pd.DataFrame:
     car = data_loader.get_car_data(session_key, driver_number=driver_number)
     loc = data_loader.get_location(session_key, driver_number=driver_number)

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -160,3 +161,73 @@ def test_pit_call_delegates_to_model():
     with TestClient(m.app) as client:
         body = client.post("/pit-call", json=payload).json()
         assert body["recommendation"] == "PIT NOW" and body["toy_model"] is True
+
+
+def test_duel_shape_and_delta_at_the_line(monkeypatch):
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+
+    def circle(duration: float, driver: int) -> pd.DataFrame:
+        t = np.linspace(0, duration, 400)
+        return pd.DataFrame(
+            {
+                "date": [(start + pd.Timedelta(seconds=float(v))).isoformat() for v in t],
+                "x": np.cos(2 * np.pi * t / duration) * 1000,
+                "y": np.sin(2 * np.pi * t / duration) * 1000,
+                "driver_number": driver,
+            }
+        )
+
+    locs = {1: circle(90, 1), 2: circle(91, 2)}
+    rows = [
+        {"driver_number": 1, "lap_number": 10, "lap_duration": 90.0},
+        {"driver_number": 2, "lap_number": 10, "lap_duration": 91.0},
+    ]
+
+    def fake_laps(session_key, driver_number=None):
+        picked = [r for r in rows if driver_number in (None, r["driver_number"])]
+        return _frame(picked)
+
+    monkeypatch.setattr(m.data_loader, "list_laps", fake_laps)
+    monkeypatch.setattr(
+        m.data_loader,
+        "lap_window",
+        lambda df, lap: (
+            start,
+            start + pd.Timedelta(seconds=float(df["lap_duration"].iloc[0])),
+        ),
+    )
+    monkeypatch.setattr(m.data_loader, "get_location", lambda sk, drv: locs[drv])
+
+    with TestClient(m.app) as client:
+        params = {
+            "session_key": 1,
+            "a_driver": 1,
+            "a_lap": 10,
+            "b_driver": 2,
+            "b_lap": 10,
+        }
+        body = client.get("/session/duel", params=params).json()
+
+    assert body["points"] == 600
+    assert len(body["traces"]["a"]) == len(body["traces"]["b"]) == 600
+    assert body["a"]["lap_duration"] == 90.0
+    assert body["delta"][0][1] == pytest.approx(0.0, abs=0.01)
+    # Same distance, one second slower: the delta at the line is that second.
+    assert body["delta"][-1][1] == pytest.approx(1.0, abs=0.05)
+
+
+def test_duel_404_when_a_lap_has_no_positions(monkeypatch):
+    monkeypatch.setattr(
+        m.data_loader,
+        "list_laps",
+        lambda *a, **k: _frame([{"driver_number": 1, "lap_number": 4, "lap_duration": 90.0}]),
+    )
+    monkeypatch.setattr(
+        m.data_loader,
+        "lap_window",
+        lambda df, lap: (pd.Timestamp("2024-01-01T00:00:00+00:00"), None),
+    )
+    monkeypatch.setattr(m.data_loader, "get_location", lambda *a, **k: _frame([]))
+    with TestClient(m.app) as client:
+        params = {"session_key": 1, "a_driver": 1, "a_lap": 4, "b_driver": 1, "b_lap": 4}
+        assert client.get("/session/duel", params=params).status_code == 404

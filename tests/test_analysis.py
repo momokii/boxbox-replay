@@ -286,3 +286,68 @@ def test_position_at_uses_latest_sample():
     assert analysis.position_at(pos, 150) == {1: 1, 2: 4}
     assert analysis.position_at(pos, -5) == {}
     assert analysis.position_at(pd.DataFrame(), 10) == {}
+
+
+def _circle_lap(seconds: float, start: str = "2024-01-01T00:00:00+00:00", n: int = 400):
+    """A synthetic lap: one full circle at 1 Hz, `seconds` long."""
+    import numpy as np
+
+    stamp = pd.Timestamp(start)
+    t = np.linspace(0, seconds, n)
+    return pd.DataFrame(
+        {
+            "date": [(stamp + pd.Timedelta(seconds=float(v))).isoformat() for v in t],
+            "x": np.cos(2 * np.pi * t / seconds) * 1000,
+            "y": np.sin(2 * np.pi * t / seconds) * 1000,
+            "t_true": t,
+        }
+    )
+
+
+def test_lap_progress_covers_the_whole_lap():
+    import analysis
+
+    lap = _circle_lap(90)
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    trace = analysis.lap_progress(lap, start, start + pd.Timedelta(seconds=90), duration=90)
+
+    assert len(trace) == 600
+    assert trace["f"].iloc[0] == 0.0
+    assert trace["f"].iloc[-1] == pytest.approx(1.0)
+    assert trace["t"].iloc[0] == pytest.approx(0.0, abs=0.02)
+    assert trace["t"].iloc[-1] == pytest.approx(90.0, abs=0.5)
+    assert trace["t"].is_monotonic_increasing
+
+
+def test_duel_delta_equals_lap_time_gap_at_the_line():
+    import analysis
+
+    fast = _circle_lap(90)
+    slow = _circle_lap(91)
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    end = start + pd.Timedelta(seconds=91)
+    a = analysis.lap_progress(fast, start, end, duration=90)
+    b = analysis.lap_progress(slow, start, end, duration=91)
+    delta = analysis.duel_delta(a, b)
+
+    assert delta["dt"].iloc[0] == pytest.approx(0.0, abs=0.01)
+    # B took one extra second for the same lap, but it also had more time in
+    # the window; at equal *progress* B is behind by the pace difference.
+    assert delta["dt"].iloc[-1] > 0.5
+    assert delta["dt"].iloc[-1] == pytest.approx(1.0, abs=0.05)
+
+
+def test_lap_progress_rejects_empty_and_origin_rows():
+    import analysis
+
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    assert analysis.lap_progress(pd.DataFrame(), start, start) .empty
+
+    only_origin = pd.DataFrame(
+        {
+            "date": [start.isoformat(), (start + pd.Timedelta(seconds=1)).isoformat()],
+            "x": [0.0, 0.0],
+            "y": [0.0, 0.0],
+        }
+    )
+    assert analysis.lap_progress(only_origin, start, start + pd.Timedelta(seconds=10)).empty

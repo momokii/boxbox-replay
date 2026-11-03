@@ -144,6 +144,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 | `GET /session/replay` | Every driver's positions, sampled; lap markers |
 | `GET /session/gaps` | Gaps to leader (live intervals, else derived from lap times) |
 | `GET /session/speed?driver_number=` | One driver's speed for the session |
+| `GET /session/duel?a_driver=&a_lap=&b_driver=&b_lap=` | Two laps aligned by distance: traces plus the time delta at equal progress |
 | `GET /session/pit` · `/overtakes` · `/result` · `/positions` | Stops, passes, classification, official order |
 | `GET /laps`, `/stints`, `/weather`, `/radio`, `/race-control` | Session feeds |
 | `POST /corner-loss` | Measured time lost at a corner vs a reference lap |
