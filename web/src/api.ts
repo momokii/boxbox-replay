@@ -15,6 +15,7 @@ import type {
   SpeedPoint,
   Stint,
 } from "./types";
+import type { DuelPayload } from "./duel";
 
 const BASE = "/api";
 
@@ -85,6 +86,11 @@ export const api = {
     get<SessionGaps>(`/session/gaps?session_key=${sessionKey}`),
   sessionSpeed: (sessionKey: number, driver: number) =>
     get<SpeedPoint[]>(`/session/speed?session_key=${sessionKey}&driver_number=${driver}`),
+  duel: (sessionKey: number, aDriver: number, aLap: number, bDriver: number, bLap: number) =>
+    get<DuelPayload>(
+      `/session/duel?session_key=${sessionKey}&a_driver=${aDriver}&a_lap=${aLap}` +
+        `&b_driver=${bDriver}&b_lap=${bLap}`,
+    ),
   sessionPit: (sessionKey: number) =>
     get<{ summary: PitStopSummary[]; stops: PitStop[] }>(`/session/pit?session_key=${sessionKey}`),
   sessionPositions: (sessionKey: number) =>

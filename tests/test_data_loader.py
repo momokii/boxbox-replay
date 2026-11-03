@@ -346,3 +346,9 @@ def test_concurrent_reads_share_one_fetch(tmp_path, monkeypatch):
     assert len(results) == 4
     assert all(len(frame) == 1 for frame in results)
     assert path.exists()
+
+
+def test_lap_window_handles_a_driver_with_no_laps():
+    # An unknown driver returns a frame with no columns; this must be a clean
+    # "no window", not a KeyError that surfaces as a 500.
+    assert data_loader.lap_window(pd.DataFrame(), 1) == (None, None)

@@ -313,6 +313,8 @@ def lap_window(driver_laps: pd.DataFrame, lap_number: int):
     to +150 s, which silently swallowed a whole extra lap and corrupted any
     geometry derived from it.
     """
+    if driver_laps.empty or "date_start" not in driver_laps.columns:
+        return None, None
     laps = driver_laps.dropna(subset=["date_start"]).sort_values("lap_number")
     row = laps[laps["lap_number"] == lap_number]
     if row.empty:

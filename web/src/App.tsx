@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import BattlePanel from "./components/BattlePanel";
+import DuelPanel from "./components/DuelPanel";
 import CoachPanel from "./components/CoachPanel";
 import GapChart from "./components/GapChart";
 import PerformancePanel from "./components/PerformancePanel";
@@ -124,7 +125,7 @@ export default function App() {
   const [highlight, setHighlight] = useState<number[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
   const [selectedCorner, setSelectedCorner] = useState<string | null>(null);
-  const [view, setView] = useState<"replay" | "battle" | "performance" | "pit">("replay");
+  const [view, setView] = useState<"replay" | "battle" | "duel" | "performance" | "pit">("replay");
   const [showLaps, setShowLaps] = useState(false);
   const [lapsModal, setLapsModal] = useState(false);
   const [driverDetail, setDriverDetail] = useState<"stints" | "laps" | "overtakes" | "pits" | null>(null);
@@ -682,7 +683,7 @@ export default function App() {
 
           <section className="stage">
             <div className="tabbar" role="tablist" aria-label="Views">
-              {(["replay", "battle", "performance", "pit"] as const).map((v) => (
+              {(["replay", "battle", "duel", "performance", "pit"] as const).map((v) => (
                 <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
                   {v === "pit" ? "Pit wall" : v}
                 </button>
@@ -877,6 +878,23 @@ export default function App() {
                 codes={new Map((drivers.data ?? []).map((d) => [d.driver_number, d.name_acronym]))}
                 labels={new Map((drivers.data ?? []).map((d) => [d.driver_number, driverMetaLabel(d.driver_number)]))}
                 colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
+              />
+            )}
+            {view === "duel" && sessionKey && (
+              <DuelPanel
+                sessionKey={sessionKey}
+                drivers={drivers.data ?? []}
+                laps={allLaps}
+                colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
+                geometry={geo.data ?? null}
+                theme={theme}
+                preferred={
+                  highlight.length
+                    ? highlight
+                    : selectedDriver != null
+                      ? [selectedDriver]
+                      : []
+                }
               />
             )}
             {view === "performance" && (
