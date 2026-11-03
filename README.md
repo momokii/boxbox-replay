@@ -30,9 +30,13 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 |---|---|
 | ![Pit wall](docs/screenshots/05-pit-wall.png) | ![Lap times](docs/screenshots/06-lap-times.png) |
 
-| Light theme | Phone |
+| Lap duel | Light theme |
 |---|---|
-| ![Light theme](docs/screenshots/02-replay-light.png) | ![Mobile](docs/screenshots/07-mobile.png) |
+| ![Lap duel](docs/screenshots/08-duel.png) | ![Light theme](docs/screenshots/02-replay-light.png) |
+
+| Phone | |
+|---|---|
+| ![Mobile](docs/screenshots/07-mobile.png) | |
 
 ## Architecture
 
