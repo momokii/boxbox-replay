@@ -68,6 +68,19 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | R3                  | Coach on-trigger: corner button, async ask, radio card (DONE) |
 | R4                  | Polish + cutover: docs current, Streamlit removed, Tailnet deploy (DONE) |
 
+## v2 Backlog — see `docs/V2_RESEARCH.md` for sources, limits and rationale
+
+| ID | Task | Status | Notes |
+|----|------|--------|-------|
+| V2-0 | Tag `v1.0.0` and (on approval) push the tag | TODO | Repo has no tags today |
+| V2-1 | Token bucket 3 req/s + 30 req/min, single-flight per session, request coalescing | TODO | Prerequisite: current 0.4 s spacing allows 150 req/min |
+| V2-2 | Lap Duel: two laps on the map, distance-aligned, live delta bar | TODO | Headline feature |
+| V2-3 | Telemetry traces: throttle/brake/gear/DRS strip synced to the clock | TODO | `car_data` already cached; DRS may be null |
+| V2-4 | Fight Finder: battles from `intervals`, click to seek | TODO | Replaces manual battle setup |
+| V2-5 | Pit strategy Gantt on the lap axis | TODO | `stints` + `pit` already cached |
+| V2-6 | Share card PNG export (1200x630) | TODO | Client-side canvas only |
+| V2-7 | Qualifying mode with real mini-sector strips | BLOCKED | Segments exist only outside races; gated on V2-2..V2-4 |
+
 ---
 
 ## Task Template (copy for every new task)
