@@ -316,3 +316,23 @@ motion); icon theme toggle; inline lap-table driver filter; per-driver wear bar
 scaling with team colours; race-control full view with search and category
 counts; pit wall how-to and clearer verdict; mobile player wrapping. 54 pytest +
 45 vitest, lint clean, 60 fps, mobile has no overflow.
+
+## 2026-11-03 — v1.0.0 published, v2.1–v2.3
+
+Tagged and pushed v1.0.0 (MIT, repo public). Pre-publish: scrubbed host
+addresses from state docs, rewrote history with git-filter-repo (no IP in any
+blob), CI green on both stacks after fixing pytest importability in a clean
+checkout and pinning a real Trivy tag.
+
+v2 research (docs/V2_RESEARCH.md) measured the free tier: 3 req/s and 30 req/min
+per IP, ~30 requests per cold build (20 location calls are unavoidable, the
+endpoint rejects filters without a driver), so ~60 s is a floor. Live data is a
+paid tier; team radio is sparse in 2026 and F1-owned.
+
+v2.1: one sliding-window bucket for both limits (the old 0.4 s spacing allowed
+150 req/min), single-flight per cache key, atomic parquet writes. v2.2/v2.3:
+lap duel — distance-aligned traces anchored to the official lap duration so the
+delta starts at 0.000 and closes on the real lap-time difference; fifth tab
+with its own clock. Fixed a v1 map bug found on the way: the glitch filter
+compared every sample to the last kept point, so a single gap truncated 36% of
+the 2026 US GP circuit. 69 pytest + 60 vitest, lint clean.

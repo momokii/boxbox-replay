@@ -1,5 +1,6 @@
 ## Project Phase
-REVAMP complete + UI overhaul shipped and screenshot-verified. DEPLOYED prod, healthy at http://<host>:8501.
+v1.0.0 tagged and published (MIT). v2 in progress: rate limiter + lap duel shipped.
+DEPLOYED prod, healthy at http://<host>:8501.
 
 ## Completed
 - [x] M0–M7 Streamlit app (superseded; removal planned at R4)
@@ -8,6 +9,10 @@ REVAMP complete + UI overhaul shipped and screenshot-verified. DEPLOYED prod, he
 - [x] UI research (`docs/UI_RESEARCH.md`): Streamlit out, React+FastAPI in
 
 ## In Progress
+- [x] V2.1: OpenF1 3/s + 30/min bucket, single-flight builds (69 pytest)
+- [x] V2.2/V2.3: lap-duel endpoint + view, distance-aligned delta (60 vitest)
+- [ ] V2.4 telemetry traces · V2.5 fight finder · V2.6 pit Gantt · V2.7 share card
+- [x] fix: glitch filter no longer truncates a circuit after one telemetry gap
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
 - [x] R2: feature panels (battle, performance, pit toy) as secondary views
 - [x] R3: coach on-trigger (corner button, async ask, radio card)
@@ -25,7 +30,7 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-10-29: U2 redesign verified on desktop + mobile, prod deployed
+2026-11-03: v1.0.0 tagged + pushed; v2.1–v2.3 shipped (rate limiter, lap duel)
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
 
 - [x] U9: smoothness (60fps), chart hover + responsive widths, stacked stints, honest pit model

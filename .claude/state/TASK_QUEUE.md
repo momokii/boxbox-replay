@@ -72,10 +72,11 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| V2-0 | Tag `v1.0.0` and (on approval) push the tag | TODO | Repo has no tags today |
-| V2-1 | Token bucket 3 req/s + 30 req/min, single-flight per session, request coalescing | TODO | Prerequisite: current 0.4 s spacing allows 150 req/min |
-| V2-2 | Lap Duel: two laps on the map, distance-aligned, live delta bar | TODO | Headline feature |
-| V2-3 | Telemetry traces: throttle/brake/gear/DRS strip synced to the clock | TODO | `car_data` already cached; DRS may be null |
+| V2-0 | Tag `v1.0.0` and push the tag | DONE | Pushed 2026-11-03 |
+| V2-1 | Token bucket 3 req/s + 30 req/min, single-flight per session | DONE | `ratelimit.py`, 6 tests + concurrency test |
+| V2-2 | Lap Duel backend: distance-aligned traces + delta | DONE | `/session/duel`, anchored to official lap duration |
+| V2-3 | Lap Duel UI | DONE | Fifth tab; desktop/mobile/light verified |
+| V2-3b | Telemetry traces: throttle/brake/gear/DRS strip synced to the clock | TODO | `car_data` already cached; DRS may be null |
 | V2-4 | Fight Finder: battles from `intervals`, click to seek | TODO | Replaces manual battle setup |
 | V2-5 | Pit strategy Gantt on the lap axis | TODO | `stints` + `pit` already cached |
 | V2-6 | Share card PNG export (1200x630) | TODO | Client-side canvas only |
