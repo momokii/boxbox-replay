@@ -42,9 +42,15 @@ import type {
 } from "./types";
 import "./index.css";
 
-function useAsync<T>(key: string, fn: () => Promise<T>): { data: T | null; error: string | null } {
+function useAsync<T>(key: string, fn: () => Promise<T>): {
+  data: T | null;
+  error: string | null;
+  /** Key the current data belongs to; null while a new key is loading. */
+  key: string | null;
+} {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const ref = useRef(fn);
   ref.current = fn;
   useEffect(() => {
@@ -53,15 +59,20 @@ function useAsync<T>(key: string, fn: () => Promise<T>): { data: T | null; error
     // data while a new one loads is exactly the "no context" bug we fixed.
     setData(null);
     setError(null);
+    setLoadedKey(null);
     ref
       .current()
-      .then((d) => live && setData(d))
+      .then((d) => {
+        if (!live) return;
+        setData(d);
+        setLoadedKey(key);
+      })
       .catch((e) => live && setError(String(e)));
     return () => {
       live = false;
     };
   }, [key]);
-  return { data, error };
+  return { data, error, key: loadedKey };
 }
 
 function ReplayFailure(p: { error: string; onRetry: () => void }) {
@@ -883,6 +894,7 @@ export default function App() {
             {view === "duel" && sessionKey && (
               <DuelPanel
                 sessionKey={sessionKey}
+                lapsSession={laps.key === `laps:${sessionKey ?? "none"}` ? sessionKey : null}
                 drivers={drivers.data ?? []}
                 laps={allLaps}
                 colors={new Map(towerRows.map((r) => [r.driver, r.color]))}

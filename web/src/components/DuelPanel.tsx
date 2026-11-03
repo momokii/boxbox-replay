@@ -19,6 +19,8 @@ interface Props {
   laps: Lap[];
   colors: Map<number, string>;
   geometry: Geometry | null;
+  /** Session the laps prop belongs to; null while a switch is loading. */
+  lapsSession: number | null;
   theme: "night" | "day";
   /** Drivers to open with: highlighted or selected in the replay. */
   preferred: number[];
@@ -36,6 +38,7 @@ export default function DuelPanel({
   laps,
   colors,
   geometry,
+  lapsSession,
   theme,
   preferred,
 }: Props) {
@@ -64,7 +67,8 @@ export default function DuelPanel({
     tRef.current = t;
   }, [t]);
 
-  // A new session is a new pair; never carry a lap number across circuits.
+  // A new session (or a pair that only becomes known once its laps load) must
+  // not inherit lap numbers from the previous circuit.
   useEffect(() => {
     setADriver(pair[0]);
     setBDriver(pair[1]);
@@ -73,7 +77,7 @@ export default function DuelPanel({
     setPayload(null);
     setT(0);
     setPlaying(false);
-  }, [sessionKey]);
+  }, [sessionKey, pair[0], pair[1]]);
 
   const lapOptions = (driver: number) =>
     laps
@@ -84,7 +88,16 @@ export default function DuelPanel({
   const bLapEff = bLap ?? fastestLap(laps, bDriver)?.lap_number ?? null;
 
   useEffect(() => {
-    if (!sessionKey || aDriver === bDriver || aLapEff == null || bLapEff == null) return;
+    // Never align a lap against a session it does not belong to: on a session
+    // switch the previous laps are still in state for one render.
+    if (!sessionKey || lapsSession !== sessionKey || aDriver === bDriver) return;
+    if (aLapEff == null || bLapEff == null) {
+      // A driver escaped the timing feed: drop the old pair rather than
+      // leaving a stale duel on screen.
+      setPayload(null);
+      setError(null);
+      return;
+    }
     let live = true;
     setLoading(true);
     setError(null);
@@ -107,7 +120,7 @@ export default function DuelPanel({
     return () => {
       live = false;
     };
-  }, [sessionKey, aDriver, aLapEff, bDriver, bLapEff]);
+  }, [sessionKey, lapsSession, aDriver, aLapEff, bDriver, bLapEff]);
 
   const duration = clockFor(payload);
 
@@ -310,6 +323,12 @@ export default function DuelPanel({
 
       {aDriver === bDriver && (
         <p className="duel-note">Pick two different drivers to compare their laps.</p>
+      )}
+      {aDriver !== bDriver && (aLapEff == null || bLapEff == null) && (
+        <p className="duel-note">
+          One of these drivers has no timed laps in this session, so there is nothing to
+          align.
+        </p>
       )}
       {error && <p className="duel-note duel-error">{error}</p>}
       {loading && <p className="duel-note dim">Aligning both laps…</p>}
