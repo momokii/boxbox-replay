@@ -165,3 +165,16 @@ export interface DriverInfo {
 }
 
 export type { Playback } from "./playbackStore";
+
+/** One lap of driver inputs from /session/inputs. */
+export interface InputsPayload {
+  driver_number: number;
+  lap: number;
+  lap_duration: number | null;
+  t: number[];
+  speed: number[];
+  throttle: number[];
+  brake: number[];
+  gear: number[];
+  drs: (number | null)[];
+}

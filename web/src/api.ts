@@ -3,6 +3,7 @@ import type {
   CornerLoss,
   Driver,
   Geometry,
+  InputsPayload,
   IntervalPoint,
   Lap,
   LapPoint,
@@ -86,6 +87,10 @@ export const api = {
     get<SessionGaps>(`/session/gaps?session_key=${sessionKey}`),
   sessionSpeed: (sessionKey: number, driver: number) =>
     get<SpeedPoint[]>(`/session/speed?session_key=${sessionKey}&driver_number=${driver}`),
+  inputs: (sessionKey: number, driver: number, lap: number) =>
+    get<InputsPayload>(
+      `/session/inputs?session_key=${sessionKey}&driver_number=${driver}&lap=${lap}`,
+    ),
   duel: (sessionKey: number, aDriver: number, aLap: number, bDriver: number, bLap: number) =>
     get<DuelPayload>(
       `/session/duel?session_key=${sessionKey}&a_driver=${aDriver}&a_lap=${aLap}` +

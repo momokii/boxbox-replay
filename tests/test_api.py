@@ -231,3 +231,50 @@ def test_duel_404_when_a_lap_has_no_positions(monkeypatch):
     with TestClient(m.app) as client:
         params = {"session_key": 1, "a_driver": 1, "a_lap": 4, "b_driver": 1, "b_lap": 4}
         assert client.get("/session/duel", params=params).status_code == 404
+
+
+def test_inputs_returns_channels_and_nulls(monkeypatch):
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    car = _frame(
+        {
+            "date": [
+                (start + pd.Timedelta(seconds=s)).isoformat() for s in (0.1, 0.4, 0.7)
+            ],
+            "speed": [120, 260, 250],
+            "throttle": [100, 98, 0],
+            "brake": [0, 100, 104],
+            "n_gear": [4, 7, 6],
+            "drs": [None, None, None],
+        }
+    )
+    laps = _frame([{"driver_number": 1, "lap_number": 7, "lap_duration": 95.0}])
+    monkeypatch.setattr(m.data_loader, "list_laps", lambda *a, **k: laps)
+    monkeypatch.setattr(
+        m.data_loader,
+        "lap_window",
+        lambda df, lap: (start, start + pd.Timedelta(seconds=95)),
+    )
+    monkeypatch.setattr(m.data_loader, "get_car_data", lambda *a, **k: car)
+
+    with TestClient(m.app) as client:
+        body = client.get(
+            "/session/inputs", params={"session_key": 1, "driver_number": 1, "lap": 7}
+        ).json()
+
+    assert body["lap_duration"] == 95.0
+    assert body["t"] == [0.1, 0.4, 0.7]
+    assert body["throttle"] == [100.0, 98.0, 0.0]
+    assert body["brake"] == [0.0, 100.0, 104.0]
+    assert body["gear"] == [4.0, 7.0, 6.0]
+    # A channel that is absent upstream must be null, never a guessed value.
+    assert body["drs"] == [None, None, None]
+
+
+def test_inputs_404_without_lap(monkeypatch):
+    monkeypatch.setattr(m.data_loader, "list_laps", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "lap_window", lambda df, lap: (None, None))
+    with TestClient(m.app) as client:
+        res = client.get(
+            "/session/inputs", params={"session_key": 1, "driver_number": 1, "lap": 3}
+        )
+        assert res.status_code == 404

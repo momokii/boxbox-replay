@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import BattlePanel from "./components/BattlePanel";
 import DuelPanel from "./components/DuelPanel";
+import InputsStrip from "./components/InputsStrip";
 import CoachPanel from "./components/CoachPanel";
 import GapChart from "./components/GapChart";
 import PerformancePanel from "./components/PerformancePanel";
@@ -480,6 +481,8 @@ export default function App() {
     }
     return best?.driver ?? null;
   }, [drivers.data, gapTable]);
+  // The inputs strip follows whoever the speed panel is showing.
+  const stripDriver = focusDrivers[0] ?? defaultDriver;
 
   useEffect(() => {
     if (!sessionKey || focusDrivers.length || defaultDriver == null) return;
@@ -854,6 +857,18 @@ export default function App() {
                         <p className="dim small">
                           Pick a driver in the tower (or click a car on the map) to see their speed trace for the lap under the playhead.
                         </p>
+                      )}
+                      {sessionKey && stripDriver != null && progress.lap > 0 && lapEndT > lapStartT && (
+                        <InputsStrip
+                          sessionKey={sessionKey}
+                          driver={stripDriver}
+                          lap={progress.lap}
+                          code={driverMeta.get(stripDriver)?.code ?? `#${stripDriver}`}
+                          color={towerRows.find((r) => r.driver === stripDriver)?.color ?? "#8A94A6"}
+                          playback={playback}
+                          windowStart={lapStartT}
+                          lapDuration={lapEndT - lapStartT}
+                        />
                       )}
                     </div>
 

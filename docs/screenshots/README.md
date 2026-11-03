@@ -13,3 +13,4 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `06-lap-times.png` | Full-view lap comparison |
 | `07-mobile.png` | Phone layout |
 | `08-duel.png` | Lap duel: two laps on the circuit with the live delta |
+| `09-inputs.png` | Throttle, brake and gear for the lap under the playhead |

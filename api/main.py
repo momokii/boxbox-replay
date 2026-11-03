@@ -233,6 +233,54 @@ def _trace_rows(trace: pd.DataFrame) -> list[list[float]]:
     ]
 
 
+@app.get("/session/inputs")
+def session_inputs(session_key: int, driver_number: int, lap: int) -> dict:
+    """One lap of driver inputs, sampled from the cached car feed.
+
+    Times are seconds from the lap start; the client adds the lap's session
+    offset. Missing channels come back as nulls, never as invented values.
+    """
+    laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
+    start, end = data_loader.lap_window(laps_df, lap)
+    if start is None:
+        raise HTTPException(404, f"lap {lap} not found for driver {driver_number}")
+    row = laps_df[laps_df.get("lap_number") == lap].tail(1)
+    duration = None
+    if not row.empty and "lap_duration" in row.columns and pd.notna(row["lap_duration"].iloc[0]):
+        duration = float(row["lap_duration"].iloc[0])
+    end_ts = end if end is not None else start + pd.Timedelta(seconds=duration or 150)
+
+    car = data_loader.get_car_data(session_key, driver_number=driver_number)
+    if car.empty or "date" not in car.columns:
+        raise HTTPException(404, "no car data for this driver")
+    stamps = data_loader.to_dt(car["date"])
+    win = car[(stamps >= start) & (stamps < end_ts)].sort_values("date")
+    if win.empty:
+        raise HTTPException(404, "no car data in this lap")
+
+    t = (data_loader.to_dt(win["date"]) - start).dt.total_seconds()
+
+    def channel(name: str) -> list:
+        if name not in win.columns:
+            return []
+        values = []
+        for value in win[name].tolist():
+            values.append(None if pd.isna(value) else round(float(value), 3))
+        return values
+
+    return {
+        "driver_number": driver_number,
+        "lap": lap,
+        "lap_duration": duration,
+        "t": [round(float(v), 3) for v in t],
+        "speed": channel("speed"),
+        "throttle": channel("throttle"),
+        "brake": channel("brake"),
+        "gear": channel("n_gear"),
+        "drs": channel("drs"),
+    }
+
+
 @app.get("/session/duel")
 def session_duel(
     session_key: int, a_driver: int, a_lap: int, b_driver: int, b_lap: int

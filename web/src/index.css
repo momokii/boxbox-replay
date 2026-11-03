@@ -1443,3 +1443,45 @@ tr.driver-marked td {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Inputs strip (v2) ─────────────────────────────────────────────────── */
+.inputs {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-2);
+}
+.inputs-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+}
+.inputs-title {
+  color: var(--dim);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.inputs-values {
+  display: flex;
+  gap: var(--space-3);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.inputs-drs {
+  color: var(--dim);
+}
+.inputs-drs.on {
+  color: var(--green);
+  font-weight: 600;
+}
+.inputs-canvas {
+  display: block;
+  width: 100%;
+  height: 112px;
+  margin-top: 2px;
+}
+.inputs-note {
+  margin: var(--space-2) 0 0;
+}
