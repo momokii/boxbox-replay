@@ -10,12 +10,15 @@ Rules honored here:
 from __future__ import annotations
 
 import os
+import threading
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
 import pandas as pd
+
+from ratelimit import TokenBucket
 
 BASE_URL = os.getenv("OPENF1_BASE_URL", "https://api.openf1.org/v1").rstrip("/")
 # OpenF1 can start requiring credentials at any time; when a key is configured
@@ -27,21 +30,34 @@ class FeedAuthRequired(RuntimeError):
     """The upstream feed answered 401/403: credentials are needed."""
 CACHE_ROOT = Path(os.getenv("CACHE_DIR", "data/cache"))
 
-# OpenF1 free tier: max 3 requests/second. 0.4s spacing keeps us safely under.
-RATE_MIN_INTERVAL_S = 0.4
+# OpenF1 free tier: 3 requests/second and 30 requests/minute per IP. Both are
+# enforced by one bucket; the sponsor tier (6/s, 60/min) can be configured with
+# OPENF1_RATE_PER_SEC / OPENF1_RATE_PER_MIN instead of editing code.
+RATE_PER_SEC = float(os.getenv("OPENF1_RATE_PER_SEC", "3"))
+RATE_PER_MIN = int(os.getenv("OPENF1_RATE_PER_MIN", "30"))
 MAX_RETRIES = 4
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
-_last_call_ts = 0.0
+_limiter = TokenBucket(RATE_PER_SEC, RATE_PER_MIN)
+
+# One lock per cache file: concurrent requests for the same session build it
+# once instead of racing each other through the whole request budget.
+_cache_locks: dict[str, threading.Lock] = {}
+_cache_locks_guard = threading.Lock()
+
+
+def _cache_lock(path: Path) -> threading.Lock:
+    key = str(path.resolve())
+    with _cache_locks_guard:
+        lock = _cache_locks.get(key)
+        if lock is None:
+            lock = _cache_locks[key] = threading.Lock()
+        return lock
 
 
 def _throttle() -> None:
-    """Sleep just enough to stay under the 3 req/s limit."""
-    global _last_call_ts
-    wait = RATE_MIN_INTERVAL_S - (time.monotonic() - _last_call_ts)
-    if wait > 0:
-        time.sleep(wait)
-    _last_call_ts = time.monotonic()
+    """Wait for a slot in the upstream request budget."""
+    _limiter.acquire()
 
 
 def _fetch(endpoint: str, params: dict | None = None) -> list[dict]:
@@ -105,14 +121,27 @@ def _session_cache(session_key: int, filename: str) -> Path:
     return _cache_path("by_session_key", str(session_key), filename)
 
 
+def _write_parquet(df: pd.DataFrame, path: Path) -> None:
+    """Write via a temp file so a crashed or concurrent build never leaves a
+    half-written parquet that later reads as corrupt."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    df.to_parquet(tmp, index=False)
+    os.replace(tmp, path)
+
+
 def _cached(endpoint: str, params: dict | None, cache_file: Path) -> pd.DataFrame:
-    """Return cached parquet if present, else fetch, cache (even if empty), return."""
-    if cache_file.exists():
-        return pd.read_parquet(cache_file)
-    rows = _fetch(endpoint, params)
-    df = pd.DataFrame(rows)
-    df.to_parquet(cache_file, index=False)
-    return df
+    """Return cached parquet if present, else fetch, cache, return.
+
+    Single-flight: the first caller for a key fetches while the others wait,
+    then re-read the file the first one wrote.
+    """
+    with _cache_lock(cache_file):
+        if cache_file.exists():
+            return pd.read_parquet(cache_file)
+        rows = _fetch(endpoint, params)
+        df = pd.DataFrame(rows)
+        _write_parquet(df, cache_file)
+        return df
 
 
 def list_years() -> list[int]:
@@ -435,6 +464,14 @@ def build_session_replay(session_key: int, hz: int = 2) -> pd.DataFrame:
     # Versioned name: older builds used different cleaning/plane rules, and a
     # cached empty file used to make a session look permanently broken.
     cache_file = _session_cache(session_key, f"session_pos_v2_{hz}hz.parquet")
+    with _cache_lock(cache_file):
+        return _build_session_replay_locked(session_key, hz, cache_file)
+
+
+def _build_session_replay_locked(
+    session_key: int, hz: int, cache_file: Path
+) -> pd.DataFrame:
+    """Build the replay while holding this session's cache lock."""
     if cache_file.exists():
         cached = pd.read_parquet(cache_file)
         if not cached.empty:
@@ -480,7 +517,7 @@ def build_session_replay(session_key: int, hz: int = 2) -> pd.DataFrame:
     # Never cache an empty result: a transient feed failure must not turn into a
     # permanent "no data" for this session.
     if not out.empty:
-        out.to_parquet(cache_file, index=False)
+        _write_parquet(out, cache_file)
     return out
 
 

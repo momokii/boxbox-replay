@@ -14,7 +14,7 @@
 
 - Modules: `data_loader.py`, `analysis.py`, `viz.py`, `coach.py` (flat layout, M0).
 - Functions: `snake_case` verb-noun (`list_sessions`, `get_car_data`, `best_lap`).
-- Constants: `UPPER_SNAKE_CASE` (`BASE_URL`, `CACHE_ROOT`, `RATE_MIN_INTERVAL_S`).
+- Constants: `UPPER_SNAKE_CASE` (`BASE_URL`, `CACHE_ROOT`, `RATE_PER_MIN`).
 - Booleans: prefixed `is/has/should/can`.
 - Types: `from __future__ import annotations` + hints on all public functions.
 

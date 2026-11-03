@@ -9,7 +9,7 @@ import data_loader
 @pytest.fixture
 def isolated_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(data_loader, "CACHE_ROOT", tmp_path / "cache")
-    monkeypatch.setattr(data_loader, "RATE_MIN_INTERVAL_S", 0.0)
+    monkeypatch.setattr(data_loader, "_throttle", lambda: None)
     return tmp_path / "cache"
 
 
@@ -32,7 +32,7 @@ def test_cache_miss_fetches_then_hit_avoids_network(isolated_cache, monkeypatch)
 
 
 def test_fetch_404_means_empty_no_retry(monkeypatch):
-    monkeypatch.setattr(data_loader, "RATE_MIN_INTERVAL_S", 0.0)
+    monkeypatch.setattr(data_loader, "_throttle", lambda: None)
     monkeypatch.setattr(data_loader.time, "sleep", lambda s: None)
     calls = {"n": 0}
 
@@ -67,7 +67,7 @@ def test_empty_response_returns_empty_frame_no_crash(isolated_cache, monkeypatch
 
 
 def test_fetch_retries_on_429_then_succeeds(monkeypatch):
-    monkeypatch.setattr(data_loader, "RATE_MIN_INTERVAL_S", 0.0)
+    monkeypatch.setattr(data_loader, "_throttle", lambda: None)
     attempts = {"n": 0}
 
     class FakeResp:
@@ -316,3 +316,33 @@ def test_m5_feeds_cached(monkeypatch, isolated_cache):
     assert len(data_loader.get_team_radio(5)) == 1
     assert len(data_loader.get_race_control(5)) == 1
     assert sorted(set(seen)) == ["race_control", "stints", "team_radio", "weather"]
+
+
+def test_concurrent_reads_share_one_fetch(tmp_path, monkeypatch):
+    """Four threads asking for the same uncached key must hit the API once."""
+    import threading
+    import time as _time
+
+    calls = {"n": 0}
+
+    def slow_fetch(endpoint, params=None):
+        calls["n"] += 1
+        _time.sleep(0.1)
+        return [{"value": 1}]
+
+    monkeypatch.setattr(data_loader, "_fetch", slow_fetch)
+    path = tmp_path / "shared.parquet"
+    results: list[pd.DataFrame] = []
+    threads = [
+        threading.Thread(target=lambda: results.append(data_loader._cached("x", {}, path)))
+        for _ in range(4)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert calls["n"] == 1
+    assert len(results) == 4
+    assert all(len(frame) == 1 for frame in results)
+    assert path.exists()

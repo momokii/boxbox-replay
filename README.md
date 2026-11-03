@@ -58,7 +58,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
                         │                               │
                 ┌───────┴───────────────────────────────▼───────────┐
                 │ data_loader.py                                    │
-                │ 3 req/s throttle · retry · session-window clamp   │
+                │ 3/s + 30/min bucket · retry · session clamp       │
                 │ parquet cache in ./data/cache                     │
                 └───────▲───────────────────────────────▲───────────┘
                         │                               │
@@ -122,6 +122,8 @@ cd web && npm install && npm run dev                    # SPA on :5173, proxies 
 | `APP_PORT` | `8501` | Host port for the web container |
 | `OPENF1_BASE_URL` | `https://api.openf1.org/v1` | Data feed base URL |
 | `OPENF1_API_KEY` | empty | Only needed if the feed starts requiring credentials; sent as Bearer and `api_key` |
+| `OPENF1_RATE_PER_SEC` | `3` | Request budget, part 1. Raise to `6` only on the sponsor tier |
+| `OPENF1_RATE_PER_MIN` | `30` | Request budget, part 2: rolling 60 s window |
 | `CACHE_DIR` | `data/cache` | Where parquet caches live |
 | `BOXBOX_MODEL` | empty | Optional model override for the coach (`opencode run -m …`) |
 
@@ -187,8 +189,9 @@ compose*.yaml        base / dev override / prod override
 
 - **[OpenF1](https://openf1.org)** — sessions, laps, positions, car telemetry,
   intervals, stints, weather, radio, race control, pit stops, overtakes,
-  results. Anonymous access is rate-limited; this app spaces requests at 3/s and
-  caches everything it receives.
+  results. Anonymous access is rate-limited; this app enforces both documented
+  limits (3 req/s and 30 req/min) with one bucket, single-flights concurrent
+  builds, and caches every response to disk.
 - **[Jolpica (Ergast)](https://api.jolpi.ca/ergast/)** — historical schedule and
   results context.
 
