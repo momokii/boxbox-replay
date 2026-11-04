@@ -1324,22 +1324,101 @@ tr.driver-marked td {
 }
 .duel-pick {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.duel-pick-label {
+  font-size: 0.72rem;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+}
+.duel-pick-label b {
+  color: var(--ink);
+  font-weight: 700;
+}
+.duel-select-row {
+  display: flex;
   gap: var(--space-1);
   min-width: 0;
 }
 .duel-select {
-  flex: 0 0 84px;
   min-width: 0;
-  padding: 6px 8px;
-  background: var(--panel-2);
+  padding: 7px 26px 7px 9px;
+  background-color: var(--panel-2);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' fill='none' stroke='%238592a3' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
   color: var(--ink);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   font: inherit;
   font-size: 0.85rem;
+  height: 34px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.duel-select:hover,
+.duel-select:focus-visible {
+  border-color: var(--amber);
+  outline: none;
+}
+.duel-select-driver {
+  flex: 0 0 86px;
 }
 .duel-select-lap {
   flex: 1 1 auto;
+}
+.duel-fast {
+  color: var(--green);
+}
+.duel-slow {
+  color: #ff8f86;
+}
+.duel-sectors {
+  width: 100%;
+  max-width: 560px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.duel-sectors caption {
+  text-align: left;
+  color: var(--ink);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  padding-bottom: 4px;
+}
+.duel-sectors th,
+.duel-sectors td {
+  padding: 4px 8px 4px 0;
+  text-align: right;
+}
+.duel-sectors thead th {
+  color: var(--dim);
+  font-weight: 500;
+  border-bottom: 1px solid var(--line);
+}
+.duel-sectors tbody th {
+  text-align: left;
+  color: var(--dim);
+  font-weight: 500;
+}
+.duel-help {
+  font-size: 0.85rem;
+  color: var(--dim);
+}
+.duel-help summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+.duel-help ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
 }
 .duel-pick-a .duel-select {
   border-left: 3px solid var(--amber);

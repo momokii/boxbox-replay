@@ -260,36 +260,83 @@ export default function DuelPanel({
     setLap: (n: number | null) => void,
   ) => (
     <div className={`duel-pick duel-pick-${side}`}>
-      <select
-        className="duel-select"
-        value={driver}
-        aria-label={`Driver ${side.toUpperCase()}`}
-        onChange={(e) => {
-          setDriver(Number(e.target.value));
-          setLap(null);
-        }}
-      >
-        {drivers.map((d) => (
-          <option key={d.driver_number} value={d.driver_number}>
-            {d.name_acronym}
-          </option>
-        ))}
-      </select>
-      <select
-        className="duel-select duel-select-lap"
-        value={lapNumber ?? ""}
-        aria-label={`Lap for ${driverCode(driver)}`}
-        onChange={(e) => setLap(e.target.value ? Number(e.target.value) : null)}
-      >
-        {lapOptions(driver).length === 0 && <option value="">no timed laps</option>}
-        {lapOptions(driver).map((l) => (
-          <option key={l.lap_number} value={l.lap_number}>
-            L{l.lap_number} · {formatLapTime(l.lap_duration)}
-          </option>
-        ))}
-      </select>
+      <span className="duel-pick-label">
+        <b>{side.toUpperCase()}</b> · {side === "a" ? "reference lap" : "comparison lap"}
+      </span>
+      <div className="duel-select-row">
+        <select
+          className="duel-select duel-select-driver"
+          value={driver}
+          aria-label={`Driver ${side.toUpperCase()}`}
+          title="Pick a driver"
+          onChange={(e) => {
+            setDriver(Number(e.target.value));
+            setLap(null);
+          }}
+        >
+          {drivers.map((d) => (
+            <option key={d.driver_number} value={d.driver_number}>
+              {d.name_acronym}
+            </option>
+          ))}
+        </select>
+        <select
+          className="duel-select duel-select-lap"
+          value={lapNumber ?? ""}
+          aria-label={`Lap for ${driverCode(driver)}`}
+          title="Pick a lap: the fastest is selected by default"
+          onChange={(e) => setLap(e.target.value ? Number(e.target.value) : null)}
+        >
+          {lapOptions(driver).length === 0 && <option value="">no timed laps</option>}
+          {lapOptions(driver).map((l) => (
+            <option key={l.lap_number} value={l.lap_number}>
+              L{l.lap_number} · {formatLapTime(l.lap_duration)}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
+
+  const lapRow = (driver: number, lapNumber: number | null) =>
+    lapNumber == null
+      ? undefined
+      : laps.find((l) => l.driver_number === driver && l.lap_number === lapNumber);
+
+  const sectors = (() => {
+    if (!payload) return [];
+    const a = lapRow(payload.a.driver_number, payload.a.lap);
+    const b = lapRow(payload.b.driver_number, payload.b.lap);
+    if (!a || !b) return [];
+    const rows = [];
+    for (const [label, key] of [
+      ["S1", "duration_sector_1"],
+      ["S2", "duration_sector_2"],
+      ["S3", "duration_sector_3"],
+    ] as const) {
+      const ta = a[key];
+      const tb = b[key];
+      if (ta == null || tb == null) continue;
+      rows.push({ label, a: ta, b: tb, delta: tb - ta });
+    }
+    return rows;
+  })();
+
+  // Lead changes along the sampled delta curve.
+  const leadChanges = (() => {
+    if (!payload || !payload.delta.length) return 0;
+    // Ignore flips inside the sampling noise: a change only counts once the
+    // other car is genuinely ahead by more than 50 ms.
+    let changes = 0;
+    let last = 0;
+    for (const [, dt] of payload.delta) {
+      if (Math.abs(dt) < 0.05) continue;
+      const sign = dt > 0 ? 1 : -1;
+      if (last !== 0 && sign !== last) changes += 1;
+      last = sign;
+    }
+    return changes;
+  })();
 
   return (
     <section className="duel" aria-label="Lap duel">
@@ -320,6 +367,10 @@ export default function DuelPanel({
         {picker("a", aDriver, setADriver, aLapEff, setALap)}
         {picker("b", bDriver, setBDriver, bLapEff, setBLap)}
       </div>
+      <p className="duel-note dim">
+        Pick a driver, then a lap on each side — the fastest lap is selected for you. Swap
+        flips A and B.
+      </p>
 
       {aDriver === bDriver && (
         <p className="duel-note">Pick two different drivers to compare their laps.</p>
@@ -406,7 +457,63 @@ export default function DuelPanel({
                 Math.abs((payload.b.lap_duration ?? 0) - (payload.a.lap_duration ?? 0)),
               )}
             </span>
+            {leadChanges > 0 && (
+              <span className="dim">
+                lead changed {leadChanges} time{leadChanges === 1 ? "" : "s"}
+              </span>
+            )}
           </div>
+
+          {sectors.length > 0 && (
+            <table className="duel-sectors">
+              <caption>
+                Sector split
+                <span className="dim"> · negative is B faster</span>
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Sector</th>
+                  <th scope="col">{driverCode(payload.a.driver_number)}</th>
+                  <th scope="col">{driverCode(payload.b.driver_number)}</th>
+                  <th scope="col">Δ B−A</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sectors.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row">{row.label}</th>
+                    <td>{row.a.toFixed(3)}</td>
+                    <td>{row.b.toFixed(3)}</td>
+                    <td className={row.delta < 0 ? "duel-fast" : row.delta > 0 ? "duel-slow" : ""}>
+                      {row.delta > 0 ? "+" : ""}
+                      {row.delta.toFixed(3)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <details className="duel-help">
+            <summary>How to read this</summary>
+            <ul>
+              <li>
+                Both cars run the circuit at the same <em>distance</em>, not the same clock:
+                position on track is what makes the gap comparable.
+              </li>
+              <li>
+                The delta starts at 0.000 and closes exactly on the official lap-time
+                difference at the finish line.
+              </li>
+              <li>
+                A positive delta means A is ahead; the bar fills toward the leading side.
+              </li>
+              <li>
+                The sector table shows where the time was won: a negative Δ means B was faster
+                in that sector.
+              </li>
+            </ul>
+          </details>
         </>
       )}
     </section>
