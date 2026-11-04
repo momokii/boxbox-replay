@@ -74,14 +74,14 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 |----|------|--------|-------|
 | V2-0 | Tag `v1.0.0` and push the tag | DONE | Pushed 2026-11-03 |
 | V2-1 | Token bucket 3 req/s + 30 req/min, single-flight per session | DONE | `ratelimit.py`, 6 tests + concurrency test |
-| V2-2 | Lap Duel backend: distance-aligned traces + delta | DONE | `/session/duel`, anchored to official lap duration |
+| V2-2 | Lap Duel: backend + UI + sector split/read guide | DONE | `/session/duel`, anchored to official lap duration |
 | V2-3 | Lap Duel UI | DONE | Fifth tab; desktop/mobile/light verified |
-| V2-3b | Telemetry traces: throttle/brake/gear/DRS strip synced to the clock | DONE | `/session/inputs` + `InputsStrip`; 4 tests |
+| V2-3b | Inputs: multi-driver overlay + hover readout | DONE | Window mode `t0/t1`; one axis, per-driver chips |
 | V2-4 | Fight Finder: battles from `intervals` | DEFERRED | Measured: 181–593 noisy runs per race; needs positions + pit/lapped logic |
 | V2-5 | Pit strategy Gantt on the lap axis | TODO | `stints` + `pit` already cached |
 | V2-6 | Share card PNG export (1200x630) | TODO | Client-side canvas only |
 | V2-7 | Qualifying mode with real mini-sector strips | BLOCKED | Segments exist only outside races |
-| V2-8 | Tag `v2.0.0` once V2-4 (inputs) is verified in prod | TODO | v2 = duel + inputs + rate limit + outline fix |
+| V2-8 | Tag releases | DONE | v1.0.0, v2.0.0, v2.1.0 |
 
 ---
 

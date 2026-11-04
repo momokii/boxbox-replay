@@ -343,3 +343,10 @@ candidate runs per race, some lasting 500 s on stale samples; shipping a list
 would have broken the honesty rule. Also fixed two duel edges: stale laps
 across a session switch (useAsync now reports which key its data belongs to)
 and a driver with no timed laps leaving the previous pair on screen.
+
+v2.1 UI pass: duel pickers rebuilt to one design (A/B labels, chevrons, same
+height, default lap stated), sector split with Δ B−A, lead changes with a 50 ms
+noise floor, and a "How to read this" block. Inputs now overlay every followed
+driver on one axis (new t0/t1 window mode in /session/inputs), with a hover
+tooltip per driver and coloured brake rows. 72 pytest + 64 vitest, CI green,
+prod verified at 1440 px and 390 px with no overflow.
