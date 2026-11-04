@@ -481,8 +481,6 @@ export default function App() {
     }
     return best?.driver ?? null;
   }, [drivers.data, gapTable]);
-  // The inputs strip follows whoever the speed panel is showing.
-  const stripDriver = focusDrivers[0] ?? defaultDriver;
 
   useEffect(() => {
     if (!sessionKey || focusDrivers.length || defaultDriver == null) return;
@@ -858,16 +856,18 @@ export default function App() {
                           Pick a driver in the tower (or click a car on the map) to see their speed trace for the lap under the playhead.
                         </p>
                       )}
-                      {sessionKey && stripDriver != null && progress.lap > 0 && lapEndT > lapStartT && (
+                      {sessionKey && series.length > 0 && progress.lap > 0 && lapEndT > lapStartT && (
                         <InputsStrip
                           sessionKey={sessionKey}
-                          driver={stripDriver}
-                          lap={progress.lap}
-                          code={driverMeta.get(stripDriver)?.code ?? `#${stripDriver}`}
-                          color={towerRows.find((r) => r.driver === stripDriver)?.color ?? "#8A94A6"}
+                          entries={series.map((s) => ({
+                            driver: s.driver,
+                            code: s.label,
+                            color: s.color,
+                          }))}
                           playback={playback}
                           windowStart={lapStartT}
-                          lapDuration={lapEndT - lapStartT}
+                          windowEnd={lapEndT}
+                          lapLabel={`LAP ${Math.max(1, progress.lap)}`}
                         />
                       )}
                     </div>

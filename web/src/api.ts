@@ -91,6 +91,11 @@ export const api = {
     get<InputsPayload>(
       `/session/inputs?session_key=${sessionKey}&driver_number=${driver}&lap=${lap}`,
     ),
+  inputsWindow: (sessionKey: number, driver: number, t0: number, t1: number) =>
+    get<InputsPayload>(
+      `/session/inputs?session_key=${sessionKey}&driver_number=${driver}` +
+        `&t0=${t0.toFixed(2)}&t1=${t1.toFixed(2)}`,
+    ),
   duel: (sessionKey: number, aDriver: number, aLap: number, bDriver: number, bLap: number) =>
     get<DuelPayload>(
       `/session/duel?session_key=${sessionKey}&a_driver=${aDriver}&a_lap=${aLap}` +

@@ -111,7 +111,7 @@ retired cars (result feed, or no fresh laps) are classified last.
 | `GET /session/geometry` | `outline[]`, `corners[]`, `zones[]`, `angle` |
 | `GET /session/replay` | `drivers[{driver_number,t[],x[],y[]}]`, `laps[]`, `positions_end_s`, coverage counts |
 | `GET /session/speed?driver_number=` | 1 Hz speed |
-| `GET /session/inputs` | `t[]`, `speed[]`, `throttle[]`, `brake[]`, `gear[]`, `drs[]` (nulls when a channel is absent) |
+| `GET /session/inputs` | `t[]`, `speed[]`, `throttle[]`, `brake[]`, `gear[]`, `drs[]` (nulls when a channel is absent); `lap=` or `t0`/`t1` window mode for comparing drivers on one axis |
 | `GET /session/duel` | `traces.a/b: [[f,x,y,t]]` (600 points, anchored to official lap duration) + `delta: [[f,dt]]` |
 | `GET /session/gaps` | `source: intervals \| lap_times \| none` + points |
 | `GET /session/pit` | `summary[]` (stops, best/total) + `stops[]` |

@@ -1531,10 +1531,8 @@ tr.driver-marked td {
 }
 .inputs-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 3px;
   font-size: 0.78rem;
 }
 .inputs-title {
@@ -1544,9 +1542,27 @@ tr.driver-marked td {
 }
 .inputs-values {
   display: flex;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  gap: 4px var(--space-3);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
+}
+.inputs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.inputs-chip i {
+  width: 3px;
+  height: 11px;
+  border-radius: 2px;
+}
+.inputs-chip b {
+  font-weight: 700;
+}
+.inputs-hover-time {
+  color: var(--amber);
 }
 .inputs-drs {
   color: var(--dim);
@@ -1558,7 +1574,7 @@ tr.driver-marked td {
 .inputs-canvas {
   display: block;
   width: 100%;
-  height: 112px;
+  height: 148px;
   margin-top: 2px;
 }
 .inputs-note {

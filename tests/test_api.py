@@ -278,3 +278,39 @@ def test_inputs_404_without_lap(monkeypatch):
             "/session/inputs", params={"session_key": 1, "driver_number": 1, "lap": 3}
         )
         assert res.status_code == 404
+
+
+def test_inputs_window_mode_shares_one_axis(monkeypatch):
+    clock = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    start = clock + pd.Timedelta(seconds=10)  # lights out 10 s into the file
+    car = _frame(
+        {
+            "date": [(start + pd.Timedelta(seconds=s)).isoformat() for s in (0.0, 1.0, 2.0)],
+            "throttle": [100, 50, 0],
+            "brake": [0, 0, 100],
+            "n_gear": [7, 5, 3],
+            "drs": [None, None, None],
+        }
+    )
+    monkeypatch.setattr(
+        m,
+        "_session_clock",
+        lambda sk: (
+            clock,
+            clock + pd.Timedelta(hours=2),
+            _frame([{"lap_number": 1, "t": 10.0}]),
+            7200.0,
+        ),
+    )
+    monkeypatch.setattr(m.data_loader, "get_car_data", lambda *a, **k: car)
+
+    with TestClient(m.app) as client:
+        body = client.get(
+            "/session/inputs",
+            params={"session_key": 1, "driver_number": 1, "t0": 0, "t1": 3},
+        ).json()
+
+    assert body["lap"] is None
+    assert body["window_t0"] == 0.0
+    assert body["t"] == [0.0, 1.0, 2.0]
+    assert body["throttle"] == [100.0, 50.0, 0.0]

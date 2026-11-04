@@ -234,31 +234,57 @@ def _trace_rows(trace: pd.DataFrame) -> list[list[float]]:
 
 
 @app.get("/session/inputs")
-def session_inputs(session_key: int, driver_number: int, lap: int) -> dict:
-    """One lap of driver inputs, sampled from the cached car feed.
+def session_inputs(
+    session_key: int,
+    driver_number: int,
+    lap: int | None = None,
+    t0: float | None = None,
+    t1: float | None = None,
+) -> dict:
+    """One driver's inputs for a lap, or for a session-time window.
 
-    Times are seconds from the lap start; the client adds the lap's session
-    offset. Missing channels come back as nulls, never as invented values.
+    Window mode (`t0`/`t1`, seconds on the replay clock) lets several drivers
+    share one axis for comparison. Times in the response are seconds from the
+    window start; missing channels come back as nulls, never as guesses.
     """
-    laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
-    start, end = data_loader.lap_window(laps_df, lap)
-    if start is None:
-        raise HTTPException(404, f"lap {lap} not found for driver {driver_number}")
-    row = laps_df[laps_df.get("lap_number") == lap].tail(1)
-    duration = None
-    if not row.empty and "lap_duration" in row.columns and pd.notna(row["lap_duration"].iloc[0]):
-        duration = float(row["lap_duration"].iloc[0])
-    end_ts = end if end is not None else start + pd.Timedelta(seconds=duration or 150)
+    if t0 is not None and t1 is not None and t1 > t0:
+        clock_start, _end, markers, _dur = _session_clock(session_key)
+        base = float(markers["t"].min()) if not markers.empty else 0.0
+        win_start = clock_start + pd.Timedelta(seconds=base + t0)
+        win_end = clock_start + pd.Timedelta(seconds=base + t1)
+        duration = float(t1 - t0)
+        window_t0: float | None = float(t0)
+        lap_value: int | None = None
+    else:
+        if lap is None:
+            raise HTTPException(400, "lap or t0/t1 required")
+        laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
+        start, end = data_loader.lap_window(laps_df, lap)
+        if start is None:
+            raise HTTPException(404, f"lap {lap} not found for driver {driver_number}")
+        row = laps_df[laps_df.get("lap_number") == lap].tail(1)
+        duration = None
+        measured = (
+            row["lap_duration"].iloc[0]
+            if not row.empty and "lap_duration" in row.columns
+            else None
+        )
+        if measured is not None and pd.notna(measured):
+            duration = float(measured)
+        win_start = start
+        win_end = end if end is not None else start + pd.Timedelta(seconds=duration or 150)
+        window_t0 = None
+        lap_value = lap
 
     car = data_loader.get_car_data(session_key, driver_number=driver_number)
     if car.empty or "date" not in car.columns:
         raise HTTPException(404, "no car data for this driver")
     stamps = data_loader.to_dt(car["date"])
-    win = car[(stamps >= start) & (stamps < end_ts)].sort_values("date")
+    win = car[(stamps >= win_start) & (stamps < win_end)].sort_values("date")
     if win.empty:
-        raise HTTPException(404, "no car data in this lap")
+        raise HTTPException(404, "no car data in this window")
 
-    t = (data_loader.to_dt(win["date"]) - start).dt.total_seconds()
+    t = (data_loader.to_dt(win["date"]) - win_start).dt.total_seconds()
 
     def channel(name: str) -> list:
         if name not in win.columns:
@@ -270,8 +296,9 @@ def session_inputs(session_key: int, driver_number: int, lap: int) -> dict:
 
     return {
         "driver_number": driver_number,
-        "lap": lap,
+        "lap": lap_value,
         "lap_duration": duration,
+        "window_t0": window_t0,
         "t": [round(float(v), 3) for v in t],
         "speed": channel("speed"),
         "throttle": channel("throttle"),

@@ -128,9 +128,11 @@ much; the user can play, pause, scrub and swap drivers.
   lap window, downsampled to ~2 Hz for the trace plus raw peaks.
 - `drs` may be all `null` (2026): the UI prints "—", never a guessed state.
 
-**UI.** An "Inputs" strip under the speed chart for the followed driver:
-throttle filled area, brake overlaid in red, gear number block, DRS tag. It
-follows the replay clock and switches to the whole lap in the lap modal.
+**UI (shipped, extended).** An "Inputs" strip under the speed chart for every
+followed driver: one throttle line per driver in team colour, a brake tick row
+each, gear from the reference driver, DRS per driver, the replay playhead, and a
+hover tooltip with every driver's values at the pointer. Window mode in the
+endpoint keeps all drivers on one axis.
 
 **Acceptance.** Peak speed in the strip matches `/session/speed` within one
 sample; missing channels hide their row with a reason; tests cover a lap with

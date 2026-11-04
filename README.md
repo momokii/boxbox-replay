@@ -17,7 +17,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Performance.** Stint timeline with pit-stop notches, wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters.
 - **Driver drill-down.** Click any car or tower row for position, gap, tyre age, result, a five-lap strip, pit stops, overtakes — each opening a full view.
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
-- **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, with the replay cursor drawn on the trace; missing channels print "—" instead of a guess.
+- **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
 - **Lap duel.** Two laps race the same circuit, aligned by distance around the lap, with a live delta that starts at 0.000 and closes exactly on the official lap-time difference.
 - **Pit strategy toy model.** "Pit now or stay out?" using measured pace and wear, with the breakdown and every assumption shown.
 - **Shareable moments.** "Copy link" stores the exact timestamp, so a link reopens the same frame.
