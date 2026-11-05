@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
+import AskPanel from "./components/AskPanel";
 import BattlePanel from "./components/BattlePanel";
 import DuelPanel from "./components/DuelPanel";
 import InputsStrip from "./components/InputsStrip";
@@ -137,7 +138,7 @@ export default function App() {
   const [highlight, setHighlight] = useState<number[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
   const [selectedCorner, setSelectedCorner] = useState<string | null>(null);
-  const [view, setView] = useState<"replay" | "battle" | "duel" | "performance" | "pit">("replay");
+  const [view, setView] = useState<"replay" | "battle" | "duel" | "performance" | "pit" | "ask">("replay");
   const [showLaps, setShowLaps] = useState(false);
   const [lapsModal, setLapsModal] = useState(false);
   const [driverDetail, setDriverDetail] = useState<"stints" | "laps" | "overtakes" | "pits" | null>(null);
@@ -695,7 +696,7 @@ export default function App() {
 
           <section className="stage">
             <div className="tabbar" role="tablist" aria-label="Views">
-              {(["replay", "battle", "duel", "performance", "pit"] as const).map((v) => (
+              {(["replay", "battle", "duel", "performance", "pit", "ask"] as const).map((v) => (
                 <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
                   {v === "pit" ? "Pit wall" : v}
                 </button>
@@ -922,6 +923,12 @@ export default function App() {
                       ? [selectedDriver]
                       : []
                 }
+              />
+            )}
+            {view === "ask" && sessionKey && (
+              <AskPanel
+                sessionKey={sessionKey}
+                sessionLabel={`${gpName} · ${sessName}`}
               />
             )}
             {view === "performance" && (

@@ -314,3 +314,62 @@ def test_inputs_window_mode_shares_one_axis(monkeypatch):
     assert body["window_t0"] == 0.0
     assert body["t"] == [0.0, 1.0, 2.0]
     assert body["throttle"] == [100.0, 50.0, 0.0]
+
+
+def test_ai_status_reports_model(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(
+        m.ai, "status", lambda: {"configured": True, "model": "deepseek-v4.1-flash"}
+    )
+    with TestClient(m.app) as client:
+        body = client.get("/ai/status").json()
+    assert body["ready"] is True
+    assert body["model"] == "deepseek-v4.1-flash"
+
+
+def test_ai_ask_503_without_key(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: False)
+    with TestClient(m.app) as client:
+        res = client.post("/ai/ask", json={"session_key": 1, "question": "Who won?"})
+    assert res.status_code == 503
+    assert "OPENCODE_API_KEY" in res.json()["detail"]
+
+
+def test_ai_ask_validates_length(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    with TestClient(m.app) as client:
+        short = client.post("/ai/ask", json={"session_key": 1, "question": "hi"})
+        long = client.post("/ai/ask", json={"session_key": 1, "question": "x" * 400})
+    assert short.status_code == 422
+    assert long.status_code == 422
+
+
+def test_ai_ask_returns_grounded_answer(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "_ai_facts", lambda sk: ("Result: P1 ANT.", ["session", "result"]))
+    seen = {}
+
+    def fake_answer(session_key, facts, question):
+        seen["facts"] = facts
+        seen["question"] = question
+        return "ANT won."
+
+    monkeypatch.setattr(m.ai, "answer", fake_answer)
+    with TestClient(m.app) as client:
+        body = client.post(
+            "/ai/ask", json={"session_key": 1, "question": "Who won the race?"}
+        ).json()
+
+    assert body["answer"] == "ANT won."
+    assert body["grounded_on"] == ["session", "result"]
+    assert "P1 ANT" in seen["facts"]
+    assert seen["question"] == "Who won the race?"
+
+
+def test_ai_recap_is_typed(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "_ai_facts", lambda sk: ("facts", ["session"]))
+    monkeypatch.setattr(m.ai, "recap", lambda sk, facts: "A fine race.")
+    with TestClient(m.app) as client:
+        body = client.post("/ai/recap", json={"session_key": 1, "question": ""}).json()
+    assert body["answer"] == "A fine race."

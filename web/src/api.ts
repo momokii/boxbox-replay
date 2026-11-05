@@ -96,6 +96,17 @@ export const api = {
       `/session/inputs?session_key=${sessionKey}&driver_number=${driver}` +
         `&t0=${t0.toFixed(2)}&t1=${t1.toFixed(2)}`,
     ),
+  aiStatus: () => get<{ configured: boolean; model: string; ready: boolean }>("/ai/status"),
+  aiAsk: (sessionKey: number, question: string) =>
+    post<{ answer: string; model: string; grounded_on: string[] }>("/ai/ask", {
+      session_key: sessionKey,
+      question,
+    }),
+  aiRecap: (sessionKey: number) =>
+    post<{ answer: string; model: string; grounded_on: string[] }>("/ai/recap", {
+      session_key: sessionKey,
+      question: "",
+    }),
   duel: (sessionKey: number, aDriver: number, aLap: number, bDriver: number, bLap: number) =>
     get<DuelPayload>(
       `/session/duel?session_key=${sessionKey}&a_driver=${aDriver}&a_lap=${aLap}` +

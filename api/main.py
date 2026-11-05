@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+import ai
 import analysis
 import coach
 import data_loader
@@ -802,3 +803,221 @@ def coach_ask(req: CoachRequest) -> dict:
         "basis": basis,
         "llm": True,
     }
+
+
+# ── AI coach (OpenCode Go) ──────────────────────────────────────────────────
+
+def _driver_codes(session_key: int) -> dict[int, str]:
+    drivers = data_loader.list_drivers(session_key)
+    if drivers.empty or "name_acronym" not in drivers.columns:
+        return {}
+    return {
+        int(row.driver_number): str(row.name_acronym)
+        for row in drivers.itertuples()
+        if pd.notna(row.name_acronym)
+    }
+
+
+def _ai_facts(session_key: int) -> tuple[str, list[str]]:
+    """Compact, measured facts for the model. Missing sections are omitted."""
+    codes = _driver_codes(session_key)
+
+    def code(number: object) -> str:
+        try:
+            return codes.get(int(number), f"#{int(number)}")
+        except (TypeError, ValueError):
+            return "?"
+
+    lines: list[str] = []
+    used: list[str] = []
+
+    info = session_info(session_key)
+    lines.append(
+        f"Session: {info.get('session_name')}, {info.get('total_laps')} laps, "
+        f"{info.get('drivers')} entrants."
+    )
+    used.append("session")
+
+    result = data_loader.get_session_result(session_key)
+    if not result.empty and "position" in result.columns:
+        res = result.copy()
+        res["position"] = pd.to_numeric(res["position"], errors="coerce")
+        res = res.dropna(subset=["position"]).sort_values("position")
+        top = []
+        for row in res.head(5).itertuples():
+            gap = getattr(row, "gap_to_leader", None)
+            gap_txt = f" +{float(gap):.3f}s" if pd.notna(gap) and float(gap) > 0 else ""
+            top.append(f"P{int(row.position)} {code(row.driver_number)}{gap_txt}")
+        if top:
+            lines.append("Result (top 5): " + "; ".join(top) + ".")
+            used.append("result")
+        out = []
+        for row in res.itertuples():
+            if getattr(row, "dnf", False) is True:
+                out.append(f"{code(row.driver_number)} DNF")
+            elif getattr(row, "dsq", False) is True:
+                out.append(f"{code(row.driver_number)} DSQ")
+        if out:
+            lines.append("Did not finish: " + ", ".join(out) + ".")
+            used.append("retirements")
+
+    laps = data_loader.list_laps(session_key)
+    winner = None
+    if not result.empty and "position" in result.columns:
+        first = result[pd.to_numeric(result["position"], errors="coerce") == 1]
+        if not first.empty:
+            winner = int(first.iloc[0]["driver_number"])
+    if not laps.empty and "lap_duration" in laps.columns:
+        timed = laps.dropna(subset=["lap_duration"]).copy()
+        timed["lap_duration"] = pd.to_numeric(timed["lap_duration"], errors="coerce")
+        timed = timed.dropna(subset=["lap_duration"])
+        if not timed.empty:
+            median = float(timed["lap_duration"].median())
+            clean = timed[timed["lap_duration"] <= median * 1.6]
+            ordered = clean.sort_values("lap_duration")
+            best = ordered.iloc[0]
+            lines.append(
+                f"Fastest lap: {code(best['driver_number'])} "
+                f"{float(best['lap_duration']):.3f}s on lap {int(best['lap_number'])}."
+            )
+            used.append("fastest lap")
+            podium_laps = [
+                f"{code(row.driver_number)} {float(row.lap_duration):.3f}s"
+                for row in ordered.head(3).itertuples()
+            ]
+            lines.append("Three fastest laps: " + ", ".join(podium_laps) + ".")
+
+            def sectors(row) -> str:
+                values = [
+                    getattr(row, f"duration_sector_{i}", None) for i in (1, 2, 3)
+                ]
+                if any(v is None or pd.isna(v) for v in values):
+                    return ""
+                return "S1 {:.3f} S2 {:.3f} S3 {:.3f}".format(*[float(v) for v in values])
+
+            best_sectors = sectors(best)
+            if best_sectors:
+                lines.append(
+                    f"Fastest-lap sectors ({code(best['driver_number'])}): {best_sectors}."
+                )
+
+            pace = []
+            for driver, rows in clean.groupby("driver_number"):
+                if len(rows) < 5:
+                    continue
+                pace.append(
+                    (
+                        code(driver),
+                        float(rows["lap_duration"].min()),
+                        float(rows["lap_duration"].median()),
+                    )
+                )
+            pace.sort(key=lambda row: row[2])
+            if pace:
+                lines.append(
+                    "Median clean-lap pace (best three): "
+                    + ", ".join(f"{d} {m:.3f}s (best {b:.3f}s)" for d, b, m in pace[:3])
+                    + "."
+                )
+                used.append("pace")
+
+            if winner is not None:
+                win_rows = clean[clean["driver_number"] == winner]
+                if not win_rows.empty:
+                    win_best = win_rows.loc[win_rows["lap_duration"].idxmin()]
+                    win_sectors = sectors(win_best)
+                    if win_sectors:
+                        lines.append(
+                            f"Winner's best lap ({code(winner)} "
+                            f"{float(win_best['lap_duration']):.3f}s): {win_sectors}."
+                        )
+
+    pit = data_loader.get_pit(session_key)
+    if not pit.empty and "driver_number" in pit.columns:
+        durations = pd.to_numeric(pit.get("stop_duration"), errors="coerce")
+        fastest = ""
+        if durations is not None and durations.notna().any():
+            idx = durations.idxmin()
+            fastest = (
+                f" Fastest stop {float(durations.loc[idx]):.1f}s "
+                f"({code(pit.loc[idx, 'driver_number'])})."
+            )
+        lines.append(f"Pit stops: {len(pit)} in total.{fastest}")
+        used.append("pit stops")
+
+    stints = data_loader.get_stints(session_key)
+    if not stints.empty and {"driver_number", "compound"} <= set(stints.columns):
+        short = {"SOFT": "S", "MEDIUM": "M", "HARD": "H", "INTERMEDIATE": "I", "WET": "W"}
+        focus = [winner] if winner is not None else []
+        if not result.empty and "position" in result.columns:
+            top3 = result.copy()
+            top3["position"] = pd.to_numeric(top3["position"], errors="coerce")
+            ranked = top3.dropna(subset=["position"]).sort_values("position").head(3)
+            focus = [int(row.driver_number) for row in ranked.itertuples()]
+        plans = []
+        for driver in focus:
+            rows = stints[stints["driver_number"] == driver].sort_values("lap_start")
+            if rows.empty:
+                continue
+            parts = []
+            for row in rows.itertuples():
+                compound = short.get(str(getattr(row, "compound", "")).upper())
+                start = getattr(row, "lap_start", None)
+                end = getattr(row, "lap_end", None)
+                if compound and pd.notna(start) and pd.notna(end):
+                    parts.append(f"{compound} {int(start)}-{int(end)}")
+            if parts:
+                plans.append(f"{code(driver)}: " + ", ".join(parts))
+        if plans:
+            lines.append("Tyre plans (compound, lap range): " + " | ".join(plans) + ".")
+            used.append("tyre plans")
+
+    overtakes = data_loader.get_overtakes(session_key)
+    if not overtakes.empty and "overtaking_driver_number" in overtakes.columns:
+        made = overtakes.groupby("overtaking_driver_number").size().sort_values(ascending=False)
+        top = ", ".join(f"{code(d)} {int(n)}" for d, n in made.head(3).items())
+        lines.append(f"Most overtakes: {top}.")
+        used.append("overtakes")
+
+    return "\n".join(lines), used
+
+
+class AskRequest(BaseModel):
+    session_key: int
+    question: str
+
+
+@app.get("/ai/status")
+def ai_status() -> dict:
+    return {**ai.status(), "ready": ai.configured()}
+
+
+@app.post("/ai/ask")
+def ai_ask(body: AskRequest) -> dict:
+    if not ai.configured():
+        raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    question = body.question.strip()
+    if not 3 <= len(question) <= 300:
+        raise HTTPException(422, "question must be between 3 and 300 characters")
+    facts, used = _ai_facts(body.session_key)
+    try:
+        text = ai.answer(body.session_key, facts, question)
+    except ai.AINotConfigured as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ai.AIError as exc:
+        raise HTTPException(502, "the AI provider did not answer, try again") from exc
+    return {"answer": text, "model": ai.MODEL, "grounded_on": used}
+
+
+@app.post("/ai/recap")
+def ai_recap(body: AskRequest) -> dict:
+    if not ai.configured():
+        raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    facts, used = _ai_facts(body.session_key)
+    try:
+        text = ai.recap(body.session_key, facts)
+    except ai.AINotConfigured as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ai.AIError as exc:
+        raise HTTPException(502, "the AI provider did not answer, try again") from exc
+    return {"answer": text, "model": ai.MODEL, "grounded_on": used}
