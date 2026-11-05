@@ -20,6 +20,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
 - **Lap duel.** Two laps race the same circuit, aligned by distance around the lap, with a live delta that starts at 0.000 and closes exactly on the official lap-time difference.
 - **Pit strategy toy model.** "Pit now or stay out?" using measured pace and wear, with the breakdown and every assumption shown.
+- **Ask the race engineer.** Ask about the race in plain language, or generate a recap. Answers are built only from the session's measured data (result, sectors, pace, pit stops, tyre plans, overtakes) and say so when the data cannot answer. The API key stays on the server.
 - **Shareable moments.** "Copy link" stores the exact timestamp, so a link reopens the same frame.
 - **Dark and light themes**, keyboard shortcuts, reduced-motion support, and a layout that stacks on phones.
 
@@ -34,6 +35,10 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 | Lap duel | Driver inputs |
 |---|---|
 | ![Lap duel](docs/screenshots/08-duel.png) | ![Inputs](docs/screenshots/09-inputs.png) |
+
+| Ask the race engineer | |
+|---|---|
+| ![Ask](docs/screenshots/10-ask.png) | |
 
 | Light theme | |
 |---|---|
@@ -134,6 +139,11 @@ cd web && npm install && npm run dev                    # SPA on :5173, proxies 
 | `OPENF1_API_KEY` | empty | Only needed if the feed starts requiring credentials; sent as Bearer and `api_key` |
 | `OPENF1_RATE_PER_SEC` | `3` | Request budget, part 1. Raise to `6` only on the sponsor tier |
 | `OPENF1_RATE_PER_MIN` | `30` | Request budget, part 2: rolling 60 s window |
+| `OPENCODE_BASE_URL` | `https://opencode.ai/inference/go/openai/v1` | OpenAI-compatible AI endpoint (OpenCode Go) |
+| `OPENCODE_API_KEY` | empty | AI key; server-only, never exposed to the browser |
+| `OPENCODE_MODEL` | `deepseek-v4.1-flash` | Model id used for answers |
+| `AI_MAX_TOKENS` | `1200` | Answer budget (reasoning tokens count) |
+| `AI_RATE_PER_MIN` | `6` | Server-side AI budget |
 | `CACHE_DIR` | `data/cache` | Where parquet caches live |
 | `BOXBOX_MODEL` | empty | Optional model override for the coach (`opencode run -m …`) |
 

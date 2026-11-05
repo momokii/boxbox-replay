@@ -22,7 +22,7 @@ import httpx
 BASE_URL = os.getenv("OPENCODE_BASE_URL", "https://opencode.ai/inference/go/openai/v1").rstrip("/")
 API_KEY = os.getenv("OPENCODE_API_KEY", "").strip()
 MODEL = os.getenv("OPENCODE_MODEL", "deepseek-v4.1-flash").strip()
-MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "500"))
+MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "1200"))
 RATE_PER_MIN = int(os.getenv("AI_RATE_PER_MIN", "6"))
 TIMEOUT_S = float(os.getenv("AI_TIMEOUT_S", "60"))
 USER_AGENT = "boxbox-replay/2.2"
@@ -109,26 +109,33 @@ def _complete(session_key: int, prompt: str) -> str:
         "temperature": 0.2,
     }
     last_error: Exception | None = None
-    for attempt in range(2):
+    for attempt in range(3):
         try:
             with httpx.Client(timeout=TIMEOUT_S) as client:
                 response = client.post(f"{BASE_URL}/chat/completions", headers=headers, json=body)
             if response.status_code in (401, 403):
                 raise AINotConfigured("the provider rejected the key")
-            if response.status_code == 429:
-                last_error = AIError("provider rate limit")
-                time.sleep(2)
+            if response.status_code in (429, 500, 502, 503, 504):
+                last_error = AIError(f"provider HTTP {response.status_code}")
+                if attempt < 2:
+                    time.sleep(2 * (attempt + 1))
                 continue
             response.raise_for_status()
             payload = response.json()
-            text = (payload["choices"][0]["message"].get("content") or "").strip()
+            choice = payload["choices"][0]
+            text = (choice["message"].get("content") or "").strip()
             if not text:
                 raise AIError("empty answer")
+            if choice.get("finish_reason") == "length":
+                # Never show half a sentence: the caller retries with a longer cap.
+                last_error = AIError("answer hit the token cap")
+                body["max_tokens"] = min(MAX_TOKENS * 2, 4000)
+                continue
             return text
         except httpx.HTTPError as exc:
             last_error = exc
-            if attempt == 0:
-                time.sleep(1.5)
+            if attempt < 2:
+                time.sleep(2 * (attempt + 1))
     raise AIError(f"AI request failed: {last_error}")
 
 

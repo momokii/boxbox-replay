@@ -10,6 +10,8 @@ step.
 ## Order and why
 
 **Status (2026-11-03):** V2.1–V2.4 shipped and verified in production.
+V2.2 adds the AI layer: grounded Q&A and a race recap through OpenCode Go
+(`deepseek-v4.1-flash`), server-side key, budget and cache (see §V2.8 below).
 V2.5 deferred with measured reasons (§V2.5). V2.6–V2.7 remain backlog.
 
 | Step | Milestone | Depends on | Why first |
@@ -202,3 +204,17 @@ rows in a test; entries never point outside the session window.
   clocks, paused when their view is hidden.
 - **Security:** no new secrets; the rate-limiter env vars are documented in
   `.env.example`; no user input reaches a shell or path.
+
+## V2.8 — Grounded AI answers (shipped)
+
+- Provider: OpenCode Go, OpenAI-compatible chat completions at
+  `https://opencode.ai/inference/go/openai/v1`, model `deepseek-v4.1-flash`.
+  The provider requires a stable `x-opencode-session` header and a client user
+  agent; both are set in `ai.py`.
+- Grounding: `_ai_facts` compresses cached session data (result, fastest lap,
+  sectors, clean-lap pace, pit stops, tyre plans, overtakes). The system prompt
+  forbids inventing numbers and requires an explicit refusal when data is thin.
+- Safety: key only in `.env` (server), never sent to the browser; 3 retries for
+  transient 5xx/429; a 6/min budget; per-session answer cache; `max_tokens`
+  raised to 1200 because reasoning tokens count toward the cap (500 truncated
+  answers mid-sentence).
