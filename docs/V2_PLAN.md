@@ -218,3 +218,14 @@ rows in a test; entries never point outside the session window.
   transient 5xx/429; a 6/min budget; per-session answer cache; `max_tokens`
   raised to 1200 because reasoning tokens count toward the cap (500 truncated
   answers mid-sentence).
+
+## V2.9 — Dashboard instead of forced selection (shipped)
+
+The app used to auto-open the latest race on first visit. That removed the
+user's choice and made the landing state invisible. Now nothing is selected
+until the user acts: the dashboard shows a Continue list from localStorage
+(newest first, one entry per session, max 8, deletable per entry or cleared in
+two steps), three suggestions drawn from the year's calendar and excluding what
+is already in Continue, a three-step explanation, and the free-data note. Deep
+links and the pickers are unchanged. 7 unit tests cover the storage layer
+(broken JSON, shape validation, dedupe, cap, remove, clear).

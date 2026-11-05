@@ -10,6 +10,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 ## What it does
 
+- **Dashboard with continue-list.** No forced session: a landing page shows the sessions you opened recently (stored in the browser, deletable one by one), three suggestions, and how the app works.
 - **Full-field replay.** All 20+ cars on the circuit at once, moving on the real session clock (lights out to chequered flag). Play, pause, 1×–8×, scrub, or press Space.
 - **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
 - **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
@@ -36,9 +37,9 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 |---|---|
 | ![Lap duel](docs/screenshots/08-duel.png) | ![Inputs](docs/screenshots/09-inputs.png) |
 
-| Ask the race engineer | |
+| Ask the race engineer | Dashboard |
 |---|---|
-| ![Ask](docs/screenshots/10-ask.png) | |
+| ![Ask](docs/screenshots/10-ask.png) | ![Dashboard](docs/screenshots/11-dashboard.png) |
 
 | Light theme | |
 |---|---|
