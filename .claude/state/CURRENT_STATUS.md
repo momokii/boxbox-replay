@@ -13,6 +13,7 @@ DEPLOYED prod, healthy at http://<host>:8501.
 - [x] V2.2/V2.3: lap-duel endpoint + view, distance-aligned delta (60 vitest)
 - [x] V2.4 inputs strip: multi-driver overlay, hover readout, window endpoint
 - [x] Duel UX: consistent pickers, sector split, lead changes, reading guide
+- [x] V2.8 AI: grounded Q&A + recap (OpenCode Go), server-side key
 - [ ] V2.6 pit Gantt · V2.7 share card · V2.5 fight finder deferred (feed too noisy)
 - [x] fix: glitch filter no longer truncates a circuit after one telemetry gap
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
@@ -32,7 +33,7 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-11-03: v1.0.0 and v2.0.0 tagged; v2.1 adds duel polish + inputs comparison
+2026-11-05: v2.2.0 tagged — AI answers/recap, inputs guide, duel picker fix
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
 
 - [x] U9: smoothness (60fps), chart hover + responsive widths, stacked stints, honest pit model

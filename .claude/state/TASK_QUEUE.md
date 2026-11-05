@@ -81,7 +81,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-5 | Pit strategy Gantt on the lap axis | TODO | `stints` + `pit` already cached |
 | V2-6 | Share card PNG export (1200x630) | TODO | Client-side canvas only |
 | V2-7 | Qualifying mode with real mini-sector strips | BLOCKED | Segments exist only outside races |
-| V2-8 | Tag releases | DONE | v1.0.0, v2.0.0, v2.1.0 |
+| V2-8 | GROUNDED AI: ask + recap via OpenCode Go | DONE | `ai.py`, `/ai/*`, Ask tab; key server-only |
+| V2-9 | Tag releases | DONE | v1.0.0, v2.0.0, v2.1.0, v2.2.0 |
 
 ---
 

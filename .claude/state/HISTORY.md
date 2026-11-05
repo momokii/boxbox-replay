@@ -350,3 +350,16 @@ noise floor, and a "How to read this" block. Inputs now overlay every followed
 driver on one axis (new t0/t1 window mode in /session/inputs), with a hover
 tooltip per driver and coloured brake rows. 72 pytest + 64 vitest, CI green,
 prod verified at 1440 px and 390 px with no overflow.
+
+v2.2 AI: researched OpenCode Go (2026-11-03 docs) and confirmed the required
+`x-opencode-session` header plus a custom user agent; endpoint
+/inference/go/openai/v1, model deepseek-v4.1-flash. Added ai.py (server-side key,
+3 retries, 6/min budget, per-session cache), /ai/status|ask|recap, and an Ask
+tab with a recap button and suggestion chips. Facts are compressed from cached
+data (result, sectors, clean-lap pace, pit stops, tyre plans, overtakes); the
+prompt forces refusals when data is thin. max_tokens 500 truncated answers
+because reasoning tokens count, so it is 1200 with a doubling retry on
+finish_reason=length. Key lives only in gitignored .env (0600); audited that it
+never appears in tracked files or history. Also fixed the A/B picker mismatch
+(leftover amber border) and added the inputs explainer. 81 pytest + 64 vitest,
+CI green, prod verified.
