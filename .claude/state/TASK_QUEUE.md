@@ -82,7 +82,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-6 | Share card PNG export (1200x630) | TODO | Client-side canvas only |
 | V2-7 | Qualifying mode with real mini-sector strips | BLOCKED | Segments exist only outside races |
 | V2-8 | GROUNDED AI: ask + recap via OpenCode Go | DONE | `ai.py`, `/ai/*`, Ask tab; key server-only |
-| V2-9 | Tag releases | DONE | v1.0.0, v2.0.0, v2.1.0, v2.2.0 |
+| V2-9 | Dashboard + deletable recents (no forced auto-open) | DONE | `recents.ts`, `Dashboard.tsx`, 7 tests |
+| V2-10 | Tag releases | DONE | v1.0.0 … v2.2.0; v2.3.0 pending this commit |
 
 ---
 

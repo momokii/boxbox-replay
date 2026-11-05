@@ -363,3 +363,11 @@ finish_reason=length. Key lives only in gitignored .env (0600); audited that it
 never appears in tracked files or history. Also fixed the A/B picker mismatch
 (leftover amber border) and added the inputs explainer. 81 pytest + 64 vitest,
 CI green, prod verified.
+
+Dashboard pass: removed the forced auto-selection (first visit used to jump
+into the latest race), added a localStorage Continue list (max 8, deduped per
+session, per-entry remove, two-step clear), suggestions from the year calendar
+that exclude what is already in Continue, and a how-it-works block. The brand
+mark now returns to the picker. Ask tab gained an honest can/cannot guide.
+7 storage tests; prod verified: fresh visit -> dashboard, open -> recents,
+remove -> empty, reload -> persisted.
