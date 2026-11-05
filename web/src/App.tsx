@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import AskPanel from "./components/AskPanel";
+import Dashboard from "./components/Dashboard";
 import BattlePanel from "./components/BattlePanel";
 import DuelPanel from "./components/DuelPanel";
 import InputsStrip from "./components/InputsStrip";
@@ -18,6 +19,13 @@ import LapTimesModal from "./components/LapTimesModal";
 import DriverDetails from "./components/DriverDetails";
 import Info from "./components/Info";
 import { formatClock } from "./session";
+import {
+  addRecent,
+  clearRecents,
+  loadRecents,
+  removeRecent,
+  type RecentSetup,
+} from "./recents";
 import { driverLabel, formatLapTime, teamColor } from "./format";
 import {
   buildGapTable,
@@ -156,47 +164,32 @@ export default function App() {
   );
   const reasons: Record<string, string> = status.data ?? {};
 
-  // Open inside a real race on first visit (deep links win).
-  const autoPicked = useRef(false);
-  const hasParams = params.year != null || params.meeting != null || params.session != null;
-  useEffect(() => {
-    if (autoPicked.current || hasParams || yearSel || !years.data?.length) return;
-    setYearSel(years.data[years.data.length - 1]);
-  }, [years.data, yearSel, hasParams]);
-  useEffect(() => {
-    if (autoPicked.current || hasParams || !year) return;
-    const ms = meetings.data ?? [];
-    if (!ms.length || sessionKey) return;
-    let live = true;
-    (async () => {
-      for (const m of [...ms].reverse().slice(0, 8)) {
-        const sess = await api.sessions(year, m.meeting_key).catch(() => []);
-        if (!live || !sess.length) continue;
-        const ordered = [
-          ...sess.filter((s) => s.session_name.startsWith("Race")),
-          ...sess.filter((s) => !s.session_name.startsWith("Race")),
-        ];
-        const probe = await api
-          .sessionStatus(ordered.map((s) => s.session_key))
-          .catch(() => ({} as Record<string, string>));
-        if (!live) return;
-        const good = ordered.find((s) => (probe[String(s.session_key)] ?? "x") === "");
-        if (good) {
-          autoPicked.current = true;
-          setMeetingKey(m.meeting_key);
-          setSessionKey(good.session_key);
-          return;
-        }
-      }
-    })();
-    return () => {
-      live = false;
-    };
-  }, [meetings.data, year, sessionKey, hasParams]);
+  // Recently opened sessions live in localStorage; opening one is always an
+  // explicit choice, never an automatic redirect.
+  const [recents, setRecents] = useState<RecentSetup[]>(() => loadRecents());
 
   const info = useAsync(`info:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionInfo(sessionKey) : Promise.resolve(null as unknown as SessionInfoFull),
   );
+  useEffect(() => {
+    if (!sessionKey || !year || !info.data) return;
+    const meeting = meetings.data?.find((m) => m.meeting_key === meetingKey);
+    const label = meeting?.meeting_name ?? info.data.session_name ?? `Session ${sessionKey}`;
+    const sessionName = info.data.session_name ?? "Session";
+    const date = (info.data.date_start ?? "").slice(0, 10);
+    const sub = date ? `${sessionName} · ${date}` : sessionName;
+    setRecents((prev) =>
+      addRecent(prev, {
+        year,
+        meeting: meetingKey ?? 0,
+        session: sessionKey,
+        label,
+        sub,
+        savedAt: Date.now(),
+      }),
+    );
+  }, [sessionKey, year, meetingKey, info.data, meetings.data]);
+
   const geo = useAsync(`geom:${sessionKey ?? "none"}`, () =>
     sessionKey
       ? api.sessionGeometry(sessionKey).catch(() => ({ ...EMPTY_GEO, driver: 0, lap: 0 }))
@@ -535,10 +528,49 @@ export default function App() {
     [flagged, highlight],
   );
 
+  const openRecent = (recent: RecentSetup) => {
+    setYearSel(recent.year);
+    setMeetingKey(recent.meeting);
+    setSessionKey(recent.session);
+    setHighlight([]);
+    setSelectedDriver(null);
+    setView("replay");
+  };
+
+  const openMeeting = async (meeting: Meeting) => {
+    if (!year) return;
+    const list = await api.sessions(year, meeting.meeting_key).catch(() => []);
+    const ordered = [
+      ...list.filter((s) => s.session_name.startsWith("Race")),
+      ...list.filter((s) => !s.session_name.startsWith("Race")),
+    ];
+    for (const session of ordered) {
+      const probe = await api
+        .sessionStatus([session.session_key])
+        .catch(() => ({} as Record<string, string>));
+      if ((probe[String(session.session_key)] ?? "x") === "") {
+        setMeetingKey(meeting.meeting_key);
+        setSessionKey(session.session_key);
+        setHighlight([]);
+        setSelectedDriver(null);
+        setView("replay");
+        return;
+      }
+    }
+    setMeetingKey(meeting.meeting_key);
+  };
+
+  const goHome = () => {
+    setSessionKey(null);
+    setMeetingKey(null);
+    setHighlight([]);
+    setSelectedDriver(null);
+    setView("replay");
+  };
+
   const gpName = meetings.data?.find((m: Meeting) => m.meeting_key === meetingKey)?.meeting_name ?? "";
   const sessName = sessions.data?.find((s: SessionInfo) => s.session_key === sessionKey)?.session_name ?? "";
   const sessionBlocked = sessionKey ? reasons[String(sessionKey)] || null : null;
-  const loading = sessionKey != null && replay.data == null && replay.error == null;
 
   const seekToLap = (lapNumber: number) => {
     const marker = lapMarkers.find((m) => m.index === lapNumber);
@@ -550,6 +582,13 @@ export default function App() {
     <>
       <header className="topbar">
         <h1>
+          <button
+            type="button"
+            className="brand-home"
+            onClick={goHome}
+            title="Back to the session picker"
+            aria-label="Back to the session picker"
+          >
           <svg className="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
             <rect width="32" height="32" rx="7.5" fill="var(--panel-2)" />
             <rect x="6.9" y="15.2" width="4.6" height="9.4" rx="1.7" fill="var(--dim)" />
@@ -558,6 +597,7 @@ export default function App() {
             <rect x="6.9" y="25.4" width="18.2" height="1.5" rx="0.75" fill="var(--line)" />
           </svg>
           BoxBox Replay
+          </button>
         </h1>
         <span className="sub">
           {gpName}
@@ -668,10 +708,17 @@ export default function App() {
       )}
 
       {!sessionKey && !sessionBlocked && (
-        <main className="layout">
-          <div className="empty" style={{ gridColumn: "1 / -1" }}>
-            {loading ? "Loading the latest race…" : "Pick a season, Grand Prix and session to replay a race."}
-          </div>
+        <main className="layout dash-layout">
+          <Dashboard
+            recents={recents}
+            meetings={meetings.data ?? []}
+            year={year}
+            loadingMeetings={meetings.data == null}
+            onOpenRecent={openRecent}
+            onRemoveRecent={(session) => setRecents((prev) => removeRecent(prev, session))}
+            onClearRecents={() => setRecents(clearRecents())}
+            onOpenMeeting={openMeeting}
+          />
         </main>
       )}
 

@@ -102,6 +102,31 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
         </p>
       )}
 
+      <details className="ask-help">
+        <summary>What this can and cannot do</summary>
+        <ul>
+          <li>
+            <b>It reads this session's measured data only:</b> classification, fastest lap,
+            sector times, clean-lap pace, pit stops, tyre plans and overtakes. It does not read
+            news, video or anything from outside the replay.
+          </li>
+          <li>
+            <b>It will say it doesn't know</b> when the data cannot answer — for example on
+            penalties, radio messages or why a driver crashed. That is deliberate: a wrong
+            number would be worse than no answer.
+          </li>
+          <li>
+            <b>Suggested questions</b> work best: strategy, pace, overtakes, retirements. Free
+            text is limited to 300 characters.
+          </li>
+          <li>
+            <b>Answers are cached per session and question</b>, and the server allows a handful
+            of requests per minute to protect the subscription. The API key never reaches your
+            browser.
+          </li>
+        </ul>
+      </details>
+
       {status?.ready && (
         <>
           <div className="ask-actions">

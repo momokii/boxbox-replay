@@ -1704,3 +1704,203 @@ tr.driver-marked td {
     flex-direction: column;
   }
 }
+
+/* ── Dashboard (no session selected) ───────────────────────────────────── */
+.dash-layout {
+  grid-template-columns: 1fr !important;
+}
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-4) 0 var(--space-5);
+  max-width: 980px;
+}
+.dash-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.dash-kicker {
+  margin: 0;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.dash-hero h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  max-width: 22ch;
+}
+.dash-lede {
+  margin: 0;
+  color: var(--dim);
+  max-width: 62ch;
+  line-height: 1.5;
+}
+.dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.dash-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--space-2);
+}
+.dash-section-head h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+.dash-link {
+  background: none;
+  border: none;
+  color: var(--dim);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dash-link:hover {
+  color: var(--ink);
+}
+.dash-recents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.dash-recent {
+  display: flex;
+  align-items: stretch;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.dash-recent-open {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.dash-recent-open:hover {
+  background: var(--panel-2);
+}
+.dash-recent-title {
+  font-weight: 600;
+}
+.dash-recent-sub {
+  color: var(--dim);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.dash-recent-remove {
+  flex: 0 0 42px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.dash-recent-remove:hover {
+  color: var(--ink);
+  background: var(--panel-2);
+}
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--space-2);
+}
+.dash-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.dash-card:hover {
+  border-color: var(--amber);
+}
+.dash-card-title {
+  font-weight: 600;
+}
+.dash-card-sub {
+  color: var(--dim);
+  font-size: 0.78rem;
+}
+.dash-card-action {
+  margin-top: 6px;
+  color: var(--amber);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+.dash-how ol {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: var(--dim);
+}
+.dash-how b {
+  color: var(--ink);
+}
+.brand-home {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+@media (max-width: 640px) {
+  .dash {
+    gap: var(--space-4);
+  }
+}
+
+.ask-help {
+  font-size: 0.82rem;
+  color: var(--dim);
+}
+.ask-help summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+.ask-help ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
