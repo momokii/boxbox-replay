@@ -4,6 +4,7 @@ import { beginDraw, themeColors, useCanvasSize } from "../chart";
 import { drsState, sampleIndex } from "../inputs";
 import type { Playback } from "../playbackStore";
 import type { InputsPayload } from "../types";
+import Info from "./Info";
 
 export interface InputEntry {
   driver: number;
@@ -270,7 +271,12 @@ export default function InputsStrip(p: Props) {
     <div className="inputs" ref={wrapRef}>
       <div className="inputs-head">
         <span className="inputs-title">
-          Inputs · {p.lapLabel} · {p.entries.length > 1 ? `${p.entries.length} drivers` : p.entries[0]?.code}
+          Inputs · {p.lapLabel} ·{" "}
+          {p.entries.length > 1 ? `${p.entries.length} drivers` : p.entries[0]?.code}{" "}
+          <Info
+            label="what these mean"
+            tip="Throttle: how hard the accelerator is pressed, 0–100%. Brake: whether the pedal is down. Gear: the current gear. DRS: the rear-wing flap that opens on long straights to cut drag and help overtaking — only in the marked zones, usually when within a second of the car ahead. '—' means the feed does not carry that channel."
+          />
           {hover && <span className="inputs-hover-time"> · hovering {hover.t.toFixed(1)}s</span>}
         </span>
         <span className="inputs-values">
@@ -285,6 +291,31 @@ export default function InputsStrip(p: Props) {
           ))}
         </span>
       </div>
+      <details className="inputs-help">
+        <summary>What am I looking at?</summary>
+        <ul>
+          <li>
+            <b>Throttle</b> — how hard the driver is on the accelerator, from 0 to 100%.
+            A flat line at the top means full throttle.
+          </li>
+          <li>
+            <b>Brake</b> — a red tick wherever the brake pedal is pressed. Brake and
+            throttle never overlap for long: that is a driver at the limit.
+          </li>
+          <li>
+            <b>Gear</b> — the gear the car is in; lower gears in slow corners, eighth on
+            the straights.
+          </li>
+          <li>
+            <b>DRS</b> — the rear wing opens on marked straights to reduce drag and help a
+            pass. Some seasons do not publish it, so it shows “—”.
+          </li>
+          <li>
+            <b>Hover</b> anywhere on the chart to read every driver's values at that
+            instant. The coloured line on the left of each brake row matches its driver.
+          </li>
+        </ul>
+      </details>
       {error ? (
         <p className="dim small inputs-note">{error}</p>
       ) : (
