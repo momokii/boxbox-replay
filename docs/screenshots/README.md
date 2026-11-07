@@ -16,4 +16,4 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `09-inputs.png` | Throttle, brake and gear for the lap under the playhead |
 | `10-ask.png` | Grounded race recap from the Ask tab |
 | `11-dashboard.png` | Landing dashboard with suggestions |
-| `12-dashboard-recent.png` | Continue list after opening a session |
+| `12-dashboard-recent.png` | Continue list with the filter and remove controls |

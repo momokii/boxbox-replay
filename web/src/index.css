@@ -1774,12 +1774,54 @@ tr.driver-marked td {
 .dash-link:hover {
   color: var(--ink);
 }
+.dash-link.danger {
+  color: #ff8f86;
+}
+.dash-head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.dash-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--panel-2);
+  color: var(--dim);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+.dash-filter {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  min-width: 150px;
+}
+.dash-filter:focus-visible {
+  border-color: var(--amber);
+  outline: none;
+}
 .dash-recents {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   gap: var(--space-2);
+}
+.dash-recents.scroll {
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
 }
 .dash-recent {
   display: flex;
@@ -1815,17 +1857,65 @@ tr.driver-marked td {
   font-variant-numeric: tabular-nums;
 }
 .dash-recent-remove {
-  flex: 0 0 42px;
+  flex: 0 0 34px;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 8px;
+  padding: 0;
   background: none;
   border: none;
-  border-left: 1px solid var(--line);
+  border-radius: 7px;
   color: var(--dim);
-  font-size: 1.1rem;
   cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
+}
+.dash-recent:hover .dash-recent-remove,
+.dash-recent-remove:focus-visible {
+  opacity: 1;
 }
 .dash-recent-remove:hover {
   color: var(--ink);
   background: var(--panel-2);
+}
+@media (hover: none) {
+  .dash-recent-remove {
+    opacity: 1;
+  }
+}
+.dash-lucky {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+.dash-lucky-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.dash-surprise {
+  flex: 0 0 auto;
+  background: var(--amber);
+  color: #0b0e13;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dash-surprise:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 .dash-grid {
   display: grid;

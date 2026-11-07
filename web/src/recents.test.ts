@@ -55,12 +55,13 @@ describe("addRecent", () => {
     expect(list[0].sub).toBe("Qualifying");
   });
 
-  it("caps the list", () => {
+  it("caps the list at MAX_RECENTS", () => {
     const store = fakeStorage();
     let list: RecentSetup[] = [];
-    for (let i = 1; i <= 12; i += 1) list = addRecent(list, setup(i), store);
-    expect(list).toHaveLength(8);
-    expect(list[0].session).toBe(12);
+    for (let i = 1; i <= 25; i += 1) list = addRecent(list, setup(i), store);
+    expect(list).toHaveLength(20);
+    expect(list[0].session).toBe(25);
+    expect(list[19].session).toBe(6);
   });
 });
 

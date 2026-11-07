@@ -21,7 +21,7 @@ export interface StorageLike {
 }
 
 export const RECENTS_KEY = "boxbox.recents";
-export const MAX_RECENTS = 8;
+export const MAX_RECENTS = 20;
 
 function storageOrDefault(storage?: StorageLike): StorageLike | null {
   if (storage) return storage;

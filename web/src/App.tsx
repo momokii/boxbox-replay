@@ -167,6 +167,7 @@ export default function App() {
   // Recently opened sessions live in localStorage; opening one is always an
   // explicit choice, never an automatic redirect.
   const [recents, setRecents] = useState<RecentSetup[]>(() => loadRecents());
+  const [surprising, setSurprising] = useState(false);
 
   const info = useAsync(`info:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionInfo(sessionKey) : Promise.resolve(null as unknown as SessionInfoFull),
@@ -537,27 +538,41 @@ export default function App() {
     setView("replay");
   };
 
-  const openMeeting = async (meeting: Meeting) => {
-    if (!year) return;
-    const list = await api.sessions(year, meeting.meeting_key).catch(() => []);
-    const ordered = [
-      ...list.filter((s) => s.session_name.startsWith("Race")),
-      ...list.filter((s) => !s.session_name.startsWith("Race")),
-    ];
-    for (const session of ordered) {
-      const probe = await api
-        .sessionStatus([session.session_key])
-        .catch(() => ({} as Record<string, string>));
-      if ((probe[String(session.session_key)] ?? "x") === "") {
-        setMeetingKey(meeting.meeting_key);
-        setSessionKey(session.session_key);
-        setHighlight([]);
-        setSelectedDriver(null);
-        setView("replay");
-        return;
+  const surprise = async () => {
+    if (surprising) return;
+    setSurprising(true);
+    try {
+      const shuffle = <T,>(items: T[]): T[] => {
+        const copy = [...items];
+        for (let i = copy.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      };
+      for (const candidateYear of shuffle(years.data ?? []).slice(0, 2)) {
+        const calendar = await api.meetings(candidateYear).catch(() => []);
+        for (const meeting of shuffle(calendar).slice(0, 3)) {
+          const list = await api.sessions(candidateYear, meeting.meeting_key).catch(() => []);
+          if (!list.length) continue;
+          // A race is the safest pick; if the meeting has none, take any session.
+          const races = list.filter((s) => s.session_name.startsWith("Race"));
+          const pool = races.length ? races : list;
+          const candidate = pool[Math.floor(Math.random() * pool.length)];
+          // No telemetry probe: it costs a request per try and can be slow. The
+          // blocked-session screen offers another roll of the dice.
+          setYearSel(candidateYear);
+          setMeetingKey(meeting.meeting_key);
+          setSessionKey(candidate.session_key);
+          setHighlight([]);
+          setSelectedDriver(null);
+          setView("replay");
+          return;
+        }
       }
+    } finally {
+      setSurprising(false);
     }
-    setMeetingKey(meeting.meeting_key);
   };
 
   const goHome = () => {
@@ -702,7 +717,10 @@ export default function App() {
       {sessionBlocked && (
         <main className="layout">
           <div className="empty" style={{ gridColumn: "1 / -1" }}>
-            This session has no telemetry ({sessionBlocked}). Pick another session or Grand Prix.
+            <p>This session has no telemetry ({sessionBlocked}). Pick another session or Grand Prix.</p>
+            <button type="button" className="dash-surprise" onClick={surprise} disabled={surprising}>
+              {surprising ? "Looking for one…" : "Try a random session"}
+            </button>
           </div>
         </main>
       )}
@@ -711,13 +729,11 @@ export default function App() {
         <main className="layout dash-layout">
           <Dashboard
             recents={recents}
-            meetings={meetings.data ?? []}
-            year={year}
-            loadingMeetings={meetings.data == null}
             onOpenRecent={openRecent}
             onRemoveRecent={(session) => setRecents((prev) => removeRecent(prev, session))}
             onClearRecents={() => setRecents(clearRecents())}
-            onOpenMeeting={openMeeting}
+            onSurprise={surprise}
+            surprising={surprising}
           />
         </main>
       )}

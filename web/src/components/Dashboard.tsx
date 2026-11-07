@@ -1,51 +1,37 @@
-import { useState } from "react";
-import type { Meeting } from "../types";
+import { useMemo, useState } from "react";
 import type { RecentSetup } from "../recents";
 
 interface Props {
   recents: RecentSetup[];
-  meetings: Meeting[];
-  year: number | null;
-  loadingMeetings: boolean;
   onOpenRecent: (recent: RecentSetup) => void;
   onRemoveRecent: (session: number) => void;
   onClearRecents: () => void;
-  onOpenMeeting: (meeting: Meeting) => void;
-}
-
-/** Curated meetings first, then the newest ones, without duplicates. */
-function suggestions(meetings: Meeting[]): Meeting[] {
-  const wanted = ["Monaco", "British", "Italian", "Japanese", "Belgian", "Singapore"];
-  const picked: Meeting[] = [];
-  for (const name of wanted) {
-    const hit = meetings.find((m) => m.meeting_name?.includes(name));
-    if (hit) picked.push(hit);
-  }
-  for (const meeting of [...meetings].reverse()) {
-    if (picked.length >= 3) break;
-    if (!picked.includes(meeting)) picked.push(meeting);
-  }
-  return picked.slice(0, 3);
+  onSurprise: () => void;
+  surprising: boolean;
 }
 
 /**
  * Landing view when no session is chosen. It never forces a session: the user
- * opens a recent one, a suggestion, or uses the pickers above.
+ * opens a recent one, rolls the dice, or uses the pickers above.
  */
 export default function Dashboard({
   recents,
-  meetings,
-  year,
-  loadingMeetings,
   onOpenRecent,
   onRemoveRecent,
   onClearRecents,
-  onOpenMeeting,
+  onSurprise,
+  surprising,
 }: Props) {
+  const [filter, setFilter] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
-  // Do not offer something that is already in Continue.
-  const seen = new Set(recents.map((recent) => recent.meeting));
-  const picks = suggestions(meetings.filter((meeting) => !seen.has(meeting.meeting_key)));
+
+  const shown = useMemo(() => {
+    const needle = filter.trim().toLowerCase();
+    if (!needle) return recents;
+    return recents.filter((recent) =>
+      `${recent.label} ${recent.sub} ${recent.year}`.toLowerCase().includes(needle),
+    );
+  }, [recents, filter]);
 
   return (
     <div className="dash">
@@ -54,39 +40,59 @@ export default function Dashboard({
         <h1>Watch any race again, one frame at a time.</h1>
         <p className="dash-lede">
           Every car on the circuit, live gaps, telemetry, strategy — then ask the race engineer
-          what actually happened. Pick a session above, or continue with one you had open.
+          what actually happened. Pick a session above, continue where you left off, or let the
+          app choose for you.
         </p>
       </header>
 
       <section className="dash-section" aria-label="Recently opened sessions">
         <div className="dash-section-head">
-          <h2>Continue</h2>
-          {recents.length > 0 && (
-            <button
-              type="button"
-              className="dash-link"
-              onClick={() => {
-                if (confirmClear) {
-                  onClearRecents();
-                  setConfirmClear(false);
-                } else {
-                  setConfirmClear(true);
-                }
-              }}
-              onBlur={() => setConfirmClear(false)}
-            >
-              {confirmClear ? "Confirm clear" : "Clear list"}
-            </button>
-          )}
+          <h2>
+            Continue
+            {recents.length > 0 && <span className="dash-count">{recents.length}</span>}
+          </h2>
+          <div className="dash-head-actions">
+            {recents.length > 4 && (
+              <input
+                className="dash-filter"
+                type="search"
+                value={filter}
+                placeholder="Filter sessions…"
+                aria-label="Filter recent sessions"
+                onChange={(e) => setFilter(e.target.value)}
+              />
+            )}
+            {recents.length > 0 && (
+              <button
+                type="button"
+                className={confirmClear ? "dash-link danger" : "dash-link"}
+                onClick={() => {
+                  if (confirmClear) {
+                    onClearRecents();
+                    setConfirmClear(false);
+                    setFilter("");
+                  } else {
+                    setConfirmClear(true);
+                  }
+                }}
+                onBlur={() => setConfirmClear(false)}
+              >
+                {confirmClear ? "Confirm clear" : "Clear list"}
+              </button>
+            )}
+          </div>
         </div>
+
         {recents.length === 0 ? (
           <p className="dim small">
-            Sessions you open are remembered here. Nothing is stored on the server, and you can
-            remove any entry.
+            Sessions you open are remembered here, on this device only. Open one and it will be
+            one click away next time.
           </p>
+        ) : shown.length === 0 ? (
+          <p className="dim small">No session matches “{filter}”.</p>
         ) : (
-          <ul className="dash-recents">
-            {recents.map((recent) => (
+          <ul className={recents.length > 4 ? "dash-recents scroll" : "dash-recents"}>
+            {shown.map((recent) => (
               <li key={recent.session} className="dash-recent">
                 <button
                   type="button"
@@ -99,11 +105,19 @@ export default function Dashboard({
                 <button
                   type="button"
                   className="dash-recent-remove"
-                  aria-label={`Remove ${recent.label} ${recent.sub} from the list`}
+                  aria-label={`Remove ${recent.label}, ${recent.sub}, from the list`}
                   title="Remove from this list"
                   onClick={() => onRemoveRecent(recent.session)}
                 >
-                  ×
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+                    <path
+                      d="M4 4l8 8M12 4l-8 8"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 </button>
               </li>
             ))}
@@ -111,29 +125,21 @@ export default function Dashboard({
         )}
       </section>
 
-      <section className="dash-section" aria-label="Suggested sessions">
+      <section className="dash-section" aria-label="Random session">
         <div className="dash-section-head">
-          <h2>Start somewhere{year ? ` in ${year}` : ""}</h2>
-          {loadingMeetings && <span className="dim small">Loading calendar…</span>}
+          <h2>Can’t decide?</h2>
         </div>
-        <div className="dash-grid">
-          {picks.map((meeting) => (
-            <button
-              key={meeting.meeting_key}
-              type="button"
-              className="dash-card"
-              onClick={() => onOpenMeeting(meeting)}
-            >
-              <span className="dash-card-title">{meeting.meeting_name}</span>
-              <span className="dash-card-sub">
-                {[meeting.location, (meeting.date_start ?? "").slice(0, 10)].filter(Boolean).join(" · ")}
-              </span>
-              <span className="dash-card-action">Open the race →</span>
-            </button>
-          ))}
-          {!loadingMeetings && picks.length === 0 && (
-            <p className="dim small">Pick a season above to see its calendar.</p>
-          )}
+        <div className="dash-lucky">
+          <div>
+            <p className="dash-lucky-title">Roll the dice</p>
+            <p className="dim small">
+              A random season, circuit and session that has telemetry — anything from 2023 to
+              today, races and qualifying alike.
+            </p>
+          </div>
+          <button type="button" className="dash-surprise" onClick={onSurprise} disabled={surprising}>
+            {surprising ? "Looking for one…" : "Surprise me"}
+          </button>
         </div>
       </section>
 

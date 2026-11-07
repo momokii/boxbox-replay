@@ -225,7 +225,13 @@ The app used to auto-open the latest race on first visit. That removed the
 user's choice and made the landing state invisible. Now nothing is selected
 until the user acts: the dashboard shows a Continue list from localStorage
 (newest first, one entry per session, max 8, deletable per entry or cleared in
-two steps), three suggestions drawn from the year's calendar and excluding what
-is already in Continue, a three-step explanation, and the free-data note. Deep
+two steps), a random “Surprise me” picker (season, circuit and session), a three-step
+explanation, and the free-data note. Deep
 links and the pickers are unchanged. 7 unit tests cover the storage layer
 (broken JSON, shape validation, dedupe, cap, remove, clear).
+
+Revision after review: the remove control is a subtle icon (visible at 40%,
+full on hover/focus, always visible on touch) instead of a boxed “×”; lists
+longer than four entries get a filter field and a capped scroll area; the
+suggestions were replaced with a random picker that needs no telemetry probe
+(the blocked-session screen offers another roll).
