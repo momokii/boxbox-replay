@@ -28,13 +28,28 @@ TIMEOUT_S = float(os.getenv("AI_TIMEOUT_S", "60"))
 USER_AGENT = "boxbox-replay/2.2"
 
 SYSTEM = (
-    "You are a concise Formula 1 race engineer explaining a session to a fan who "
-    "did not watch it. Use ONLY the DATA below. If the data does not contain the "
-    "answer, say plainly that you don't have that information. Never invent times, "
-    "positions, penalties or events. Reply in at most four short sentences, plain "
-    "text, using the three-letter driver codes."
+    "You are the race engineer inside BoxBox Replay, a free F1 replay app. You are "
+    "talking to a curious fan who knows the basics but not the jargon. Be warm, "
+    "plain and specific; no hype and no bullet lists.\n"
+    "NAMES: use the driver's full name the first time (for example \"Kimi Antonelli\"), "
+    "then the surname; put the three-letter code in brackets only when it helps.\n"
+    "VOICE: never say \"the data\", \"the dataset\", \"the feed\", \"the API\", "
+    "\"the session DATA\" or \"official race report\". You are the app, not a database "
+    "reading out fields. Say what you can and cannot see in your own words.\n"
+    "SCOPE: answer only about this session and Formula 1. If the question is about "
+    "anything else (politics, coding, personal advice, other sports, news), reply with "
+    "exactly: OUT_OF_SCOPE\n"
+    "HONESTY: use only the SESSION NOTES. Never invent times, penalties, incidents or "
+    "quotes. If the notes cannot answer, say in one sentence what is missing and offer "
+    "a related question you can answer.\n"
+    "LENGTH: at most four short sentences, unless the user asks for a recap."
 )
 
+# Branded refusal used when the model returns the sentinel.
+OUT_OF_SCOPE = (
+    "That one is outside this race. I can help with what happened on track - strategy, "
+    "pace, overtakes, retirements, or a recap of this session."
+)
 
 class AINotConfigured(RuntimeError):
     """No API key: the feature is off, and says so."""
@@ -146,8 +161,10 @@ def answer(session_key: int, facts: str, question: str) -> str:
         hit = _cache.get(key)
     if hit:
         return hit
-    prompt = f"DATA:\n{facts}\n\nQUESTION: {question.strip()}"
+    prompt = f"SESSION NOTES:\n{facts}\n\nQUESTION: {question.strip()}"
     text = _complete(session_key, prompt)
+    if text.strip().upper().startswith("OUT_OF_SCOPE"):
+        text = OUT_OF_SCOPE
     _remember(key, text)
     return text
 
@@ -160,12 +177,18 @@ def recap(session_key: int, facts: str) -> str:
     if hit:
         return hit
     prompt = (
-        "DATA:\n"
+        "SESSION NOTES:\n"
         f"{facts}\n\n"
-        "TASK: write a five-sentence recap of the race: the win, the podium, the "
-        "decisive strategy or move, and one honest caveat if the data is thin."
+        "TASK: write a five or six sentence race story for someone who missed it. "
+        "Who won and how the podium shaped up; the decisive strategy or stop; the "
+        "biggest mover or best overtake; retirements or incidents if any; the fastest "
+        "lap. Use full names on first mention and tell it as a story, not a list. If "
+        "the notes are thin on a point, say so in one short clause instead of guessing. "
+        "If this is not a race session, recap what the session actually was."
     )
     text = _complete(session_key, prompt)
+    if text.strip().upper().startswith("OUT_OF_SCOPE"):
+        text = OUT_OF_SCOPE
     _remember(key, text)
     return text
 

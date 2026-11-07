@@ -807,24 +807,35 @@ def coach_ask(req: CoachRequest) -> dict:
 
 # ── AI coach (OpenCode Go) ──────────────────────────────────────────────────
 
-def _driver_codes(session_key: int) -> dict[int, str]:
+def _driver_meta(session_key: int) -> dict[int, dict[str, str]]:
     drivers = data_loader.list_drivers(session_key)
     if drivers.empty or "name_acronym" not in drivers.columns:
         return {}
-    return {
-        int(row.driver_number): str(row.name_acronym)
-        for row in drivers.itertuples()
-        if pd.notna(row.name_acronym)
-    }
+    meta: dict[int, dict[str, str]] = {}
+    for row in drivers.itertuples():
+        if pd.isna(row.name_acronym):
+            continue
+        meta[int(row.driver_number)] = {
+            "code": str(row.name_acronym),
+            "name": str(getattr(row, "full_name", "") or row.name_acronym),
+            "team": str(getattr(row, "team_name", "") or ""),
+        }
+    return meta
 
 
 def _ai_facts(session_key: int) -> tuple[str, list[str]]:
     """Compact, measured facts for the model. Missing sections are omitted."""
-    codes = _driver_codes(session_key)
+    meta = _driver_meta(session_key)
 
     def code(number: object) -> str:
         try:
-            return codes.get(int(number), f"#{int(number)}")
+            return meta.get(int(number), {}).get("code", f"#{int(number)}")
+        except (TypeError, ValueError):
+            return "?"
+
+    def name(number: object) -> str:
+        try:
+            return meta.get(int(number), {}).get("name", f"#{int(number)}")
         except (TypeError, ValueError):
             return "?"
 
@@ -838,27 +849,51 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
     )
     used.append("session")
 
+    # Classification: every entrant, with the name the model should use.
     result = data_loader.get_session_result(session_key)
+    classified: list[str] = []
+    retired: list[str] = []
     if not result.empty and "position" in result.columns:
-        res = result.copy()
-        res["position"] = pd.to_numeric(res["position"], errors="coerce")
-        res = res.dropna(subset=["position"]).sort_values("position")
-        top = []
-        for row in res.head(5).itertuples():
-            gap = getattr(row, "gap_to_leader", None)
-            gap_txt = f" +{float(gap):.3f}s" if pd.notna(gap) and float(gap) > 0 else ""
-            top.append(f"P{int(row.position)} {code(row.driver_number)}{gap_txt}")
-        if top:
-            lines.append("Result (top 5): " + "; ".join(top) + ".")
-            used.append("result")
-        out = []
-        for row in res.itertuples():
-            if getattr(row, "dnf", False) is True:
-                out.append(f"{code(row.driver_number)} DNF")
-            elif getattr(row, "dsq", False) is True:
-                out.append(f"{code(row.driver_number)} DSQ")
-        if out:
-            lines.append("Did not finish: " + ", ".join(out) + ".")
+        rows = result.copy()
+        rows["position"] = pd.to_numeric(rows["position"], errors="coerce")
+        rows = rows.sort_values("position", na_position="last")
+        for row in rows.itertuples():
+            status = (
+                "DNF"
+                if bool(getattr(row, "dnf", False))
+                else "DNS"
+                if bool(getattr(row, "dns", False))
+                else "DSQ"
+                if bool(getattr(row, "dsq", False))
+                else ""
+            )
+            who = f"{name(row.driver_number)} ({code(row.driver_number)})"
+            if pd.notna(getattr(row, "position", None)):
+                gap = getattr(row, "gap_to_leader", None)
+                gap_txt = (
+                    f" +{float(gap):.3f}s"
+                    if pd.notna(gap) and float(gap) > 0
+                    else " winner"
+                    if int(row.position) == 1
+                    else ""
+                )
+                points = getattr(row, "points", None)
+                pts = f" {float(points):g}pts" if pd.notna(points) else ""
+                laps_done = getattr(row, "number_of_laps", None)
+                laps_txt = f" {int(laps_done)} laps" if pd.notna(laps_done) else ""
+                classified.append(f"P{int(row.position)} {who}{gap_txt}{pts}{laps_txt}.")
+            else:
+                retired.append(f"{who} {status or 'not classified'}")
+        if classified:
+            lines.append("Full classification:\n" + "\n".join(classified))
+            used.append("classification")
+        if retired:
+            lines.append("Did not finish / not classified: " + "; ".join(retired) + ".")
+            used.append("retirements")
+        else:
+            lines.append(
+                "Retirements: none — every entrant was classified at the finish."
+            )
             used.append("retirements")
 
     laps = data_loader.list_laps(session_key)
@@ -877,20 +912,23 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
             ordered = clean.sort_values("lap_duration")
             best = ordered.iloc[0]
             lines.append(
-                f"Fastest lap: {code(best['driver_number'])} "
+                f"Fastest lap: {name(best['driver_number'])} ({code(best['driver_number'])}) "
                 f"{float(best['lap_duration']):.3f}s on lap {int(best['lap_number'])}."
             )
             used.append("fastest lap")
+            best_per_driver = (
+                ordered.drop_duplicates(subset=["driver_number"], keep="first")
+                .sort_values("lap_duration")
+                .head(3)
+            )
             podium_laps = [
-                f"{code(row.driver_number)} {float(row.lap_duration):.3f}s"
-                for row in ordered.head(3).itertuples()
+                f"{name(row.driver_number)} {float(row.lap_duration):.3f}s"
+                for row in best_per_driver.itertuples()
             ]
-            lines.append("Three fastest laps: " + ", ".join(podium_laps) + ".")
+            lines.append("Best lap per driver (top three): " + ", ".join(podium_laps) + ".")
 
             def sectors(row) -> str:
-                values = [
-                    getattr(row, f"duration_sector_{i}", None) for i in (1, 2, 3)
-                ]
+                values = [getattr(row, f"duration_sector_{i}", None) for i in (1, 2, 3)]
                 if any(v is None or pd.isna(v) for v in values):
                     return ""
                 return "S1 {:.3f} S2 {:.3f} S3 {:.3f}".format(*[float(v) for v in values])
@@ -901,13 +939,36 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
                     f"Fastest-lap sectors ({code(best['driver_number'])}): {best_sectors}."
                 )
 
+            # Reference for "where did time go": best sector and ideal lap.
+            best_each: list[str] = []
+            total_ideal = 0.0
+            for index in (1, 2, 3):
+                column = f"duration_sector_{index}"
+                if column not in clean.columns:
+                    continue
+                numeric = pd.to_numeric(clean[column], errors="coerce")
+                if numeric.notna().sum() == 0:
+                    continue
+                idx = numeric.idxmin()
+                total_ideal += float(numeric.loc[idx])
+                who = code(clean.loc[idx, "driver_number"])
+                best_each.append(f"S{index} {float(numeric.loc[idx]):.3f} ({who})")
+            if best_each:
+                lines.append(
+                    "Best sector in the session: " + ", ".join(best_each) + "."
+                )
+                lines.append(
+                    f"Theoretical best lap (sum of those sectors): {total_ideal:.3f}s."
+                )
+                used.append("ideal lap")
+
             pace = []
             for driver, rows in clean.groupby("driver_number"):
                 if len(rows) < 5:
                     continue
                 pace.append(
                     (
-                        code(driver),
+                        name(driver),
                         float(rows["lap_duration"].min()),
                         float(rows["lap_duration"].median()),
                     )
@@ -915,8 +976,8 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
             pace.sort(key=lambda row: row[2])
             if pace:
                 lines.append(
-                    "Median clean-lap pace (best three): "
-                    + ", ".join(f"{d} {m:.3f}s (best {b:.3f}s)" for d, b, m in pace[:3])
+                    "Median clean-lap pace (best five): "
+                    + ", ".join(f"{d} {m:.3f}s (best {b:.3f}s)" for d, b, m in pace[:5])
                     + "."
                 )
                 used.append("pace")
@@ -928,7 +989,7 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
                     win_sectors = sectors(win_best)
                     if win_sectors:
                         lines.append(
-                            f"Winner's best lap ({code(winner)} "
+                            f"Winner's best lap ({name(winner)} "
                             f"{float(win_best['lap_duration']):.3f}s): {win_sectors}."
                         )
 
@@ -940,7 +1001,7 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
             idx = durations.idxmin()
             fastest = (
                 f" Fastest stop {float(durations.loc[idx]):.1f}s "
-                f"({code(pit.loc[idx, 'driver_number'])})."
+                f"({name(pit.loc[idx, 'driver_number'])})."
             )
         lines.append(f"Pit stops: {len(pit)} in total.{fastest}")
         used.append("pit stops")
@@ -948,12 +1009,14 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
     stints = data_loader.get_stints(session_key)
     if not stints.empty and {"driver_number", "compound"} <= set(stints.columns):
         short = {"SOFT": "S", "MEDIUM": "M", "HARD": "H", "INTERMEDIATE": "I", "WET": "W"}
-        focus = [winner] if winner is not None else []
+        focus: list[int] = []
         if not result.empty and "position" in result.columns:
-            top3 = result.copy()
-            top3["position"] = pd.to_numeric(top3["position"], errors="coerce")
-            ranked = top3.dropna(subset=["position"]).sort_values("position").head(3)
-            focus = [int(row.driver_number) for row in ranked.itertuples()]
+            ranked = result.copy()
+            ranked["position"] = pd.to_numeric(ranked["position"], errors="coerce")
+            top5 = ranked.dropna(subset=["position"]).sort_values("position").head(5)
+            focus = [int(row.driver_number) for row in top5.itertuples()]
+        elif winner is not None:
+            focus = [winner]
         plans = []
         for driver in focus:
             rows = stints[stints["driver_number"] == driver].sort_values("lap_start")
@@ -967,19 +1030,64 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
                 if compound and pd.notna(start) and pd.notna(end):
                     parts.append(f"{compound} {int(start)}-{int(end)}")
             if parts:
-                plans.append(f"{code(driver)}: " + ", ".join(parts))
+                plans.append(f"{name(driver)}: " + ", ".join(parts))
         if plans:
-            lines.append("Tyre plans (compound, lap range): " + " | ".join(plans) + ".")
+            lines.append("Tyre plans, top five (compound, lap range): " + " | ".join(plans) + ".")
             used.append("tyre plans")
 
     overtakes = data_loader.get_overtakes(session_key)
     if not overtakes.empty and "overtaking_driver_number" in overtakes.columns:
         made = overtakes.groupby("overtaking_driver_number").size().sort_values(ascending=False)
-        top = ", ".join(f"{code(d)} {int(n)}" for d, n in made.head(3).items())
+        top = ", ".join(f"{name(d)} {int(n)}" for d, n in made.head(3).items())
         lines.append(f"Most overtakes: {top}.")
         used.append("overtakes")
 
-    return "\n".join(lines), used
+    # Weather and race control only if the feed answers; each is cached.
+    try:
+        weather = data_loader.get_weather(session_key)
+    except Exception:
+        weather = pd.DataFrame()
+    if not weather.empty and "track_temperature" in weather.columns:
+        try:
+            track = pd.to_numeric(weather["track_temperature"], errors="coerce")
+            air = pd.to_numeric(weather.get("air_temperature"), errors="coerce")
+            rain = pd.to_numeric(weather.get("rainfall"), errors="coerce")
+            pieces = [f"track {track.min():.0f}-{track.max():.0f}°C"]
+            if air is not None and air.notna().any():
+                pieces.append(f"air {air.min():.0f}-{air.max():.0f}°C")
+            if rain is not None and rain.notna().any():
+                pieces.append("rain" if float(rain.max()) > 0 else "dry")
+            lines.append("Weather: " + ", ".join(pieces) + ".")
+            used.append("weather")
+        except Exception:
+            pass
+
+    try:
+        control = data_loader.get_race_control(session_key)
+    except Exception:
+        control = pd.DataFrame()
+    if not control.empty and "message" in control.columns:
+        text = control["message"].fillna("").astype(str)
+        sc = int(text.str.contains("SAFETY CAR", case=False, regex=False).sum())
+        vsc = int(text.str.contains("VIRTUAL SAFETY CAR", case=False, regex=False).sum())
+        red = int(text.str.contains("RED FLAG", case=False, regex=False).sum())
+        if sc or vsc or red:
+            lines.append(
+                f"Neutralisations: {sc} safety-car messages, {vsc} virtual safety car, "
+                f"{red} red flag."
+            )
+            used.append("race control")
+        notable = control[
+            text.str.contains("COLLISION|STOPPED|RETIRED|PENALTY", case=False, regex=True)
+        ].head(3)
+        for row in notable.itertuples():
+            message = str(getattr(row, "message", "")).strip().replace("\n", " ")
+            if message:
+                lines.append(f"Race control note: {message[:140]}")
+                used.append("race control")
+
+    ordered_used = list(dict.fromkeys(used))
+    return "\n".join(lines), ordered_used
 
 
 class AskRequest(BaseModel):

@@ -99,3 +99,26 @@ def test_answer_caches_per_question(monkeypatch):
     assert calls["n"] == 1
     assert ai.answer(8, "facts", "Who won?") == "cached answer"
     assert calls["n"] == 2
+
+
+def test_out_of_scope_becomes_a_branded_answer(monkeypatch):
+    monkeypatch.setattr(ai, "_complete", lambda session_key, prompt: "OUT_OF_SCOPE")
+    ai._cache.clear()
+    text = ai.answer(9, "facts", "What do you think about a politician?")
+    assert text == ai.OUT_OF_SCOPE
+    assert "outside this race" in text
+
+
+def test_prompt_carries_the_notes_and_the_scope_rule(monkeypatch):
+    seen = {}
+
+    def fake_complete(session_key, prompt):
+        seen["prompt"] = prompt
+        return "An answer."
+
+    monkeypatch.setattr(ai, "_complete", fake_complete)
+    ai._cache.clear()
+    ai.answer(3, "P1 Kimi ANTONELLI", "Who won?")
+    assert "SESSION NOTES" in seen["prompt"]
+    assert "P1 Kimi ANTONELLI" in seen["prompt"]
+    assert "OUT_OF_SCOPE" in ai.SYSTEM

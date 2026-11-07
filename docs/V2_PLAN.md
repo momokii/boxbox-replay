@@ -219,6 +219,33 @@ rows in a test; entries never point outside the session window.
   raised to 1200 because reasoning tokens count toward the cap (500 truncated
   answers mid-sentence).
 
+## V2.10 — AI quality pass (shipped)
+
+Review of the first AI answers found real problems, fixed here:
+
+- **Retirements were hidden by a bug**: `getattr(row, "dnf") is True` never matched
+  a numpy bool, so every race looked like it had no retirements. Uses `bool(...)`
+  now, and adds an explicit "Retirements: none — every entrant was classified"
+  when that is true, so the model stops claiming the information is missing.
+- **Codes instead of names**: facts now carry the full classification with full
+  names and teams, and the prompt asks for the full name on first mention.
+- **No reference for "where did time go"**: facts now include the best sector in
+  the session, the theoretical best lap, the winner's best-lap sectors and the
+  fastest-lap sectors.
+- **Thin race context**: full classification, retirements, weather and race
+  control notes are included; tyre plans cover the top five.
+- **Voice**: the system prompt makes the model the app's engineer, not a database
+  reader — it forbids "the data", "the feed", "official race report" and asks for
+  plain language, warm tone and an offer of a related question.
+- **Scope guardrail**: off-topic questions (politics, coding, other sports) get a
+  sentinel from the model, which the server replaces with a branded message:
+  "That one is outside this race. I can help with what happened on track…".
+- Recap prompt now asks for a five/six-sentence story with names, strategy,
+  movers, retirements and fastest lap, and adapts to non-race sessions.
+
+Tests: 84 pytest (new facts test covers the numpy-bool regression, names and the
+ideal lap; new AI tests cover the sentinel and the prompt contents).
+
 ## V2.9 — Dashboard instead of forced selection (shipped)
 
 The app used to auto-open the latest race on first visit. That removed the

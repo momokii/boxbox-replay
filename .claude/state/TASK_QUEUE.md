@@ -83,7 +83,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-7 | Qualifying mode with real mini-sector strips | BLOCKED | Segments exist only outside races |
 | V2-8 | GROUNDED AI: ask + recap via OpenCode Go | DONE | `ai.py`, `/ai/*`, Ask tab; key server-only |
 | V2-9 | Dashboard + deletable recents (no forced auto-open) | DONE | `recents.ts`, `Dashboard.tsx`, 7 tests |
-| V2-10 | Tag releases | DONE | v1.0.0 … v2.2.0; v2.3.0 pending this commit |
+| V2-10 | Dashboard filter/random + AI quality pass | DONE | 84 pytest, 71 vitest |
+| V2-11 | Tag releases | DONE | v1.0.0 … v2.3.0; v2.4.0 next |
 
 ---
 

@@ -371,3 +371,13 @@ that exclude what is already in Continue, and a how-it-works block. The brand
 mark now returns to the picker. Ask tab gained an honest can/cannot guide.
 7 storage tests; prod verified: fresh visit -> dashboard, open -> recents,
 remove -> empty, reload -> persisted.
+
+AI quality pass after review: the facts builder had been hiding retirements because
+`is True` never matches a numpy bool; fixed with bool(). Facts now include the full
+classification with full names and teams, retirements (or an explicit "none"),
+best sector in the session plus theoretical best lap, winner/fastest-lap sectors,
+top-five pace, tyre plans, weather and race-control notes. The prompt now speaks as
+the app's engineer (no "data"/"feed"/"official report" phrasing), uses full names,
+and answers off-topic questions with a branded OUT_OF_SCOPE message. Dashboard got a
+quiet remove icon, a filter for lists over four entries, a 20-entry cap, and a
+random "Surprise me" picker without the telemetry probe. 84 pytest + 71 vitest.

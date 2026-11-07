@@ -373,3 +373,97 @@ def test_ai_recap_is_typed(monkeypatch):
     with TestClient(m.app) as client:
         body = client.post("/ai/recap", json={"session_key": 1, "question": ""}).json()
     assert body["answer"] == "A fine race."
+
+
+def test_ai_facts_include_names_retirements_and_ideal_lap(monkeypatch):
+    import numpy as np
+
+    drivers = _frame(
+        [
+            {
+                "driver_number": 1,
+                "name_acronym": "ANT",
+                "full_name": "Kimi ANTONELLI",
+                "team_name": "Mercedes",
+            },
+            {
+                "driver_number": 2,
+                "name_acronym": "LEC",
+                "full_name": "Charles LECLERC",
+                "team_name": "Ferrari",
+            },
+            {
+                "driver_number": 3,
+                "name_acronym": "BOT",
+                "full_name": "Valtteri BOTTAS",
+                "team_name": "Cadillac",
+            },
+        ]
+    )
+    result = _frame(
+        [
+            {
+                "position": 1.0,
+                "driver_number": 1,
+                "gap_to_leader": 0.0,
+                "points": 25.0,
+                "number_of_laps": 50,
+                "dnf": np.bool_(False),
+            },
+            {
+                "position": 2.0,
+                "driver_number": 2,
+                "gap_to_leader": 2.5,
+                "points": 18.0,
+                "number_of_laps": 50,
+                "dnf": np.bool_(False),
+            },
+            {
+                "position": np.nan,
+                "driver_number": 3,
+                "gap_to_leader": np.nan,
+                "points": 0.0,
+                "number_of_laps": 20,
+                "dnf": np.bool_(True),
+            },
+        ]
+    )
+    laps = _frame(
+        [
+            {
+                "driver_number": 1,
+                "lap_number": 10,
+                "lap_duration": 90.0,
+                "duration_sector_1": 30.0,
+                "duration_sector_2": 31.0,
+                "duration_sector_3": 29.0,
+            },
+            {
+                "driver_number": 2,
+                "lap_number": 10,
+                "lap_duration": 91.0,
+                "duration_sector_1": 29.5,
+                "duration_sector_2": 31.5,
+                "duration_sector_3": 30.0,
+            },
+        ]
+    )
+    monkeypatch.setattr(m.data_loader, "list_drivers", lambda *a, **k: drivers)
+    monkeypatch.setattr(m.data_loader, "get_session_result", lambda *a, **k: result)
+    monkeypatch.setattr(m.data_loader, "list_laps", lambda *a, **k: laps)
+    monkeypatch.setattr(m.data_loader, "get_pit", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "get_stints", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "get_overtakes", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "get_weather", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "get_race_control", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(
+        m, "session_info", lambda sk: {"session_name": "Race", "total_laps": 50, "drivers": 3}
+    )
+
+    facts, used = m._ai_facts(1)
+
+    # The numpy bool used to defeat `is True`, hiding real retirements.
+    assert "Valtteri BOTTAS" in facts and "DNF" in facts
+    assert "Kimi ANTONELLI" in facts
+    assert "Theoretical best lap" in facts
+    assert "classification" in used and "retirements" in used
