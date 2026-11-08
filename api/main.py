@@ -887,6 +887,48 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
         if classified:
             lines.append("Full classification:\n" + "\n".join(classified))
             used.append("classification")
+        # First position recorded for each driver, for "gained/lost" questions.
+        try:
+            positions_feed = data_loader.get_position(session_key)
+            if not positions_feed.empty and {"driver_number", "position", "date"} <= set(
+                positions_feed.columns
+            ):
+                feed = positions_feed.copy()
+                feed["date"] = data_loader.to_dt(feed["date"])
+                feed = feed.sort_values("date")
+                first = feed.drop_duplicates(subset=["driver_number"], keep="first")
+                start_pos = {
+                    int(row.driver_number): int(row.position)
+                    for row in first.itertuples()
+                    if pd.notna(row.position) and 1 <= int(row.position) <= 30
+                }
+                finish = {
+                    int(row.driver_number): int(row.position)
+                    for row in result.itertuples()
+                    if pd.notna(getattr(row, "position", None))
+                }
+                movement = []
+                for driver, start in sorted(start_pos.items(), key=lambda item: item[1]):
+                    end = finish.get(driver)
+                    if end is None:
+                        continue
+                    delta = start - end
+                    if delta == 0:
+                        continue
+                    movement.append(
+                        f"{name(driver)} P{start} to P{end} ("
+                        f"{'+' if delta > 0 else ''}{delta})"
+                    )
+                if movement:
+                    lines.append(
+                        "First recorded position to finish (positive gained places): "
+                        + ", ".join(movement)
+                        + "."
+                    )
+                    used.append("position changes")
+        except Exception:
+            pass
+
         if retired:
             lines.append("Did not finish / not classified: " + "; ".join(retired) + ".")
             used.append("retirements")
@@ -982,6 +1024,23 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
                 )
                 used.append("pace")
 
+            # Consistency: how far a driver's typical lap sits from their best.
+            spread = []
+            for driver, rows in clean.groupby("driver_number"):
+                if len(rows) < 5:
+                    continue
+                best = float(rows["lap_duration"].min())
+                median = float(rows["lap_duration"].median())
+                spread.append((name(driver), median - best))
+            spread.sort(key=lambda row: row[1])
+            if spread:
+                lines.append(
+                    "Consistency, median clean lap minus personal best (lower is better): "
+                    + ", ".join(f"{d} {gap:.3f}s" for d, gap in spread[:8])
+                    + "."
+                )
+                used.append("consistency")
+
             if winner is not None:
                 win_rows = clean[clean["driver_number"] == winner]
                 if not win_rows.empty:
@@ -994,16 +1053,29 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
                         )
 
     pit = data_loader.get_pit(session_key)
-    if not pit.empty and "driver_number" in pit.columns:
-        durations = pd.to_numeric(pit.get("stop_duration"), errors="coerce")
-        fastest = ""
-        if durations is not None and durations.notna().any():
-            idx = durations.idxmin()
-            fastest = (
-                f" Fastest stop {float(durations.loc[idx]):.1f}s "
-                f"({name(pit.loc[idx, 'driver_number'])})."
+    if not pit.empty and "driver_number" in pit.columns and "stop_duration" in pit.columns:
+        stops = pit.copy()
+        stops["stop_duration"] = pd.to_numeric(stops["stop_duration"], errors="coerce")
+        stops = stops.dropna(subset=["stop_duration"]).sort_values(["driver_number", "lap_number"])
+        stops["stop_number"] = stops.groupby("driver_number").cumcount() + 1
+        detail = "; ".join(
+            f"{name(row.driver_number)} lap {int(row.lap_number)} "
+            f"(stop {int(row.stop_number)}) {float(row.stop_duration):.1f}s"
+            for row in stops.itertuples()
+        )
+        lines.append(
+            f"Pit stops, all {len(stops)} "
+            f"(driver, lap, stop number, stationary time): {detail}."
+        )
+        if len(stops):
+            quick = stops.loc[stops["stop_duration"].idxmin()]
+            slow = stops.loc[stops["stop_duration"].idxmax()]
+            lines.append(
+                f"Fastest stop: {name(quick.driver_number)} on lap {int(quick.lap_number)} "
+                f"(stop {int(quick.stop_number)}) {float(quick.stop_duration):.1f}s. "
+                f"Slowest: {name(slow.driver_number)} on lap {int(slow.lap_number)} "
+                f"(stop {int(slow.stop_number)}) {float(slow.stop_duration):.1f}s."
             )
-        lines.append(f"Pit stops: {len(pit)} in total.{fastest}")
         used.append("pit stops")
 
     stints = data_loader.get_stints(session_key)
@@ -1095,6 +1167,24 @@ class AskRequest(BaseModel):
     question: str
 
 
+class ChatTurn(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    session_key: int
+    messages: list[ChatTurn]
+
+
+class PitExplainRequest(PitCallRequest):
+    session_key: int
+    driver: str = ""
+    compound: str = ""
+    tyre_age: int | None = None
+    laps_done: int | None = None
+
+
 @app.get("/ai/status")
 def ai_status() -> dict:
     return {**ai.status(), "ready": ai.configured()}
@@ -1115,6 +1205,80 @@ def ai_ask(body: AskRequest) -> dict:
     except ai.AIError as exc:
         raise HTTPException(502, "the AI provider did not answer, try again") from exc
     return {"answer": text, "model": ai.MODEL, "grounded_on": used}
+
+
+@app.post("/ai/chat")
+def ai_chat(body: ChatRequest) -> dict:
+    """Answer the last turn with bounded conversation context."""
+    if not ai.configured():
+        raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    history: list[dict] = []
+    for turn in body.messages[-10:]:
+        if turn.role not in ("user", "assistant"):
+            raise HTTPException(422, "messages may only be user or assistant turns")
+        content = turn.content.strip()
+        if not content:
+            continue
+        history.append(
+            {"role": turn.role, "content": content[:600 if turn.role == "user" else 1600]}
+        )
+    if not history or history[-1]["role"] != "user":
+        raise HTTPException(422, "the last message must be a question")
+    question = history[-1]["content"]
+    if not 3 <= len(question) <= 400:
+        raise HTTPException(422, "questions must be between 3 and 400 characters")
+    facts, used = _ai_facts(body.session_key)
+    try:
+        text = ai.chat(body.session_key, facts, history)
+    except ai.AINotConfigured as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ai.AIError as exc:
+        raise HTTPException(502, "the AI provider did not answer, try again") from exc
+    return {"answer": text, "model": ai.MODEL, "grounded_on": used}
+
+
+@app.post("/ai/pit")
+def ai_pit_explain(body: PitExplainRequest) -> dict:
+    """Explain a pit call that the deterministic model already computed."""
+    if not ai.configured():
+        raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    call = analysis.pit_toy_model(
+        body.base_pace_s,
+        body.fresh_pace_s,
+        body.deg_slope_s_per_lap,
+        body.laps_remaining,
+        body.pit_loss_s,
+        body.gap_behind_s,
+    )
+    lean = (
+        "pit"
+        if call["pit_total_s"] < call["stay_total_s"]
+        else "stay out"
+        if call["stay_total_s"] < call["pit_total_s"]
+        else "tie"
+    )
+    notes = (
+        f"Driver: {body.driver or 'the followed car'}. Tyre: {body.compound or 'unknown'}"
+        + (f", {body.tyre_age} laps old" if body.tyre_age is not None else "")
+        + (f". Laps done: {body.laps_done}" if body.laps_done is not None else "")
+        + f". Laps remaining: {body.laps_remaining}.\n"
+        f"Measured current pace: {body.base_pace_s:.3f}s. Fresh-tyre pace: "
+        f"{body.fresh_pace_s:.3f}s. Degradation: {body.deg_slope_s_per_lap:.3f}s per lap.\n"
+        f"Pit loss: {body.pit_loss_s:.1f}s. Gap behind: "
+        + (f"{body.gap_behind_s:.1f}s" if body.gap_behind_s is not None else "not recorded")
+        + f".\nModel totals: stay out {call['stay_total_s']:.1f}s vs pit "
+        f"{call['pit_total_s']:.1f}s. The model leans: {lean}. "
+        f"Traffic on exit: {'yes' if call['traffic_on_exit'] else 'no'}. "
+        f"This is an explicit toy model: no safety car, linear degradation, "
+        f"and the pit loss is an assumption."
+    )
+    try:
+        text = ai.explain_pit(body.session_key, notes)
+    except ai.AINotConfigured as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ai.AIError as exc:
+        raise HTTPException(502, "the AI provider did not answer, try again") from exc
+    return {"answer": text, "model": ai.MODEL, "call": call}
 
 
 @app.post("/ai/recap")

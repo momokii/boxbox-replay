@@ -1,32 +1,37 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
+import {
+  clearChat,
+  loadChat,
+  saveChat,
+  type ChatMessage,
+} from "../chatStore";
 
 interface Props {
   sessionKey: number;
   sessionLabel: string;
 }
 
-interface Answer {
-  question: string;
-  answer: string;
-  grounded_on: string[];
-}
-
 const SUGGESTIONS = [
   "Summarise this race in four sentences",
   "Where did the winner lose time on their best lap?",
-  "Who had the best strategy, and why?",
+  "Who had the fastest and slowest pit stop?",
   "Who made the most overtakes?",
   "Which drivers retired, and what happened?",
 ];
 
-/** Grounded Q&A over the measured session data; the key stays on the server. */
+const MAX_QUESTION = 400;
+
+/** Chat with the race engineer, grounded in this session; the key stays server-side. */
 export default function AskPanel({ sessionKey, sessionLabel }: Props) {
   const [status, setStatus] = useState<{ ready: boolean; model: string } | null>(null);
-  const [question, setQuestion] = useState("");
-  const [history, setHistory] = useState<Answer[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
   const [busy, setBusy] = useState<"ask" | "recap" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     let live = true;
@@ -40,59 +45,130 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
   }, []);
 
   useEffect(() => {
-    setHistory([]);
+    setMessages(loadChat(sessionKey));
+    setInput("");
     setError(null);
   }, [sessionKey]);
 
-  const run = async (kind: "ask" | "recap", text: string) => {
-    const trimmed = text.trim();
-    if (kind === "ask" && (trimmed.length < 3 || trimmed.length > 300)) {
-      setError("Keep the question between 3 and 300 characters.");
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    endRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" });
+  }, [messages, busy]);
+
+  const remember = (next: ChatMessage[]) => {
+    setMessages(next);
+    saveChat(sessionKey, next);
+  };
+
+  const fail = (err: unknown) => {
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("503")) {
+      setError("The AI is turned off on this deployment: set OPENCODE_API_KEY on the server.");
+    } else if (message.includes("422")) {
+      setError("That question is outside the length the engineer accepts (3–400 characters).");
+    } else if (message.includes("502")) {
+      setError("The engineer did not answer this time. Your question is kept — try again.");
+    } else {
+      setError("Could not reach the AI service. Try again in a moment.");
+    }
+  };
+
+  const send = async (text: string, base: ChatMessage[] = messages) => {
+    const question = text.trim();
+    if (busy || question.length < 3) return;
+    if (question.length > MAX_QUESTION) {
+      setError(`Keep the question under ${MAX_QUESTION} characters.`);
       return;
     }
-    setBusy(kind);
+    const next: ChatMessage[] = [...base, { role: "user", content: question }];
+    remember(next);
+    setInput("");
+    setBusy("ask");
     setError(null);
     try {
-      const response =
-        kind === "recap" ? await api.aiRecap(sessionKey) : await api.aiAsk(sessionKey, trimmed);
-      setHistory((prev) =>
-        [
-          {
-            question: kind === "recap" ? "Race recap" : trimmed,
-            answer: response.answer,
-            grounded_on: response.grounded_on,
-          },
-          ...prev,
-        ].slice(0, 6),
+      const reply = await api.aiChat(
+        sessionKey,
+        next.map(({ role, content }) => ({ role, content })),
       );
-      if (kind === "ask") setQuestion("");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "";
-      if (message.includes("503")) {
-        setError("The AI is turned off on this deployment: set OPENCODE_API_KEY on the server.");
-      } else if (message.includes("422")) {
-        setError("Keep the question between 3 and 300 characters.");
-      } else if (message.includes("502")) {
-        setError("The AI provider did not answer. Try again in a moment.");
-      } else {
-        setError("Could not reach the AI service. Try again in a moment.");
-      }
+      remember([
+        ...next,
+        { role: "assistant", content: reply.answer, grounded_on: reply.grounded_on },
+      ]);
+    } catch (err) {
+      fail(err);
     } finally {
       setBusy(null);
     }
   };
 
+  const recap = async () => {
+    if (busy) return;
+    const next: ChatMessage[] = [...messages, { role: "user", content: "Race recap" }];
+    remember(next);
+    setBusy("recap");
+    setError(null);
+    try {
+      const reply = await api.aiRecap(sessionKey);
+      remember([
+        ...next,
+        { role: "assistant", content: reply.answer, grounded_on: reply.grounded_on },
+      ]);
+    } catch (err) {
+      fail(err);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const retry = async () => {
+    if (busy) return;
+    const lastIndex = messages.map((m) => m.role).lastIndexOf("user");
+    if (lastIndex < 0) return;
+    // Re-send the failed question on top of the turns before it, with no duplicate.
+    const base = messages.slice(0, lastIndex);
+    setMessages(base);
+    await send(messages[lastIndex].content, base);
+  };
+
+  const grow = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`;
+  };
+
+  const empty = messages.length === 0;
+
   return (
     <section className="ask" aria-label="Ask the race engineer">
       <header className="ask-head">
-        <h2>Ask the race engineer</h2>
-        <span className="dim small">
-          {status?.ready
-            ? `Answers are built only from this session's measured data · ${status.model}`
-            : status
-              ? "AI is not configured on this deployment"
-              : "Checking the AI service…"}
-        </span>
+        <div>
+          <h2>Ask the race engineer</h2>
+          <span className="dim small">
+            {status?.ready
+              ? `Grounded in this session's timings · ${status.model}`
+              : status
+                ? "AI is not configured on this deployment"
+                : "Checking the AI service…"}
+          </span>
+        </div>
+        {messages.length > 0 && (
+          <button
+            type="button"
+            className={confirmClear ? "dash-link danger" : "dash-link"}
+            onClick={() => {
+              if (confirmClear) {
+                clearChat(sessionKey);
+                setMessages([]);
+                setError(null);
+                setConfirmClear(false);
+              } else {
+                setConfirmClear(true);
+              }
+            }}
+            onBlur={() => setConfirmClear(false)}
+          >
+            {confirmClear ? "Confirm clear" : "Clear chat"}
+          </button>
+        )}
       </header>
 
       {status && !status.ready && (
@@ -106,23 +182,22 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
         <summary>What this can and cannot do</summary>
         <ul>
           <li>
-            <b>It reads this session's measured data only:</b> classification, fastest lap,
-            sector times, clean-lap pace, pit stops, tyre plans and overtakes. It does not read
-            news, video or anything from outside the replay.
+            <b>It reads this session's timings only</b> — classification, sectors, pace, pit
+            stops, tyre plans, overtakes, weather and race-control notes. No news, video or
+            anything outside the replay.
           </li>
           <li>
-            <b>It will say it doesn't know</b> when the data cannot answer — for example on
-            penalties, radio messages or why a driver crashed. That is deliberate: a wrong
-            number would be worse than no answer.
+            <b>It keeps the thread.</b> Follow-up questions use the earlier turns, so you can
+            ask “and on which lap?” without repeating the first question.
           </li>
           <li>
-            <b>Suggested questions</b> work best: strategy, pace, overtakes, retirements. Free
-            text is limited to 300 characters.
+            <b>It says when it cannot answer</b>, and it declines questions that are not about
+            this race or F1 — politely, in the app's voice.
           </li>
           <li>
-            <b>Answers are cached per session and question</b>, and the server allows a handful
-            of requests per minute to protect the subscription. The API key never reaches your
-            browser.
+            <b>Private by default.</b> The conversation lives in this tab only, is wiped when
+            the tab closes, and can be cleared with the button above. Answers are cached on
+            the server; the API key never reaches the browser.
           </li>
         </ul>
       </details>
@@ -130,73 +205,108 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
       {status?.ready && (
         <>
           <div className="ask-actions">
-            <button
-              type="button"
-              className="ask-recap"
-              onClick={() => run("recap", "")}
-              disabled={busy !== null}
-            >
+            <button type="button" className="ask-recap" onClick={recap} disabled={busy !== null}>
               {busy === "recap" ? "Writing…" : "Write the race recap"}
             </button>
             <span className="dim small">{sessionLabel}</span>
           </div>
 
-          <div className="ask-chips">
-            {SUGGESTIONS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                className="chip"
-                onClick={() => run("ask", s)}
-                disabled={busy !== null}
+          {empty && (
+            <div className="ask-chips">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="chip"
+                  onClick={() => send(s)}
+                  disabled={busy !== null}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="ask-thread" aria-live="polite">
+            {messages.map((message, index) => (
+              <article
+                key={index}
+                className={message.role === "user" ? "ask-turn user" : "ask-turn engineer"}
               >
-                {s}
-              </button>
+                <span className="ask-role">
+                  {message.role === "user" ? "You" : "Race engineer"}
+                </span>
+                <p>{message.content}</p>
+                {message.role === "assistant" &&
+                message.grounded_on?.length &&
+                index === messages.length - 1 ? (
+                  <footer className="dim small">
+                    grounded in: {message.grounded_on.join(", ")}
+                  </footer>
+                ) : null}
+              </article>
             ))}
+            {busy && (
+              <p className="dim small loading-inline">
+                <span className="spinner" aria-hidden="true" />
+                {busy === "recap" ? "Writing the recap…" : "Thinking…"}
+              </p>
+            )}
+            {error && (
+              <div className="ask-error">
+                <p>{error}</p>
+                <button type="button" className="dash-link" onClick={retry} disabled={busy !== null}>
+                  Retry
+                </button>
+              </div>
+            )}
+            {empty && !busy && !error && (
+              <p className="dim small">
+                Ask about strategy, pace, pit stops, retirements or anything else in this
+                session. Follow-ups keep the thread.
+              </p>
+            )}
+            <div ref={endRef} />
           </div>
 
           <form
             className="ask-form"
             onSubmit={(e) => {
               e.preventDefault();
-              run("ask", question);
+              send(input);
             }}
           >
             <label className="sr-only" htmlFor="ask-question">
               Ask about this race
             </label>
-            <input
+            <textarea
               id="ask-question"
+              ref={inputRef}
               className="ask-input"
-              value={question}
-              maxLength={300}
-              placeholder="Ask about this race — strategy, pace, overtakes…"
-              onChange={(e) => setQuestion(e.target.value)}
+              value={input}
+              rows={1}
+              maxLength={MAX_QUESTION}
+              placeholder="Ask about this race — strategy, pace, pit stops… (Enter to send, Shift+Enter for a new line)"
+              onChange={(e) => {
+                setInput(e.target.value);
+                grow(e.target);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send(input);
+                }
+              }}
               disabled={busy !== null}
             />
-            <button type="submit" className="ask-send" disabled={busy !== null || question.trim().length < 3}>
-              {busy === "ask" ? "Thinking…" : "Ask"}
+            <button
+              type="submit"
+              className="ask-send"
+              disabled={busy !== null || input.trim().length < 3}
+            >
+              {busy === "ask" ? "Thinking…" : "Send"}
             </button>
           </form>
-          {error && <p className="duel-note duel-error">{error}</p>}
-
-          <div className="ask-history">
-            {history.map((item, index) => (
-              <article key={`${item.question}-${index}`} className="ask-answer">
-                <h3>{item.question}</h3>
-                <p>{item.answer}</p>
-                <footer className="dim small">
-                  grounded in: {item.grounded_on.length ? item.grounded_on.join(", ") : "session data"}
-                </footer>
-              </article>
-            ))}
-            {history.length === 0 && !busy && (
-              <p className="dim small">
-                Pick a suggestion or ask your own question. Answers quote the measured data and
-                say so when the data cannot answer.
-              </p>
-            )}
-          </div>
         </>
       )}
     </section>

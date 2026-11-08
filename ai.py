@@ -103,7 +103,8 @@ def _key(kind: str, session_key: int, extra: str) -> str:
     return f"{kind}:{session_key}:{digest}"
 
 
-def _complete(session_key: int, prompt: str) -> str:
+def _request(session_key: int, messages: list[dict]) -> str:
+    """POST one OpenAI-compatible conversation and return the text."""
     if not configured():
         raise AINotConfigured("AI is not configured")
     _budget()
@@ -116,10 +117,7 @@ def _complete(session_key: int, prompt: str) -> str:
     }
     body = {
         "model": MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM},
-            {"role": "user", "content": prompt},
-        ],
+        "messages": messages,
         "max_tokens": MAX_TOKENS,
         "temperature": 0.2,
     }
@@ -152,6 +150,49 @@ def _complete(session_key: int, prompt: str) -> str:
             if attempt < 2:
                 time.sleep(2 * (attempt + 1))
     raise AIError(f"AI request failed: {last_error}")
+
+
+def _complete(session_key: int, prompt: str) -> str:
+    return _request(
+        session_key,
+        [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}],
+    )
+
+
+def chat(session_key: int, facts: str, history: list[dict]) -> str:
+    """Answer the last turn with bounded conversation context.
+
+    `history` is a list of {"role": "user"|"assistant", "content": str}; the
+    caller has already trimmed it. The session notes ride in the system message
+    so every turn is grounded in the same measured facts.
+    """
+    messages: list[dict] = [
+        {"role": "system", "content": SYSTEM + "\n\nSESSION NOTES:\n" + facts}
+    ]
+    for turn in history:
+        role = turn.get("role")
+        content = str(turn.get("content", "")).strip()
+        if role in ("user", "assistant") and content:
+            messages.append({"role": role, "content": content[:1600]})
+    text = _request(session_key, messages)
+    if text.strip().upper().startswith("OUT_OF_SCOPE"):
+        return OUT_OF_SCOPE
+    return text
+
+
+def explain_pit(session_key: int, notes: str) -> str:
+    """Explain an already-computed pit call. The model never does the maths."""
+    prompt = (
+        f"PIT MODEL OUTPUT:\n{notes}\n\n"
+        "TASK: explain this pit call to a fan in three short sentences, in the app's "
+        "voice. Use only the numbers above; do not calculate new ones. Say which way "
+        "the model leans and why, and name the single biggest assumption behind it. "
+        "If the call is close, say it is close instead of inventing certainty."
+    )
+    text = _complete(session_key, prompt)
+    if text.strip().upper().startswith("OUT_OF_SCOPE"):
+        return OUT_OF_SCOPE
+    return text
 
 
 def answer(session_key: int, facts: str, question: str) -> str:

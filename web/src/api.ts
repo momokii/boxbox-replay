@@ -97,6 +97,33 @@ export const api = {
         `&t0=${t0.toFixed(2)}&t1=${t1.toFixed(2)}`,
     ),
   aiStatus: () => get<{ configured: boolean; model: string; ready: boolean }>("/ai/status"),
+  aiChat: (sessionKey: number, messages: { role: string; content: string }[]) =>
+    post<{ answer: string; model: string; grounded_on: string[] }>("/ai/chat", {
+      session_key: sessionKey,
+      messages,
+    }),
+  aiPitExplain: (body: {
+    session_key: number;
+    driver: string;
+    compound: string;
+    base_pace_s: number;
+    fresh_pace_s: number;
+    deg_slope_s_per_lap: number;
+    laps_remaining: number;
+    pit_loss_s: number;
+    gap_behind_s: number | null;
+  }) =>
+    post<{
+      answer: string;
+      model: string;
+      call: {
+        stay_total_s: number;
+        pit_total_s: number;
+        recommendation: string;
+        traffic_on_exit: boolean;
+        toy_model: boolean;
+      };
+    }>("/ai/pit", body),
   aiAsk: (sessionKey: number, question: string) =>
     post<{ answer: string; model: string; grounded_on: string[] }>("/ai/ask", {
       session_key: sessionKey,

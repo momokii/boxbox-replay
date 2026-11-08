@@ -467,3 +467,71 @@ def test_ai_facts_include_names_retirements_and_ideal_lap(monkeypatch):
     assert "Kimi ANTONELLI" in facts
     assert "Theoretical best lap" in facts
     assert "classification" in used and "retirements" in used
+
+
+def test_chat_requires_a_user_turn(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    with TestClient(m.app) as client:
+        res = client.post(
+            "/ai/chat",
+            json={
+                "session_key": 1,
+                "messages": [{"role": "assistant", "content": "hello"}],
+            },
+        )
+    assert res.status_code == 422
+
+
+def test_chat_passes_history_and_facts(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "_ai_facts", lambda sk: ("P1 Kimi ANTONELLI", ["classification"]))
+    seen = {}
+
+    def fake_chat(session_key, facts, history):
+        seen["facts"] = facts
+        seen["history"] = history
+        return "He pitted on lap 24."
+
+    monkeypatch.setattr(m.ai, "chat", fake_chat)
+    with TestClient(m.app) as client:
+        body = client.post(
+            "/ai/chat",
+            json={
+                "session_key": 1,
+                "messages": [
+                    {"role": "user", "content": "Who won?"},
+                    {"role": "assistant", "content": "Kimi Antonelli."},
+                    {"role": "user", "content": "When did he pit?"},
+                ],
+            },
+        ).json()
+
+    assert body["answer"] == "He pitted on lap 24."
+    assert body["grounded_on"] == ["classification"]
+    assert seen["facts"] == "P1 Kimi ANTONELLI"
+    assert [turn["role"] for turn in seen["history"]] == ["user", "assistant", "user"]
+
+
+def test_pit_explain_returns_the_model_call(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m.ai, "explain_pit", lambda sk, notes: "Stay out is safer.")
+    with TestClient(m.app) as client:
+        body = client.post(
+            "/ai/pit",
+            json={
+                "session_key": 1,
+                "driver": "VER",
+                "compound": "HARD",
+                "tyre_age": 6,
+                "base_pace_s": 101.2,
+                "fresh_pace_s": 99.8,
+                "deg_slope_s_per_lap": 0.08,
+                "laps_remaining": 13,
+                "pit_loss_s": 22.0,
+                "gap_behind_s": 1.2,
+            },
+        ).json()
+
+    assert body["answer"] == "Stay out is safer."
+    assert body["call"]["toy_model"] is True
+    assert "stay_total_s" in body["call"] and "pit_total_s" in body["call"]

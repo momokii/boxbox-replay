@@ -1608,6 +1608,12 @@ tr.driver-marked td {
   flex-direction: column;
   gap: var(--space-3);
 }
+.ask-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
 .ask-head h2 {
   margin: 0 0 2px;
   font-size: 1.05rem;
@@ -1993,4 +1999,115 @@ tr.driver-marked td {
   padding-left: 18px;
   display: grid;
   gap: 4px;
+}
+
+/* ── Chat thread (Ask) ─────────────────────────────────────────────────── */
+.ask-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+.ask-turn {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  background: var(--panel);
+}
+.ask-turn.user {
+  background: var(--panel-2);
+  border-color: transparent;
+  margin-left: auto;
+  max-width: 78%;
+}
+.ask-turn.engineer {
+  border-left: 2px solid var(--amber);
+}
+.ask-role {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 4px;
+}
+.ask-turn p {
+  margin: 0;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.ask-turn footer {
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.ask-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: 1px solid var(--line);
+  border-left: 2px solid #ff8f86;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  background: var(--panel);
+}
+.ask-error p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+.ask-form {
+  align-items: flex-end;
+}
+.ask-input {
+  resize: none;
+  min-height: 40px;
+  max-height: 132px;
+  line-height: 1.45;
+  overflow-y: auto;
+}
+.ask-send {
+  height: 40px;
+}
+.pit-explain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.pit-explain-btn {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 7px 13px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.pit-explain-btn:hover:not(:disabled) {
+  border-color: var(--amber);
+}
+.pit-explain-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pit-explain-note {
+  flex-basis: 100%;
+  border-left: 2px solid var(--amber);
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+.pit-explain-note p {
+  margin: 0 0 6px;
+  line-height: 1.5;
+}
+.pit-explain-note footer {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
 }
