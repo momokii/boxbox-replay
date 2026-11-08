@@ -35,6 +35,9 @@ export default function PitPanel(p: Props) {
   const [pitLoss, setPitLoss] = useState(22);
   const [call, setCall] = useState<Call | null>(null);
   const [error, setError] = useState(false);
+  const [explain, setExplain] = useState<string | null>(null);
+  const [explainBusy, setExplainBusy] = useState(false);
+  const [explainError, setExplainError] = useState<string | null>(null);
 
   const mine = useMemo(
     () => p.laps.filter((l) => l.driver_number === p.driver).sort((a, b) => a.lap_number - b.lap_number),
@@ -89,6 +92,11 @@ export default function PitPanel(p: Props) {
     deg = 0;
     degMeasured = false;
   }
+
+  useEffect(() => {
+    setExplain(null);
+    setExplainError(null);
+  }, [base, fresh, deg, lapsLeft, pitLoss, p.gapBehind, p.driver]);
 
   useEffect(() => {
     if (!base || !fresh) return;
@@ -220,6 +228,53 @@ export default function PitPanel(p: Props) {
               Traffic on exit: the car behind is closer than the pit loss, so you would rejoin behind it.
             </p>
           )}
+
+          <div className="pit-explain">
+            <button
+              type="button"
+              className="pit-explain-btn"
+              disabled={explainBusy}
+              onClick={async () => {
+                setExplainBusy(true);
+                setExplainError(null);
+                try {
+                  const reply = await api.aiPitExplain({
+                    session_key: p.sessionKey,
+                    driver: p.driverCode(p.driver),
+                    compound: currentStint?.compound ?? "",
+                    base_pace_s: base,
+                    fresh_pace_s: fresh,
+                    deg_slope_s_per_lap: deg,
+                    laps_remaining: lapsLeft,
+                    pit_loss_s: pitLoss,
+                    gap_behind_s: p.gapBehind,
+                  });
+                  setExplain(reply.answer);
+                } catch (err: unknown) {
+                  const message = err instanceof Error ? err.message : "";
+                  setExplainError(
+                    message.includes("503")
+                      ? "The engineer is not configured on this deployment."
+                      : "The engineer did not answer. The numbers above are unaffected.",
+                  );
+                } finally {
+                  setExplainBusy(false);
+                }
+              }}
+            >
+              {explainBusy ? "Asking the engineer…" : "Explain this call"}
+            </button>
+            <span className="dim small">
+              Plain-language reasoning from the same numbers — the model never recalculates them.
+            </span>
+            {explainError && <p className="small warn">{explainError}</p>}
+            {explain && (
+              <div className="pit-explain-note">
+                <p>{explain}</p>
+                <footer className="dim small">AI explanation · the arithmetic above is the source of truth</footer>
+              </div>
+            )}
+          </div>
 
           <h3 style={{ marginTop: 18 }}>Where the numbers come from</h3>
           <table className="laps mono" style={{ fontSize: "0.82rem" }}>
