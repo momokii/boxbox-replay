@@ -99,3 +99,9 @@ The key is sent as `Authorization: Bearer …` and as `api_key=…`, never logge
 - **No API key is required today.** Anonymous access works; `OPENF1_API_KEY`
   exists only so a future credential requirement can be met without a code
   change.
+
+## Cache behaviour
+
+`web/nginx.conf` serves the HTML entry with `Cache-Control: no-store` and the
+hashed files under `/assets/` as `immutable` for a year. A normal reload picks up
+a deploy; an already-open tab keeps its old bundle until refreshed.

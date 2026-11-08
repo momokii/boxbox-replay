@@ -21,6 +21,7 @@ DEPLOYED prod, healthy at http://<host>:8501.
 - [x] V2.13: chat panel rebuilt (pinned composer, prompts, scroll/jump, mobile)
 - [x] V2.14: transcript single column; pit-wall arithmetic + break-even + AI scope
 - [x] V2.15: test-suite audit (164 -> 113), dead code removed, docs/TESTING.md
+- [x] V2.16: chat messenger layout + no-store HTML cache headers
 - [ ] V2.6 pit Gantt · V2.7 share card · V2.5 fight finder deferred (feed too noisy)
 - [x] fix: glitch filter no longer truncates a circuit after one telemetry gap
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
@@ -40,7 +41,7 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-11-06: test-suite trim; v2.8.0
+2026-11-08: chat two-sided layout + cache headers; v2.9.0
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
 
 - [x] U9: smoothness (60fps), chart hover + responsive widths, stacked stints, honest pit model

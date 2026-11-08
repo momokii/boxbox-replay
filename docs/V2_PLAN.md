@@ -311,10 +311,12 @@ instant scroll in a frame).
 
 ## V2.13 — Transcript read order and pit-wall arithmetic (shipped)
 
-**Chat.** The left/right bubble split read like two columns; the transcript is
-now a single left-aligned column with a role dot, so the order is unmistakably
-you → engineer → you → engineer. The panel, pinned composer, prompts and scroll
-behaviour are unchanged.
+**Chat.** The transcript is a two-sided conversation: your turns sit on the
+right in an amber-tinted bubble, the engineer's on the left with the amber edge,
+each with a role dot. It starts at the top and scrolls down as it grows; the
+panel, pinned composer, prompts and scroll behaviour are unchanged. The web
+container now serves `index.html` with `Cache-Control: no-store` and hashed
+assets as immutable, so a stale bundle cannot hide a deploy.
 
 **Pit wall.** The panel now shows its own algebra:
 

@@ -88,7 +88,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-12 | Chat panel rebuild (pinned composer, prompts, jump) | DONE | 2 scroll bugs fixed |
 | V2-13 | Transcript single column + pit arithmetic/break-even | DONE | 88 pytest, 76 vitest |
 | V2-14 | Test-suite audit: 164 -> 113, dead code removed | DONE | +2 backbone tests (replay, token cap) |
-| V2-15 | Tag releases | DONE | v1.0.0 … v2.7.0; v2.8.0 next |
+| V2-15 | Chat two-sided layout + no-store HTML | DONE | v2.9.0 |
+| V2-16 | Tag releases | DONE | v1.0.0 … v2.8.1; v2.9.0 next |
 
 ---
 

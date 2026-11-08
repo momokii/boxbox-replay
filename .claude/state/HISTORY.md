@@ -423,3 +423,10 @@ length-retry of the AI client untested, so two contracts were added back
 (replay zeroes time at lights out and takes its duration from the race clock;
 finish_reason=length retries with a doubled cap). Final: 66 Python + 47
 frontend, all other cuts stand.
+
+Chat layout final pass: reverted the single left-aligned list to a two-sided
+conversation (user right in an amber-tinted bubble, engineer left with the amber
+edge, role dots), starting at the top of the transcript. nginx now serves
+index.html with no-store and hashed assets as immutable, because repeated "still
+the same" reports were consistent with a stale bundle. Verified on desktop and
+390px.

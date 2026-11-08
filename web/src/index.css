@@ -2023,11 +2023,8 @@ tr.driver-marked td {
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
 }
-.ask-thread > .ask-turn:first-child {
-  margin-top: auto;
-}
 .ask-empty {
-  margin: auto;
+  margin: 8px auto auto;
   max-width: 44ch;
   text-align: center;
   display: grid;
@@ -2039,19 +2036,25 @@ tr.driver-marked td {
   font-weight: 600;
 }
 .ask-turn {
-  max-width: 94%;
+  max-width: 80%;
   border: 1px solid var(--line);
-  border-left: 2px solid var(--line);
-  border-radius: 10px;
-  padding: 10px 13px;
+  border-radius: 12px;
+  padding: 9px 12px;
   background: var(--bg);
   overflow-wrap: anywhere;
 }
 .ask-turn.user {
-  background: var(--panel-2);
+  align-self: flex-end;
+  margin-left: auto;
+  border-color: color-mix(in srgb, var(--amber) 34%, var(--line));
+  background: color-mix(in srgb, var(--amber) 10%, var(--panel-2));
+  border-bottom-right-radius: 4px;
 }
 .ask-turn.engineer {
-  border-left-color: var(--amber);
+  align-self: flex-start;
+  margin-right: auto;
+  border-left: 2px solid var(--amber);
+  border-bottom-left-radius: 4px;
 }
 .ask-role {
   display: flex;
@@ -2063,15 +2066,18 @@ tr.driver-marked td {
   color: var(--dim);
   margin-bottom: 3px;
 }
+.ask-turn.user .ask-role {
+  justify-content: flex-end;
+}
 .ask-role::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--dim);
-}
-.ask-turn.engineer .ask-role::before {
   background: var(--amber);
+}
+.ask-turn.user .ask-role::before {
+  background: var(--ink);
 }
 .ask-turn p {
   margin: 0;
@@ -2220,7 +2226,7 @@ tr.driver-marked td {
     min-height: 320px;
   }
   .ask-turn {
-    max-width: 100%;
+    max-width: 90%;
   }
 }
 .pit-explain {
