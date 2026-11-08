@@ -70,7 +70,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
         ┌───────────────┴──────────────┐   ┌────────────┴─────────────┐
         │ analysis.py (pure functions) │   │ ai.py · coach.py         │
         │ corners, deltas, wear, model │   │ grounded AI answers;     │
-        │                              │   │ legacy corner coach      │
+        │                              │   │ corner coach + fallback  │
         └───────────────▲──────────────┘   └────────────┬─────────────┘
                         │                               │
                 ┌───────┴───────────────────────────────▼───────────┐
@@ -158,7 +158,6 @@ cd web && npm install && npm run dev                    # SPA on :5173, proxies 
 | `AI_MAX_TOKENS` | `1200` | Answer budget (reasoning tokens count) |
 | `AI_RATE_PER_MIN` | `6` | Server-side AI budget |
 | `CACHE_DIR` | `data/cache` | Where parquet caches live |
-| `BOXBOX_MODEL` | empty | Optional model override for the legacy corner coach (`opencode run -m …`); the Ask tab uses `OPENCODE_MODEL` |
 
 Every variable is documented with a placeholder in [`.env.example`](.env.example).
 `.env` is gitignored; never commit real values.
@@ -216,7 +215,7 @@ data_loader.py       OpenF1 client: fetch, retry, clamp, parquet cache
 ratelimit.py         Sliding-window request budget (3/s + 30/min)
 analysis.py          Pure math: corners, deltas, wear, positions, pit model, duels
 ai.py                OpenCode Go client: chat, recap, pit explainer, scope guard
-coach.py             Legacy corner coach (local opencode CLI)
+coach.py             Corner-coach prompt + measured fallback
 web/src/             React SPA: api client, playback store, canvas map,
                      charts, chat, dashboard, panels, modals
 tests/               pytest suites (pure maths, API contracts, cache, AI)

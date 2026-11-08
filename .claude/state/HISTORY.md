@@ -452,3 +452,11 @@ table includes inputs/duel/AI endpoints; Jolpica was removed (never used in the
 code); credentials and workflow are explicit; ARCHITECTURE gained an AI boundary
 section; DEPLOYMENT gained "Enabling the AI" (key, model, restart, rotation) and
 the corrected 3/s + 30/min wording. TESTING/README counts at 67 + 47.
+
+Corner coach fix: the legacy coach called the local `opencode` CLI, which is not
+installed in the API image, so /coach/ask returned answer=null in production.
+It now uses the same ai.py client with the measured prompt and session facts,
+and coach.fallback_answer gives a measured sentence when the AI is off. Removed
+the CLI code, ask_llm/render_radio tests, BOXBOX_MODEL from .env.example and
+compose, and the "LLM unreachable" UI branch. Verified in prod: llm=true answer
+in the panel. 67 pytest + 47 vitest.

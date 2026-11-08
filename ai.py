@@ -185,6 +185,20 @@ def chat(session_key: int, facts: str, history: list[dict]) -> str:
     return text
 
 
+def answer_corner(session_key: int, facts: str, prompt: str) -> str:
+    """Answer the corner coach's grounded prompt; empty when it goes off-scope."""
+    text = _request(
+        session_key,
+        [
+            {"role": "system", "content": SYSTEM + "\n\nSESSION NOTES:\n" + facts},
+            {"role": "user", "content": prompt},
+        ],
+    )
+    if text.strip().upper().startswith("OUT_OF_SCOPE"):
+        return ""
+    return text
+
+
 def explain_pit(session_key: int, notes: str) -> str:
     """Explain an already-computed pit call. The model never does the maths."""
     prompt = (

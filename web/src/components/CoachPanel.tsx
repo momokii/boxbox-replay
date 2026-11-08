@@ -18,7 +18,7 @@ interface Asked {
   loss: number | null;
   flagged: boolean;
   confidence: string;
-  answer: string | null;
+  answer: string;
   llm: boolean;
   basis: string;
 }
@@ -54,6 +54,7 @@ export default function CoachPanel(p: Props) {
         corner: p.corner!,
         loss_s: loss.loss_s,
         lap_delta_s: null,
+        session_key: p.sessionKey,
       });
       setAsked((a) => ({
         ...a,
@@ -91,13 +92,12 @@ export default function CoachPanel(p: Props) {
             Corner loss: {cached.loss == null ? "no overlap" : `${cached.loss >= 0 ? "+" : "−"}${Math.abs(cached.loss).toFixed(3)}s`}
             {cached.flagged ? " · flagged" : ""}
           </p>
-          {cached.answer ? (
-            <p style={{ whiteSpace: "pre-wrap" }}>{cached.answer}</p>
-          ) : (
-            <p className="dim">
-              LLM unreachable from this deployment — measured loss above stands as-is.
+          {!cached.llm && (
+            <p className="dim small">
+              Measured summary — the AI is not configured on this deployment.
             </p>
           )}
+          <p style={{ whiteSpace: "pre-wrap" }}>{cached.answer}</p>
           <p className="dim mono">
             [{cached.confidence}] {cached.basis}
           </p>

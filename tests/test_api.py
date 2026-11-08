@@ -90,21 +90,47 @@ def test_geometry_shape(monkeypatch):
         assert isinstance(body["corners"], list) and isinstance(body["zones"], list)
 
 
-def test_coach_ask_fallback(monkeypatch):
-    monkeypatch.setattr(m.coach, "ask_llm", lambda prompt: None)
-    payload = {
-        "driver": "#1 VER",
-        "lap": 8,
-        "ref_driver": "#11 PER",
-        "ref_lap": 8,
-        "corner": "T1",
-        "loss_s": 0.234,
-        "lap_delta_s": 0.1,
-    }
+def test_coach_ask_uses_a_measured_fallback_without_ai(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: False)
     with TestClient(m.app) as client:
-        body = client.post("/coach/ask", json=payload).json()
-        assert body["answer"] is None and body["llm"] is False and body["confidence"] == "MED"
+        body = client.post(
+            "/coach/ask",
+            json={
+                "driver": "VER",
+                "lap": 11,
+                "ref_driver": "PER",
+                "ref_lap": 11,
+                "corner": "T1",
+                "loss_s": 0.234,
+                "lap_delta_s": None,
+                "session_key": 1,
+            },
+        ).json()
+    assert body["llm"] is False
+    assert "0.234s" in body["answer"]
+    assert body["confidence"] == "MED"
 
+
+def test_coach_ask_uses_the_ai_when_configured(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "_ai_facts", lambda sk: ("facts", ["session"]))
+    monkeypatch.setattr(m.ai, "answer_corner", lambda sk, facts, prompt: "Brake later.")
+    with TestClient(m.app) as client:
+        body = client.post(
+            "/coach/ask",
+            json={
+                "driver": "VER",
+                "lap": 11,
+                "ref_driver": "PER",
+                "ref_lap": 11,
+                "corner": "T1",
+                "loss_s": 0.234,
+                "lap_delta_s": None,
+                "session_key": 1,
+            },
+        ).json()
+    assert body["llm"] is True
+    assert body["answer"] == "Brake later."
 
 def test_records_strict_json() -> None:
     import json

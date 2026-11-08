@@ -97,7 +97,7 @@ export interface Stint {
 }
 
 export interface CoachReply {
-  answer: string | null;
+  answer: string;
   confidence: string;
   basis: string;
   llm: boolean;

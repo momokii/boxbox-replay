@@ -1,26 +1,13 @@
-"""LLM race-engineer coach: measured numbers -> prompt -> team-radio markdown. (M4)
+"""Corner coach: measured numbers -> grounded prompt -> answer.
 
-Ground rules (binding):
-- The LLM explains measured numbers, never invents them. Every prompt carries
-  the exact figures; the model is told to say "noise, ignore it" below 0.05s.
-- Output is styled like a team-radio transcript with a [HIGH/MED/LOW]
-  confidence tag and a "based on lap X vs ref Y" citation.
-- Auth uses the existing opencode setup on the machine (nothing in the repo).
-  BOXBOX_MODEL optionally overrides the model. If the LLM is unreachable
-  (e.g. inside a minimal container), ask_llm returns None and the UI shows
-  the measured numbers with that note — never a fabricated answer.
+The prompt carries every figure and the 0.05 s noise floor. `ai.py` answers it
+when configured; otherwise `fallback_answer` states the measurement in plain
+language, so the corner button always returns something true.
 """
 
 from __future__ import annotations
 
-import os
-import re
-import subprocess
-
-__all__ = ["build_prompt", "ask_llm", "render_radio", "confidence_for"]
-
-LLM_TIMEOUT_S = 120
-MODEL = os.getenv("BOXBOX_MODEL", "")
+__all__ = ["build_prompt", "confidence_for", "fallback_answer"]
 
 
 def confidence_for(loss_s: float | None) -> str:
@@ -54,38 +41,31 @@ def build_prompt(
         f"Measured corner loss: {loss_s if loss_s is None else f'{loss_s:+.3f}s'} "
         f"(flagged only if > 0.15s).\n"
         f"Full-lap delta: {lap_delta_s if lap_delta_s is None else f'{lap_delta_s:+.3f}s'}.\n"
-        "End with a confidence tag on its own line: [HIGH], [MED] or [LOW]."
+        "Do not add a confidence tag; the app shows its own."
     )
 
 
-def _clean_output(text: str) -> str:
-    """Strip ANSI codes and opencode session-header lines, keep the answer."""
-    text = re.sub(r"\x1b\[[0-9;]*m", "", text)
-    lines = [ln for ln in text.splitlines() if ln.strip()]
-    while lines and (lines[0].startswith(">") or "·" in lines[0] or set(lines[0]) <= {"─", " "}):
-        lines.pop(0)
-    return "\n".join(lines).strip()
-
-
-def ask_llm(prompt: str) -> str | None:
-    """Run `opencode run` headless. None when unavailable/timed-out. Never raises."""
-    try:
-        cmd = ["opencode", "run"]
-        if MODEL:
-            cmd += ["-m", MODEL]
-        proc = subprocess.run(
-            [*cmd, prompt], capture_output=True, text=True, timeout=LLM_TIMEOUT_S
+def fallback_answer(
+    corner: str, loss_s: float | None, ref_driver: str, ref_lap: int
+) -> str:
+    """Plain, measured answer when the AI is unavailable. Never guesses."""
+    if loss_s is None:
+        return (
+            f"No measured loss is available for {corner}. Compare the two laps "
+            "directly before drawing a conclusion."
         )
-        answer = _clean_output(proc.stdout)
-        return answer or None
-    except (OSError, subprocess.SubprocessError):
-        return None
-
-
-def render_radio(question: str, answer: str, confidence: str, basis: str) -> str:
-    """Team-radio transcript markdown with confidence tag and basis citation."""
+    if abs(loss_s) < 0.05:
+        return (
+            f"{corner} cost {abs(loss_s):.3f}s against {ref_driver} on lap {ref_lap}. "
+            "That is inside the 0.05s noise floor, so there is nothing reliable to fix."
+        )
+    if loss_s > 0:
+        return (
+            f"{corner} cost {loss_s:.3f}s against {ref_driver} on lap {ref_lap}. "
+            "That is above the noise floor: compare your minimum speed and brake "
+            "point with that lap."
+        )
     return (
-        f"**DRIVER:** {question}\n\n"
-        f"**ENGINEER:** {answer}\n\n"
-        f"`[{confidence}]` *{basis}*"
+        f"You gained {abs(loss_s):.3f}s through {corner} against {ref_driver} on "
+        f"lap {ref_lap}; that is a strength to keep."
     )

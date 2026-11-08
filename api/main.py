@@ -738,6 +738,7 @@ class CoachRequest(BaseModel):
     corner: str
     loss_s: float | None = None
     lap_delta_s: float | None = None
+    session_key: int | None = None
 
 
 class PitCallRequest(BaseModel):
@@ -768,17 +769,17 @@ def coach_ask(req: CoachRequest) -> dict:
     )
     conf = coach.confidence_for(req.loss_s)
     basis = f"based on lap {req.lap} vs ref {req.ref_lap}"
-    answer = coach.ask_llm(prompt)
+    answer: str | None = None
+    if ai.configured() and req.session_key:
+        try:
+            facts, _ = _ai_facts(req.session_key)
+            answer = ai.answer_corner(req.session_key, facts, prompt) or None
+        except (ai.AINotConfigured, ai.AIError):
+            answer = None
+    llm = answer is not None
     if not answer:
-        return {"answer": None, "confidence": conf, "basis": basis, "llm": False}
-    return {
-        "answer": coach.render_radio(
-            f"What should I have done in {req.corner}?", answer, conf, basis
-        ),
-        "confidence": conf,
-        "basis": basis,
-        "llm": True,
-    }
+        answer = coach.fallback_answer(req.corner, req.loss_s, req.ref_driver, req.ref_lap)
+    return {"answer": answer, "confidence": conf, "basis": basis, "llm": llm}
 
 
 # ── AI coach (OpenCode Go) ──────────────────────────────────────────────────

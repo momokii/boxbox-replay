@@ -13,7 +13,7 @@ trade-offs were made on purpose. Pairs with the README's diagram.
 | `ratelimit.py` | Enforce the OpenF1 budget (3 req/s and 30 req/min) | Any I/O of its own |
 | `analysis.py` | Pure functions: corners, deltas, wear, gap derivation, pit model, duel alignment | I/O |
 | `ai.py` | OpenCode Go client: chat, recap, pit explanation, scope guard, budget, cache | Measuring anything; it never computes race numbers |
-| `coach.py` | Legacy corner coach: grounded prompt, local `opencode run`, radio card | Measuring anything |
+| `coach.py` | Corner coach: grounded prompt, deterministic fallback; answers via `ai.py` when configured | Measuring anything |
 
 The split is deliberate: everything in `analysis.py` is pure and unit-tested,
 the loader is the only component that touches the network, and the API layer only
@@ -173,6 +173,10 @@ the model away from anything it could get wrong.
 - `POST /ai/chat` sends the session notes in the system message and at most the
   last 10 turns; `/ai/recap` is cached per session; `/ai/pit` recomputes the pit
   model server-side and only asks for an explanation.
+- The corner coach (`/coach/ask`) uses the same client: `coach.build_prompt`
+  embeds the measured loss, `ai.py` answers it when configured, and
+  `coach.fallback_answer` returns a measured sentence when the AI is off. There
+  is no local CLI dependency.
 - The key is read from `OPENCODE_API_KEY` at process start and never leaves the
   server. Requests carry a custom user agent and a stable
   `x-opencode-session` header; a sliding budget (6/min) and an answer cache

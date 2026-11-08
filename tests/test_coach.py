@@ -1,12 +1,12 @@
-"""M4: coach prompt grounding, confidence, radio format, LLM failure modes."""
+"""Corner coach: grounded prompt, confidence, and the measured fallback."""
 
 import coach
 
 
 def test_build_prompt_carries_numbers_and_guardrail():
-    p = coach.build_prompt("#1 VER", 11, "#11 PER", 11, "T1", 0.234, -0.1)
-    assert "+0.234s" in p and "lap 11 vs reference" in p and "T1" in p
-    assert "0.05" in p and "never invent" in p
+    prompt = coach.build_prompt("#1 VER", 11, "#11 PER", 11, "T1", 0.234, -0.1)
+    assert "+0.234s" in prompt and "lap 11 vs reference" in prompt and "T1" in prompt
+    assert "0.05" in prompt and "never invent" in prompt
 
 
 def test_confidence_thresholds():
@@ -16,23 +16,12 @@ def test_confidence_thresholds():
     assert coach.confidence_for(None) == "LOW"
 
 
-def test_render_radio_format():
-    md = coach.render_radio("What?", "Do this.", "MED", "based on lap 1 vs ref 1")
-    assert md.startswith("**DRIVER:**") and "**ENGINEER:**" in md
-    assert "`[MED]`" in md and "based on lap 1 vs ref 1" in md
-
-
-def test_ask_llm_success_and_timeout(monkeypatch):
-    import subprocess
-
-    class Proc:
-        stdout = "\x1b[0m\n> Model · x\n\nBrake later."
-
-    monkeypatch.setattr(coach.subprocess, "run", lambda *a, **k: Proc())
-    assert coach.ask_llm("hi") == "Brake later."
-
-    def boom(*a, **k):
-        raise subprocess.TimeoutExpired(cmd="x", timeout=1)
-
-    monkeypatch.setattr(coach.subprocess, "run", boom)
-    assert coach.ask_llm("hi") is None
+def test_fallback_answers_are_measured_and_honest():
+    noise = coach.fallback_answer("T1", 0.02, "PER", 11)
+    assert "noise floor" in noise and "0.020s" in noise
+    real = coach.fallback_answer("T1", 0.234, "PER", 11)
+    assert "0.234s" in real and "brake" in real
+    gain = coach.fallback_answer("T1", -0.1, "PER", 11)
+    assert "gained" in gain
+    missing = coach.fallback_answer("T1", None, "PER", 11)
+    assert "No measured loss" in missing

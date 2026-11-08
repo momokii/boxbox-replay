@@ -10,7 +10,6 @@ services:
       APP_ENV: ${APP_ENV:-development}
       OPENF1_BASE_URL: ${OPENF1_BASE_URL:-https://api.openf1.org/v1}
       CACHE_DIR: /app/data/cache
-      BOXBOX_MODEL: ${BOXBOX_MODEL:-}
     expose:
       - "8000"
   web:

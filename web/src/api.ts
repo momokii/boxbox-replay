@@ -176,6 +176,7 @@ export const api = {
     corner: string;
     loss_s: number | null;
     lap_delta_s: number | null;
+    session_key: number;
   }) => post<CoachReply>("/coach/ask", body),
 };
 

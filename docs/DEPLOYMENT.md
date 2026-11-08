@@ -120,6 +120,9 @@ docker compose -f compose.yaml -f compose.prod.yaml up -d --force-recreate api
 curl -s localhost:8501/api/ai/status   # {"configured":true,"ready":true,...}
 ```
 
+Without a key, the Ask tab and the pit-wall explanation say so, and the corner
+coach falls back to a measured sentence instead of an AI answer.
+
 The key is server-only: the browser calls our API, never the provider. The
 server sends the session facts, not the key. Use a dedicated key, keep `.env`
 at `chmod 600`, never paste it into an issue or a chat, and rotate it if it has
