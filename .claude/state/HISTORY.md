@@ -417,3 +417,9 @@ unused client methods; merged parameter matrices and duplicate coverage; kept
 every regression, endpoint contract and pure-maths invariant. Result: 64 Python
 + 47 frontend, with `docs/TESTING.md` stating what is tested, what is not, and
 the rules for new tests.
+
+Test audit follow-up: coverage review found the core replay path and the
+length-retry of the AI client untested, so two contracts were added back
+(replay zeroes time at lights out and takes its duration from the race clock;
+finish_reason=length retries with a doubled cap). Final: 66 Python + 47
+frontend, all other cuts stand.

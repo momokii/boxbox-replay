@@ -20,7 +20,7 @@ DEPLOYED prod, healthy at http://<host>:8501.
 - [x] V2.12: pit-wall 'Explain this call' (model narrates, never recalculates)
 - [x] V2.13: chat panel rebuilt (pinned composer, prompts, scroll/jump, mobile)
 - [x] V2.14: transcript single column; pit-wall arithmetic + break-even + AI scope
-- [x] V2.15: test-suite audit (164 -> 111), dead code removed, docs/TESTING.md
+- [x] V2.15: test-suite audit (164 -> 113), dead code removed, docs/TESTING.md
 - [ ] V2.6 pit Gantt · V2.7 share card · V2.5 fight finder deferred (feed too noisy)
 - [x] fix: glitch filter no longer truncates a circuit after one telemetry gap
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)

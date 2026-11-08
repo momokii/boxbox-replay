@@ -122,3 +122,44 @@ def test_prompt_carries_the_notes_and_the_scope_rule(monkeypatch):
     assert "SESSION NOTES" in seen["prompt"]
     assert "P1 Kimi ANTONELLI" in seen["prompt"]
     assert "OUT_OF_SCOPE" in ai.SYSTEM
+
+
+def test_length_finish_retries_with_a_bigger_cap(monkeypatch):
+    caps: list[int] = []
+    answers = ["half a sentence", "a complete answer"]
+
+    class Response:
+        status_code = 200
+
+        def __init__(self, text: str) -> None:
+            self._text = text
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            reason = "length" if self._text == answers[0] else "stop"
+            return {
+                "choices": [{"message": {"content": self._text}, "finish_reason": reason}]
+            }
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, url, headers=None, json=None):
+            caps.append(json["max_tokens"])
+            return Response(answers[len(caps) - 1])
+
+    monkeypatch.setattr(ai, "API_KEY", "k")
+    monkeypatch.setattr(ai.httpx, "Client", Client)
+    monkeypatch.setattr(ai, "_budget", lambda: None)
+
+    assert ai._complete(1, "prompt") == "a complete answer"
+    assert caps == [ai.MAX_TOKENS, min(ai.MAX_TOKENS * 2, 4000)]

@@ -440,3 +440,32 @@ def test_pit_explain_returns_the_model_call(monkeypatch):
     assert body["answer"] == "Stay out is safer."
     assert body["call"]["toy_model"] is True
     assert "stay_total_s" in body["call"] and "pit_total_s" in body["call"]
+
+
+def test_session_replay_zeroes_time_and_counts_drivers(monkeypatch):
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    frame = _frame(
+        {
+            "driver_number": [1, 1],
+            "t": [10.0, 12.5],  # session time; lights out is at 10 s
+            "x": [0.0, 50.0],
+            "y": [0.0, 10.0],
+        }
+    )
+    markers = _frame([{"lap_number": 1, "index": 1, "t": 10.0}])
+    monkeypatch.setattr(
+        m,
+        "_session_clock",
+        lambda sk: (start, start + pd.Timedelta(hours=2), markers, 5400.0),
+    )
+    monkeypatch.setattr(m.data_loader, "build_session_replay", lambda *a, **k: frame)
+    monkeypatch.setattr(
+        m.data_loader, "list_drivers", lambda *a, **k: _frame([{"driver_number": 1}])
+    )
+
+    body = m.session_replay(1)
+
+    assert body["drivers"][0]["t"] == [0.0, 2.5]  # zeroed at lights out
+    assert body["drivers_included"] == 1 and body["drivers_expected"] == 1
+    assert body["duration_s"] == 5400.0  # the race clock, not position coverage
+    assert body["laps"][0]["lap_number"] == 1
