@@ -23,6 +23,10 @@ interface Call {
   pit_total_s: number;
   recommendation: string;
   traffic_on_exit: boolean;
+  break_even_pit_loss_s: number;
+  stay_advantage_s: number;
+  deg_total_s: number;
+  traffic_penalty_s: number;
 }
 
 /**
@@ -229,6 +233,55 @@ export default function PitPanel(p: Props) {
             </p>
           )}
 
+          <h3 style={{ marginTop: 18 }}>The arithmetic, step by step</h3>
+          <p className="dim small" style={{ marginTop: -4 }}>
+            Both scenarios are summed over {lapsLeft} laps. The wear term appears in both, so it
+            cancels in the comparison — it moves the totals, not the decision.
+          </p>
+          <div className="pit-math">
+            <div className="pit-math-row">
+              <span>Stay out</span>
+              <code>
+                {lapsLeft} × {base.toFixed(2)} + {deg.toFixed(3)} × {Math.round((lapsLeft * (lapsLeft - 1)) / 2)} ={" "}
+                {call.stay_total_s.toFixed(1)}s
+              </code>
+            </div>
+            <div className="pit-math-row">
+              <span>Pit now</span>
+              <code>
+                {pitLoss.toFixed(1)} + {lapsLeft} × {fresh.toFixed(2)} + {deg.toFixed(3)} ×{" "}
+                {Math.round((lapsLeft * (lapsLeft - 1)) / 2)} = {call.pit_total_s.toFixed(1)}s
+              </code>
+            </div>
+            <div className="pit-math-row verdict">
+              <span>{call.recommendation === "PIT NOW" ? "Pitting wins" : "Staying out wins"}</span>
+              <code>
+                {Math.abs(call.stay_advantage_s).toFixed(1)}s over {lapsLeft} laps ·{" "}
+                {(Math.abs(call.stay_advantage_s) / Math.max(1, lapsLeft)).toFixed(2)}s per lap
+                {call.traffic_penalty_s > 0
+                  ? ` (includes the ${call.traffic_penalty_s.toFixed(1)}s traffic penalty)`
+                  : ""}
+              </code>
+            </div>
+          </div>
+          <p className="small">
+            {call.break_even_pit_loss_s <= 0 ? (
+              <>Break-even: even a free pit stop would not pay off at this pace.</>
+            ) : (
+              <>
+                Break-even pit loss: <b>{call.break_even_pit_loss_s.toFixed(1)}s</b>. A stop that
+                costs less than that favours pitting; this one is set to {pitLoss.toFixed(1)}s
+                {call.traffic_penalty_s > 0
+                  ? ` plus ${call.traffic_penalty_s.toFixed(1)}s of traffic penalty`
+                  : ""}
+                , so the model says <b>{call.recommendation.toLowerCase()}</b>.
+              </>
+            )}
+          </p>
+          <p className="dim small">
+            Wear adds {call.deg_total_s.toFixed(1)}s to both scenarios over these {lapsLeft} laps.
+          </p>
+
           <div className="pit-explain">
             <button
               type="button"
@@ -264,9 +317,15 @@ export default function PitPanel(p: Props) {
             >
               {explainBusy ? "Asking the engineer…" : "Explain this call"}
             </button>
-            <span className="dim small">
-              Plain-language reasoning from the same numbers — the model never recalculates them.
-            </span>
+            <div className="pit-ai-help">
+              <p className="dim small">
+                The engineer receives the driver, tyre and age, laps remaining, current and
+                fresh-tyre pace, wear, the pit-loss slider, the gap behind and the two totals. It
+                writes three sentences: which way the model leans, the main reason, and the single
+                biggest assumption. It never recalculates or changes the numbers, and it cannot see
+                anything outside this session.
+              </p>
+            </div>
             {explainError && <p className="small warn">{explainError}</p>}
             {explain && (
               <div className="pit-explain-note">

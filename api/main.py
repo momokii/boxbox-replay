@@ -1268,6 +1268,8 @@ def ai_pit_explain(body: PitExplainRequest) -> dict:
         + (f"{body.gap_behind_s:.1f}s" if body.gap_behind_s is not None else "not recorded")
         + f".\nModel totals: stay out {call['stay_total_s']:.1f}s vs pit "
         f"{call['pit_total_s']:.1f}s. The model leans: {lean}. "
+        f"Break-even pit loss: {call['break_even_pit_loss_s']:.1f}s. "
+        f"Wear adds {call['deg_total_s']:.1f}s to both totals. "
         f"Traffic on exit: {'yes' if call['traffic_on_exit'] else 'no'}. "
         f"This is an explicit toy model: no safety car, linear degradation, "
         f"and the pit loss is an assumption."

@@ -86,7 +86,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-10 | Dashboard filter/random + AI quality pass | DONE | 84 pytest, 71 vitest |
 | V2-11 | Chat thread + richer facts + pit explainer | DONE | 87 pytest, 76 vitest |
 | V2-12 | Chat panel rebuild (pinned composer, prompts, jump) | DONE | 2 scroll bugs fixed |
-| V2-13 | Tag releases | DONE | v1.0.0 … v2.5.0; v2.6.0 next |
+| V2-13 | Transcript single column + pit arithmetic/break-even | DONE | 88 pytest, 76 vitest |
+| V2-14 | Tag releases | DONE | v1.0.0 … v2.6.0; v2.7.0 next |
 
 ---
 

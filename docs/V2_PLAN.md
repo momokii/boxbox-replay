@@ -308,3 +308,28 @@ Two real bugs surfaced while testing: the transcript did not scroll on load
 because the shell mounts only after `/ai/status` resolves (the effect now depends
 on it), and smooth scrolling during layout could stall (auto-follow now uses an
 instant scroll in a frame).
+
+## V2.13 — Transcript read order and pit-wall arithmetic (shipped)
+
+**Chat.** The left/right bubble split read like two columns; the transcript is
+now a single left-aligned column with a role dot, so the order is unmistakably
+you → engineer → you → engineer. The panel, pinned composer, prompts and scroll
+behaviour are unchanged.
+
+**Pit wall.** The panel now shows its own algebra:
+
+- stay out = `laps × current pace + wear × n(n−1)/2`
+- pit now = `pit loss + laps × fresh pace + wear × n(n−1)/2`
+- the wear term is identical in both, so it cancels in the decision and only
+  moves the totals (called out next to the sums)
+- **break-even pit loss** = `laps × (current − fresh) − traffic penalty`; the
+  model returns it, and the UI says whether the slider is above or below it
+  (or that even a free stop would not pay off)
+- the margin shown includes the traffic penalty only when it applies, and says so
+- the engineer explanation now sits under a description of what it receives
+  (driver, tyre/age, laps left, both paces, wear, pit loss, gap, totals) and what
+  it will not do (recalculate or change the numbers).
+
+The model returns `break_even_pit_loss_s`, `stay_advantage_s`, `deg_total_s` and
+`traffic_penalty_s`, covered by a test that checks the algebra, the flip point
+and the traffic adjustment.

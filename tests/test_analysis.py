@@ -374,3 +374,26 @@ def test_clean_track_points_keeps_a_normal_trace():
     xs = np.arange(0, 60) * 100.0
     frame = pd.DataFrame({"x": xs, "y": np.zeros_like(xs)})
     assert len(analysis.clean_track_points(frame, "x", "y")) == len(frame)
+
+
+def test_pit_model_exposes_the_arithmetic():
+    call = analysis.pit_toy_model(100.0, 99.0, 0.2, 10, pit_loss_s=5.0)
+    # deg term cancels: 10 laps at +0.2/lap = 9.0s in both totals
+    assert call["deg_total_s"] == pytest.approx(9.0)
+    assert call["stay_total_s"] == pytest.approx(1009.0)
+    assert call["pit_total_s"] == pytest.approx(5.0 + 990.0 + 9.0)
+    # break-even is 10 * (100 - 99) = 10s; a 5s stop is under it, so pit wins
+    assert call["break_even_pit_loss_s"] == pytest.approx(10.0)
+    assert call["stay_advantage_s"] == pytest.approx(-5.0)
+    assert call["recommendation"] == "PIT NOW"
+
+    # Above the break-even the call flips, and degradation does not change that.
+    expensive = analysis.pit_toy_model(100.0, 99.0, 0.2, 10, pit_loss_s=15.0)
+    assert expensive["break_even_pit_loss_s"] == pytest.approx(10.0)
+    assert expensive["recommendation"] == "STAY OUT"
+    assert expensive["stay_advantage_s"] == pytest.approx(5.0)
+
+    # Traffic eats five seconds of the break-even budget.
+    traffic = analysis.pit_toy_model(100.0, 99.0, 0.2, 10, pit_loss_s=5.0, gap_behind_s=1.0)
+    assert traffic["traffic_penalty_s"] == pytest.approx(5.0)
+    assert traffic["break_even_pit_loss_s"] == pytest.approx(5.0)

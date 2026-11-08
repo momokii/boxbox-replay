@@ -514,11 +514,16 @@ def pit_toy_model(
     if laps_remaining < 1:
         raise ValueError("laps_remaining must be >= 1")
     deg = max(0.0, float(deg_slope_s_per_lap))
-    stay_total = sum(base_pace_s + deg * i for i in range(laps_remaining))
-    pit_total = float(pit_loss_s) + sum(fresh_pace_s + deg * i for i in range(laps_remaining))
+    laps = int(laps_remaining)
+    # Same degradation term in both scenarios: it cancels in the comparison and
+    # only moves the totals. Exposed so the UI can show the algebra.
+    deg_total = deg * laps * (laps - 1) / 2.0
+    stay_total = laps * float(base_pace_s) + deg_total
+    pit_total = float(pit_loss_s) + laps * float(fresh_pace_s) + deg_total
     traffic = gap_behind_s is not None and gap_behind_s < float(pit_loss_s)
+    penalty = 5.0 if traffic else 0.0
     recommend = "STAY OUT"
-    if pit_total + (5.0 if traffic else 0.0) < stay_total:
+    if pit_total + penalty < stay_total:
         recommend = "PIT NOW"
     return {
         "stay_total_s": stay_total,
@@ -526,6 +531,12 @@ def pit_toy_model(
         "recommendation": recommend,
         "traffic_on_exit": bool(traffic),
         "toy_model": True,
+        # Pit loss at which the call flips; below it, pitting wins.
+        "break_even_pit_loss_s": laps * (float(base_pace_s) - float(fresh_pace_s)) - penalty,
+        # Positive means staying out is ahead by this many seconds.
+        "stay_advantage_s": pit_total + penalty - stay_total,
+        "deg_total_s": deg_total,
+        "traffic_penalty_s": penalty,
     }
 
 

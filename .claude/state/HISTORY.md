@@ -400,3 +400,12 @@ renders after /ai/status), so the effect now depends on that flag; and smooth
 scrolling during layout could stall, so auto-follow uses an instant scroll in a
 requestAnimationFrame. Mobile: tab bar wraps, clear action no longer wraps, panel
 fits the viewport. Verified desktop + 390px, jump-to-bottom, persistence.
+
+Transcript + pit math pass: chat turns now read as one left-aligned column with a
+role dot (you/engineer/you/engineer) instead of right/left bubbles. The pit model
+returns break_even_pit_loss_s, stay_advantage_s, deg_total_s and
+traffic_penalty_s; the panel shows both sums with substituted numbers, notes that
+wear cancels in the decision, states the break-even (including the traffic
+penalty) and explains what the engineer receives and will not do. A UI bug where
+the traffic penalty was folded into the margin without saying so was fixed.
+88 pytest + 76 vitest.

@@ -2039,31 +2039,39 @@ tr.driver-marked td {
   font-weight: 600;
 }
 .ask-turn {
-  max-width: 86%;
+  max-width: 94%;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-left: 2px solid var(--line);
+  border-radius: 10px;
   padding: 10px 13px;
   background: var(--bg);
   overflow-wrap: anywhere;
 }
 .ask-turn.user {
-  margin-left: auto;
-  max-width: 76%;
   background: var(--panel-2);
-  border-color: var(--line);
-  border-bottom-right-radius: 4px;
 }
 .ask-turn.engineer {
-  border-left: 2px solid var(--amber);
-  border-bottom-left-radius: 4px;
+  border-left-color: var(--amber);
 }
 .ask-role {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--dim);
   margin-bottom: 3px;
+}
+.ask-role::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+.ask-turn.engineer .ask-role::before {
+  background: var(--amber);
 }
 .ask-turn p {
   margin: 0;
@@ -2212,16 +2220,13 @@ tr.driver-marked td {
     min-height: 320px;
   }
   .ask-turn {
-    max-width: 94%;
-  }
-  .ask-turn.user {
-    max-width: 88%;
+    max-width: 100%;
   }
 }
 .pit-explain {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
@@ -2256,4 +2261,41 @@ tr.driver-marked td {
 .pit-explain-note footer {
   border-top: 1px solid var(--line);
   padding-top: 6px;
+}
+
+.pit-math {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 10px;
+  font-size: 0.82rem;
+}
+.pit-math-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 6px 10px;
+  background: var(--panel-2);
+  border-radius: 6px;
+}
+.pit-math-row code {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.pit-math-row.verdict {
+  background: transparent;
+  border: 1px solid var(--line);
+}
+.pit-ai-help {
+  flex-basis: 100%;
+  max-width: 74ch;
+}
+.pit-ai-help p {
+  margin: 0;
+  line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .pit-math-row {
+    flex-direction: column;
+    gap: 2px;
+  }
 }

@@ -14,8 +14,8 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `07-mobile.png` | Phone layout |
 | `08-duel.png` | Lap duel: two laps on the circuit with the live delta |
 | `09-inputs.png` | Throttle, brake and gear for the lap under the playhead |
-| `10-ask.png` | Ask tab: bordered chat panel, prompts, thread |
+| `10-ask.png` | Ask tab: single-column transcript, prompts, composer |
 | `14-chat-mobile.png` | The same chat on a phone |
-| `13-pit-ai.png` | Pit wall with the engineer's explanation |
+| `13-pit-ai.png` | Pit wall: step-by-step arithmetic, break-even, engineer explanation |
 | `11-dashboard.png` | Landing dashboard with suggestions |
 | `12-dashboard-recent.png` | Continue list with the filter and remove controls |

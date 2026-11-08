@@ -122,6 +122,10 @@ export const api = {
         recommendation: string;
         traffic_on_exit: boolean;
         toy_model: boolean;
+        break_even_pit_loss_s: number;
+        stay_advantage_s: number;
+        deg_total_s: number;
+        traffic_penalty_s: number;
       };
     }>("/ai/pit", body),
   aiAsk: (sessionKey: number, question: string) =>
@@ -169,6 +173,10 @@ export const api = {
       recommendation: string;
       traffic_on_exit: boolean;
       toy_model: boolean;
+      break_even_pit_loss_s: number;
+      stay_advantage_s: number;
+      deg_total_s: number;
+      traffic_penalty_s: number;
     }>("/pit-call", body),
   coachAsk: (body: {
     driver: string;
