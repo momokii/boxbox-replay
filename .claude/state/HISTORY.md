@@ -430,3 +430,10 @@ edge, role dots), starting at the top of the transcript. nginx now serves
 index.html with no-store and hashed assets as immutable, because repeated "still
 the same" reports were consistent with a stale bundle. Verified on desktop and
 390px.
+
+Narrow-window fix: the chat bubble reused the `engineer` class, so the layout's
+`@media (max-width: 1100px) .engineer { order: 3 }` reordered every user bubble
+above every engineer bubble (me/me/me then ai/ai/ai). Chat classes renamed to
+ask-user/ask-engineer and the rail rules scoped to direct layout children.
+Also stacked the pit source table under 640px (it was 478px wide at 390px).
+Verified at 1440, 800, 720, 640, 560, 500, 390.

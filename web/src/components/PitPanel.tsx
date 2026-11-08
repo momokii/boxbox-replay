@@ -336,7 +336,7 @@ export default function PitPanel(p: Props) {
           </div>
 
           <h3 style={{ marginTop: 18 }}>Where the numbers come from</h3>
-          <table className="laps mono" style={{ fontSize: "0.82rem" }}>
+          <table className="laps mono pit-source" style={{ fontSize: "0.82rem" }}>
             <tbody>
               <tr>
                 <td>

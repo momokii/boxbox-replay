@@ -263,7 +263,7 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
             {messages.map((message, index) => (
               <article
                 key={index}
-                className={message.role === "user" ? "ask-turn user" : "ask-turn engineer"}
+                className={message.role === "user" ? "ask-turn ask-user" : "ask-turn ask-engineer"}
               >
                 <span className="ask-role">
                   {message.role === "user" ? "You" : "Race engineer"}
@@ -280,7 +280,7 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
             ))}
 
             {busy && (
-              <div className="ask-turn engineer ask-typing">
+              <div className="ask-turn ask-engineer ask-typing">
                 <span className="ask-role">Race engineer</span>
                 <p className="dim small">
                   <span className="spinner" aria-hidden="true" />

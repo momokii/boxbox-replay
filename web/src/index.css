@@ -511,13 +511,13 @@ table.laps tbody tr:hover td {
   .layout {
     grid-template-columns: 1fr;
   }
-  .rail {
+  .layout > .rail {
     order: 2;
   }
-  .stage {
+  .layout > .stage {
     order: 1;
   }
-  .engineer {
+  .layout > .engineer {
     order: 3;
   }
 }
@@ -2043,14 +2043,14 @@ tr.driver-marked td {
   background: var(--bg);
   overflow-wrap: anywhere;
 }
-.ask-turn.user {
+.ask-turn.ask-user {
   align-self: flex-end;
   margin-left: auto;
   border-color: color-mix(in srgb, var(--amber) 34%, var(--line));
   background: color-mix(in srgb, var(--amber) 10%, var(--panel-2));
   border-bottom-right-radius: 4px;
 }
-.ask-turn.engineer {
+.ask-turn.ask-engineer {
   align-self: flex-start;
   margin-right: auto;
   border-left: 2px solid var(--amber);
@@ -2066,7 +2066,7 @@ tr.driver-marked td {
   color: var(--dim);
   margin-bottom: 3px;
 }
-.ask-turn.user .ask-role {
+.ask-turn.ask-user .ask-role {
   justify-content: flex-end;
 }
 .ask-role::before {
@@ -2076,7 +2076,7 @@ tr.driver-marked td {
   border-radius: 50%;
   background: var(--amber);
 }
-.ask-turn.user .ask-role::before {
+.ask-turn.ask-user .ask-role::before {
   background: var(--ink);
 }
 .ask-turn p {
@@ -2303,5 +2303,30 @@ tr.driver-marked td {
   .pit-math-row {
     flex-direction: column;
     gap: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Stack the source table so a long explanation cannot force horizontal scroll. */
+  .pit-source,
+  .pit-source tbody,
+  .pit-source tr,
+  .pit-source td {
+    display: block;
+    width: 100%;
+  }
+  .pit-source tr {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .pit-source td {
+    padding: 1px 0;
+  }
+  .pit-source td:nth-child(2) {
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+  .pit-source td:nth-child(3) {
+    color: var(--dim);
   }
 }

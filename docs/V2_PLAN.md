@@ -355,3 +355,19 @@ no test — the replay contract (time zeroing, duration from the race clock) and
 the token-cap retry that stopped truncated answers — so those two were added;
 nothing else was. `docs/TESTING.md` records what we test, what we deliberately do
 not, and the rules for adding a test.
+
+## V2.15 — Narrow-window chat fix and responsive pit table (shipped)
+
+Two layout bugs found at ~8:9 and phone widths:
+
+- **Chat turns were reordered.** The chat bubble reused the class `engineer`,
+  and the layout's `@media (max-width: 1100px)` rule `.engineer { order: 3 }`
+  (meant for the right rail) applied to it. In a flex column, `order` sorts the
+  main axis, so every user bubble jumped above every engineer bubble — exactly
+  "me, me, me / ai, ai, ai". Renaming the chat classes to `ask-user` /
+  `ask-engineer` and scoping the rail rules to `.layout > .rail|.stage|.engineer`
+  fixes it. Verified at 1440, 800, 720, 640, 560, 500 and 390 px.
+- **Pit Wall overflowed at 390 px.** The "Where the numbers come from" table was
+  478 px wide. It now stacks its cells under 640 px.
+
+Screenshots: `docs/screenshots/15-chat-narrow.png` (720 px).
