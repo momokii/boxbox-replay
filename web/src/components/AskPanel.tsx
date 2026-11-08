@@ -31,7 +31,10 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showJump, setShowJump] = useState(false);
+  const stickRef = useRef(true);
 
   useEffect(() => {
     let live = true;
@@ -48,12 +51,41 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
     setMessages(loadChat(sessionKey));
     setInput("");
     setError(null);
+    stickRef.current = true;
+    requestAnimationFrame(() => {
+      scrollToBottom(false);
+      setShowJump(false);
+    });
   }, [sessionKey]);
 
-  useEffect(() => {
+  const scrollToBottom = (smooth = true) => {
+    const el = threadRef.current;
+    if (!el) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    endRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" });
-  }, [messages, busy]);
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth && !reduced ? "smooth" : "auto" });
+  };
+
+  const nearBottom = () => {
+    const el = threadRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+  };
+
+  useEffect(() => {
+    // A new turn should not yank a reader who scrolled up to re-read something.
+    if (!stickRef.current) {
+      setShowJump(true);
+      return;
+    }
+    const el = threadRef.current;
+    if (!el) return;
+    // Instant, in a frame: smooth scrolling during a layout change can stall.
+    const frame = requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+      setShowJump(false);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [messages, busy, status?.ready]);
 
   const remember = (next: ChatMessage[]) => {
     setMessages(next);
@@ -81,6 +113,7 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
       return;
     }
     const next: ChatMessage[] = [...base, { role: "user", content: question }];
+    stickRef.current = true;
     remember(next);
     setInput("");
     setBusy("ask");
@@ -104,6 +137,7 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
   const recap = async () => {
     if (busy) return;
     const next: ChatMessage[] = [...messages, { role: "user", content: "Race recap" }];
+    stickRef.current = true;
     remember(next);
     setBusy("recap");
     setError(null);
@@ -203,31 +237,29 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
       </details>
 
       {status?.ready && (
-        <>
-          <div className="ask-actions">
-            <button type="button" className="ask-recap" onClick={recap} disabled={busy !== null}>
-              {busy === "recap" ? "Writing…" : "Write the race recap"}
-            </button>
-            <span className="dim small">{sessionLabel}</span>
-          </div>
+        <div className="ask-chat">
+          <div
+            className="ask-thread"
+            ref={threadRef}
+            role="log"
+            aria-live="polite"
+            aria-label="Conversation with the race engineer"
+            onScroll={() => {
+              const near = nearBottom();
+              stickRef.current = near;
+              setShowJump(!near);
+            }}
+          >
+            {empty && !busy && !error && (
+              <div className="ask-empty">
+                <p className="ask-empty-title">Ask about {sessionLabel}</p>
+                <p className="dim small">
+                  Strategy, pace, pit stops, retirements — follow-ups keep the thread. Answers
+                  use this session's timings only.
+                </p>
+              </div>
+            )}
 
-          {empty && (
-            <div className="ask-chips">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className="chip"
-                  onClick={() => send(s)}
-                  disabled={busy !== null}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="ask-thread" aria-live="polite">
             {messages.map((message, index) => (
               <article
                 key={index}
@@ -246,12 +278,17 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
                 ) : null}
               </article>
             ))}
+
             {busy && (
-              <p className="dim small loading-inline">
-                <span className="spinner" aria-hidden="true" />
-                {busy === "recap" ? "Writing the recap…" : "Thinking…"}
-              </p>
+              <div className="ask-turn engineer ask-typing">
+                <span className="ask-role">Race engineer</span>
+                <p className="dim small">
+                  <span className="spinner" aria-hidden="true" />
+                  {busy === "recap" ? "Writing the recap…" : "Thinking…"}
+                </p>
+              </div>
             )}
+
             {error && (
               <div className="ask-error">
                 <p>{error}</p>
@@ -260,54 +297,81 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
                 </button>
               </div>
             )}
-            {empty && !busy && !error && (
-              <p className="dim small">
-                Ask about strategy, pace, pit stops, retirements or anything else in this
-                session. Follow-ups keep the thread.
-              </p>
-            )}
             <div ref={endRef} />
           </div>
 
-          <form
-            className="ask-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              send(input);
-            }}
-          >
-            <label className="sr-only" htmlFor="ask-question">
-              Ask about this race
-            </label>
-            <textarea
-              id="ask-question"
-              ref={inputRef}
-              className="ask-input"
-              value={input}
-              rows={1}
-              maxLength={MAX_QUESTION}
-              placeholder="Ask about this race — strategy, pace, pit stops… (Enter to send, Shift+Enter for a new line)"
-              onChange={(e) => {
-                setInput(e.target.value);
-                grow(e.target);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send(input);
-                }
-              }}
-              disabled={busy !== null}
-            />
-            <button
-              type="submit"
-              className="ask-send"
-              disabled={busy !== null || input.trim().length < 3}
-            >
-              {busy === "ask" ? "Thinking…" : "Send"}
+          {showJump && (
+            <button type="button" className="ask-jump" onClick={() => scrollToBottom()}>
+              Newest ↓
             </button>
-          </form>
-        </>
+          )}
+
+          <div className="ask-composer">
+            <div className="ask-suggest" aria-label="Suggested questions">
+              <button
+                type="button"
+                className="ask-prompt recap"
+                onClick={recap}
+                disabled={busy !== null}
+              >
+                Race recap
+              </button>
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="ask-prompt"
+                  onClick={() => send(s)}
+                  disabled={busy !== null}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            <form
+              className="ask-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                send(input);
+              }}
+            >
+              <label className="sr-only" htmlFor="ask-question">
+                Ask about this race
+              </label>
+              <textarea
+                id="ask-question"
+                ref={inputRef}
+                className="ask-input"
+                value={input}
+                rows={1}
+                maxLength={MAX_QUESTION}
+                placeholder="Ask about this race…"
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  grow(e.target);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send(input);
+                  }
+                }}
+                disabled={busy !== null}
+              />
+              <button
+                type="submit"
+                className="ask-send"
+                disabled={busy !== null || input.trim().length < 3}
+              >
+                {busy === "ask" ? "Thinking…" : "Send"}
+              </button>
+            </form>
+            <p className="ask-hint">
+              Enter to send · Shift+Enter for a new line · {input.length}/{MAX_QUESTION}
+            </p>
+          </div>
+        </div>
       )}
     </section>
   );

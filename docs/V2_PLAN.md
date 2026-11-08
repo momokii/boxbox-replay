@@ -285,3 +285,26 @@ explains it. `/ai/pit` recomputes `pit_toy_model` server-side from the same
 inputs, then asks for three sentences in the app's voice that name the biggest
 assumption. The model is told not to calculate new numbers. A pit-wall chat was
 rejected: it would duplicate the Ask tab and split the conversation.
+
+## V2.12 — Chat panel rebuild (shipped)
+
+The first chat pass looked like a form with messages under it. Rebuilt against
+standard chat practice (readable transcript, persistent context, no repeated
+typing):
+
+- one bordered panel with a fixed height; the transcript scrolls inside it and
+  the composer is pinned to its bottom
+- prompts (Race recap + five questions) are always visible above the composer,
+  wrapping on desktop and scrolling horizontally on phones
+- messages are bottom-anchored when short; new turns keep the reader pinned to
+  the newest only if they were already there, with a “Newest ↓” jump when they
+  scroll back
+- the composer is a textarea that grows to about five lines, Enter sends,
+  Shift+Enter breaks the line, and a live character count sits underneath
+- mobile: the tab bar wraps instead of clipping, the clear action no longer
+  wraps, and the panel fits under the pickers
+
+Two real bugs surfaced while testing: the transcript did not scroll on load
+because the shell mounts only after `/ai/status` resolves (the effect now depends
+on it), and smooth scrolling during layout could stall (auto-follow now uses an
+instant scroll in a frame).

@@ -391,3 +391,12 @@ personal best) and first-recorded-position to finish, which makes the tyre
 management question answerable. Pit wall keeps the deterministic model as the
 source of truth; /ai/pit recomputes it and the model only narrates, naming the
 biggest assumption. 87 pytest + 76 vitest.
+
+Chat panel rebuild: bordered fixed-height shell, scrollable transcript, pinned
+composer, prompt chips always visible (wrap on desktop, scroll on mobile),
+bottom-anchored short threads, and a Newest jump when the reader scrolls back.
+Two bugs found in testing: the scroll effect ran before the shell mounted (it
+renders after /ai/status), so the effect now depends on that flag; and smooth
+scrolling during layout could stall, so auto-follow uses an instant scroll in a
+requestAnimationFrame. Mobile: tab bar wraps, clear action no longer wraps, panel
+fits the viewport. Verified desktop + 390px, jump-to-bottom, persistence.
