@@ -2330,3 +2330,49 @@ tr.driver-marked td {
     color: var(--dim);
   }
 }
+
+/* Battles at the current frame */
+.battles-now {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+}
+.battles-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.battles-head h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.battle-strip {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.battle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  padding: 5px 11px;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.battle-chip:hover {
+  border-color: var(--amber);
+}
+.battle-chip b {
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}

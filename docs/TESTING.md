@@ -1,6 +1,6 @@
 # Testing
 
-The suite is deliberately small: 67 Python and 50 frontend tests. Every test
+The suite is deliberately small: 67 Python and 53 frontend tests. Every test
 earns its place by protecting a behaviour someone could break.
 
 ## What we test
@@ -16,6 +16,7 @@ earns its place by protecting a behaviour someone could break.
 | Playback maths | `session`, `playback`, `duel`, `perf` tests | Interpolation, gap guards, tyre slopes, the duel's start/finish invariants. |
 | Browser state | `recents`, `chatStore`, `throttle`, `inputs`, `sort` | localStorage/sessionStorage corruption, the click-throttle bug, DRS nulls, sorting semantics. |
 | Share card | `shareCard` | The 1200×630 layout: fit, centring, empty outline. |
+| Battles now | `battles` | Neighbour comparison, threshold, ordering, missing gaps. |
 
 ## What we do not test
 
@@ -46,5 +47,5 @@ earns its place by protecting a behaviour someone could break.
 
 ```bash
 .venv/bin/python -m pytest          # 67 Python tests
-cd web && npm test                  # 50 frontend tests
+cd web && npm test                  # 53 frontend tests
 ```

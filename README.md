@@ -14,7 +14,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Full-field replay.** All 20+ cars on the circuit at once, moving on the real session clock (lights out to chequered flag). Play, pause, 1×–8×, scrub, or press Space.
 - **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
 - **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
-- **Battle view.** Pick an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
+- **Battle view.** A live **Battles now** strip lists neighbouring drivers within 1 s at the current frame (click to compare), plus an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
 - **Performance.** Stint timeline with pit-stop notches (hover for compound, tyre age and the gap at the stint start), wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters.
 - **Driver drill-down.** Click any car or tower row for position, gap, tyre age, result, a five-lap strip, pit stops, overtakes — each opening a full view.
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
@@ -197,7 +197,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 67 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 50 frontend tests (vitest)
+cd web && npm test           # 53 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```

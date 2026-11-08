@@ -467,3 +467,10 @@ leader at that lap). Added the 1200x630 share-card download in the player bar:
 brand, session, lap, clock, circuit and every car, top-five labels only to avoid
 a pile-up; layout maths unit-tested. V2.5 Fight Finder stays deferred for the
 documented feed-noise reason. 67 pytest + 50 vitest.
+
+V2.5 shipped as Battles now: a live strip in the Battle tab listing neighbouring
+drivers within 1.0s at the replay clock, click to load into the anchor/challenger
+view. The historical scan stays rejected — intervals produced 181-593 noisy runs,
+and the position feed only covers ~2% of a 1Hz grid, so a "finds the fight" list
+would be dishonest. The snapshot uses only current gaps. 3 new tests; 67 pytest
++ 53 vitest.

@@ -9,8 +9,9 @@ step.
 
 ## Order and why
 
-**Status (2026-11-08):** V2.1–V2.4 and V2.6–V2.7 shipped and verified in
-production. V2.5 remains deferred for the measured reasons below. V2.2 adds the
+**Status (2026-11-08):** V2.1–V2.7 shipped and verified in production. V2.5
+ships as a live **Battles now** list; the historical scan remains rejected for
+the measured reasons below. V2.2 adds the
 AI layer: grounded Q&A and a recap through OpenCode Go (`deepseek-v4.1-flash`),
 server-side key, budget and cache (see §V2.8).
 V2.5 deferred with measured reasons (§V2.5). V2.6–V2.7 remain backlog.
@@ -21,7 +22,7 @@ V2.5 deferred with measured reasons (§V2.5). V2.6–V2.7 remain backlog.
 | V2.2 | Lap Duel (backend) | V2.1 | The signature feature; defines trace/delta shape |
 | V2.3 | Lap Duel (UI) | V2.2 | First visible v2 surface |
 | V2.4 | Telemetry traces | V2.1 | Reuses per-lap `car_data` windows |
-| V2.5 | Fight Finder | V2.1 | **Deferred** — the gap feed is too noisy for an honest list (see below) |
+| V2.5 | Fight Finder | V2.1 | **Shipped as Battles now** — live snapshot; historical scan rejected (feed too sparse) |
 | V2.6 | Pit strategy Gantt | — | **Shipped** — the Performance stint timeline; hover now has tyre age and gap |
 | V2.7 | Share card PNG | V2.3 | **Shipped** — 1200×630 PNG from the player bar |
 
@@ -143,21 +144,30 @@ sample; missing channels hide their row with a reason; tests cover a lap with
 
 ---
 
-## V2.5 — Fight Finder (deferred)
+## V2.5 — Battles now (shipped)
 
-**Status: deferred after measurement, not implemented.** Two definitions were
-prototyped against the 2026 US GP:
+**Shipped as a live snapshot, not a historical scan.** The Battle tab lists the
+neighbouring drivers in classification order whose gaps are within 1.0 s at the
+current replay frame; clicking a pair loads it into the anchor/challenger view.
 
-- adjacent drivers under 1 s: 593 runs, including dozens of 3–5 s blips caused
-  by asynchronous per-driver samples;
-- sustained `interval < 1 s` per driver: 181 runs, including 500-second
-  "battles" where the feed keeps a stale interval while the car is not actually
-  fighting (traffic, lapped cars, pit stops).
+Why not the historical list the first contract described: two definitions were
+prototyped against the 2026 US GP —
 
-Both are too noisy to show as a list without a real adjacency model: same-lap
-check, pit/blue-flag exclusion, and a requirement that the gap actually moves.
-Fabricating a list would break the honesty rule the rest of the app follows.
-Revisit with positions plus intervals, not intervals alone.
+- adjacent drivers under 1 s: 593 runs, including 3–5 s blips from asynchronous
+  per-driver samples;
+- sustained `interval < 1 s`: 181 runs, including 500-second runs held by stale
+  samples through traffic, pit stops and lapped cars;
+- a position-first model was also tried; the position feed only covers ~2% of a
+  1 Hz grid (it is event-based), so adjacency cannot be sustained.
+
+Showing that as a "finds the fight" list would be dishonest. The live snapshot
+uses only the current classification gaps, updates with the replay clock, and
+says what it is. A historical finder needs dense per-lap position data that the
+free feed does not provide; it stays out until it can be accurate.
+
+The original contract, for context: a "Fights" list from `intervals`, click to
+seek. That is the part deferred; the useful half — finding who is fighting right
+now — is shipped.
 
 ## V2.5 (original contract, kept for the future)
 

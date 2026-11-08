@@ -94,7 +94,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-18 | Docs aligned with the shipped app | DONE | README/ARCH/DEPLOY/TESTING |
 | V2-19 | Corner coach via AI + measured fallback | DONE | CLI removed |
 | V2-20 | Backlog: share card + stint hover details | DONE | 50 vitest |
-| V2-21 | Tag releases | DONE | v1.0.0 … v2.11.0; v2.12.0 next |
+| V2-21 | V2.5 Battles now (live snapshot) | DONE | 53 vitest |
+| V2-22 | Tag releases | DONE | v1.0.0 … v2.12.0; v2.13.0 next |
 
 ---
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { beginDraw, themeColors, useCanvasSize } from "../chart";
 import { formatLapTime } from "../format";
 import { formatClock, gapAt, type GapTable } from "../session";
+import { currentBattles } from "../battles";
 import Info from "./Info";
 import Modal from "./Modal";
 import BattleFullView from "./BattleFullView";
@@ -73,8 +74,52 @@ export default function BattlePanel(p: Props) {
     return rows;
   }, [anchor, challengers, p.table, now]);
 
+  const battles = useMemo(
+    () =>
+      currentBattles(
+        p.drivers.map((d) => ({
+          driver: d.driver_number,
+          gap: gapAt(p.table, d.driver_number, now),
+        })),
+      ).slice(0, 4),
+    [p.drivers, p.table, now],
+  );
+
   return (
     <div>
+      <section className="battles-now" aria-label="Battles at the current frame">
+        <div className="battles-head">
+          <h3>
+            Battles now{" "}
+            <Info
+              label="what this shows"
+              tip="A live snapshot at the replay clock: drivers next to each other in classification whose gaps are within 1.0s. It is not a historical list — the timing feed is too sparse for reliable back-scanning."
+            />
+          </h3>
+          <span className="dim small">{formatClock(now)} · within 1.0s</span>
+        </div>
+        {battles.length ? (
+          <div className="battle-strip">
+            {battles.map((b) => (
+              <button
+                key={`${b.a}-${b.b}`}
+                type="button"
+                className="battle-chip"
+                onClick={() => setPicked([b.a, b.b, null])}
+                title="Compare this pair above"
+              >
+                <span>
+                  {p.codes.get(b.a) ?? `#${b.a}`} vs {p.codes.get(b.b) ?? `#${b.b}`}
+                </span>
+                <b>{b.gap.toFixed(3)}s</b>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="dim small">No neighbouring pair is within 1.0s at this frame.</p>
+        )}
+      </section>
+
       <div className="row" style={{ marginBottom: 8, gap: 12 }}>
         <label className="dim small">
           Anchor{" "}
