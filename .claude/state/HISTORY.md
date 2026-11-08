@@ -381,3 +381,13 @@ the app's engineer (no "data"/"feed"/"official report" phrasing), uses full name
 and answers off-topic questions with a branded OUT_OF_SCOPE message. Dashboard got a
 quiet remove icon, a filter for lists over four entries, a 20-entry cap, and a
 random "Surprise me" picker without the telemetry probe. 84 pytest + 71 vitest.
+
+Chat + pit explainer: the Ask tab is now a conversation (last 10 turns, notes in
+the system message, sessionStorage per session, two-step Clear, auto-growing
+textarea). Chat answers are not cached because they depend on the thread.
+Facts gained the full pit list with stop numbers (fastest 2.1s Piastri lap 15
+stop 1; slowest 17.5s Alonso lap 42 stop 2), a consistency metric (median minus
+personal best) and first-recorded-position to finish, which makes the tyre
+management question answerable. Pit wall keeps the deterministic model as the
+source of truth; /ai/pit recomputes it and the model only narrates, naming the
+biggest assumption. 87 pytest + 76 vitest.

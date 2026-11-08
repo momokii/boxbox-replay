@@ -16,6 +16,8 @@ DEPLOYED prod, healthy at http://<host>:8501.
 - [x] V2.8 AI: grounded Q&A + recap (OpenCode Go), server-side key
 - [x] V2.9: dashboard with filterable continue-list + random picker
 - [x] V2.10: AI quality pass (names, retirements bug, ideal sectors, voice, scope guard)
+- [x] V2.11: chat thread with clear + sessionStorage; pit stop/consistency/position facts
+- [x] V2.12: pit-wall 'Explain this call' (model narrates, never recalculates)
 - [ ] V2.6 pit Gantt · V2.7 share card · V2.5 fight finder deferred (feed too noisy)
 - [x] fix: glitch filter no longer truncates a circuit after one telemetry gap
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
@@ -35,7 +37,7 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-11-06: dashboard revisions + AI quality pass; v2.4.0
+2026-11-06: chat + pit-wall explainer; v2.5.0
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
 
 - [x] U9: smoothness (60fps), chart hover + responsive widths, stacked stints, honest pit model

@@ -262,3 +262,26 @@ full on hover/focus, always visible on touch) instead of a boxed “×”; lists
 longer than four entries get a filter field and a capped scroll area; the
 suggestions were replaced with a random picker that needs no telemetry probe
 (the blocked-session screen offers another roll).
+
+## V2.11 — Chat, richer facts and a pit-wall explainer (shipped)
+
+**Chat instead of one-shots.** The Ask tab is now a conversation. The server
+keeps the last 10 turns (users capped at 400 characters, assistant turns at
+1600) and puts the session notes in the system message, so every turn is
+grounded. History lives in `sessionStorage` per session: it survives a reload
+in the same tab, disappears when the tab closes, and a two-step Clear chat wipes
+it — important on a public deployment. Chat answers are not cached (they depend
+on the thread); the recap still is.
+
+**Facts that answer real questions.** Added the full pit-stop list with driver,
+lap, stop number and stationary time (fastest and slowest called out), a
+consistency metric (median clean lap minus personal best), and the first
+recorded position versus the finish (places gained). That makes questions like
+"who had the fastest and slowest stop, on which stop, and did the good tyre
+managers gain places?" answerable from measured data.
+
+**Pit wall analysis.** The deterministic model stays authoritative; the LLM only
+explains it. `/ai/pit` recomputes `pit_toy_model` server-side from the same
+inputs, then asks for three sentences in the app's voice that name the biggest
+assumption. The model is told not to calculate new numbers. A pit-wall chat was
+rejected: it would duplicate the Ask tab and split the conversation.

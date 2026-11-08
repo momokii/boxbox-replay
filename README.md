@@ -20,8 +20,8 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
 - **Lap duel.** Two laps race the same circuit, aligned by distance around the lap, with a live delta that starts at 0.000 and closes exactly on the official lap-time difference.
-- **Pit strategy toy model.** "Pit now or stay out?" using measured pace and wear, with the breakdown and every assumption shown.
-- **Ask the race engineer.** Ask about the race in plain language, or generate a recap. Answers use full driver names and every session fact (full classification, retirements, sector and ideal-lap references, pace, pit stops, tyre plans, overtakes, weather, race control), stay in the app's voice, and decline off-topic questions. The API key stays on the server.
+- **Pit strategy toy model.** "Pit now or stay out?" using measured pace and wear, with the breakdown and every assumption shown — plus an **Explain this call** button where the engineer puts the numbers into plain language without recalculating them.
+- **Ask the race engineer (chat).** A real conversation: follow-up questions keep the thread, answers are grounded in the session, the composer wraps long questions, and a Clear chat button wipes the tab-local history. Ask about the race in plain language, or generate a recap. Answers use full driver names and every session fact (full classification, retirements, sector and ideal-lap references, pace, pit stops, tyre plans, overtakes, weather, race control), stay in the app's voice, and decline off-topic questions. The API key stays on the server.
 - **Shareable moments.** "Copy link" stores the exact timestamp, so a link reopens the same frame.
 - **Dark and light themes**, keyboard shortcuts, reduced-motion support, and a layout that stacks on phones.
 
