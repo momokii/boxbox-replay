@@ -15,7 +15,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
 - **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
 - **Battle view.** Pick an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
-- **Performance.** Stint timeline with pit-stop notches, wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters.
+- **Performance.** Stint timeline with pit-stop notches (hover for compound, tyre age and the gap at the stint start), wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters.
 - **Driver drill-down.** Click any car or tower row for position, gap, tyre age, result, a five-lap strip, pit stops, overtakes — each opening a full view.
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
@@ -23,6 +23,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Pit strategy toy model.** "Pit now or stay out?" using measured pace and wear, with the arithmetic shown step by step, a **break-even pit loss**, the assumptions, and an **Explain this call** button that names exactly what the engineer receives and will not recalculate.
 - **Ask the race engineer (chat).** A bordered chat panel with a pinned composer and two-sided bubbles (you on the right, the engineer on the left): follow-ups keep the thread, prompt chips stay one click away, the transcript scrolls (with a “Newest” jump when you read back), long questions wrap, and Clear chat wipes the tab-local history. It adapts to the session — race prompts and a race recap for races, pole/gap prompts and a qualifying recap for qualifying, fastest-lap/team prompts for practice. Answers use full driver names and every session fact (full classification, retirements, sector and ideal-lap references, pace, pit stops, tyre plans, overtakes, weather, race control), stay in the app's voice, and decline off-topic questions. The API key stays on the server.
 - **Shareable moments.** "Copy link" stores the exact timestamp, so a link reopens the same frame.
+- **Share card.** One click downloads a 1200×630 PNG of the current frame — circuit, every car, lap and clock — for a post or a message.
 - **Dark and light themes**, keyboard shortcuts, reduced-motion support, and a layout that stacks on phones.
 
 | Battle | Performance |
@@ -196,7 +197,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 67 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 47 frontend tests (vitest)
+cd web && npm test           # 50 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```

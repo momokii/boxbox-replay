@@ -460,3 +460,10 @@ and coach.fallback_answer gives a measured sentence when the AI is off. Removed
 the CLI code, ask_llm/render_radio tests, BOXBOX_MODEL from .env.example and
 compose, and the "LLM unreachable" UI branch. Verified in prod: llm=true answer
 in the panel. 67 pytest + 47 vitest.
+
+Backlog closure: the Performance stint timeline already met the Gantt contract,
+so it only gained hover details (tyre age at the stint start plus the gap to the
+leader at that lap). Added the 1200x630 share-card download in the player bar:
+brand, session, lap, clock, circuit and every car, top-five labels only to avoid
+a pile-up; layout maths unit-tested. V2.5 Fight Finder stays deferred for the
+documented feed-noise reason. 67 pytest + 50 vitest.

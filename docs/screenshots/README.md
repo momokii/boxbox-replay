@@ -19,6 +19,7 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `15-chat-narrow.png` | Chat at 720×810, proving turn order |
 | `16-ask-qualifying.png` | Ask on a qualifying session: pole prompts and recap |
 | `17-corner-coach.png` | Corner coach answer in the right rail |
+| `18-share-card.png` | A downloaded 1200×630 share card |
 | `13-pit-ai.png` | Pit wall: step-by-step arithmetic, break-even, engineer explanation |
 | `11-dashboard.png` | Landing dashboard with suggestions |
 | `12-dashboard-recent.png` | Continue list with the filter and remove controls |

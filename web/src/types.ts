@@ -94,6 +94,7 @@ export interface Stint {
   lap_start: number | null;
   lap_end: number | null;
   compound: string | null;
+  tyre_age_at_start: number | null;
 }
 
 export interface CoachReply {

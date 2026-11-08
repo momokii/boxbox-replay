@@ -18,7 +18,8 @@ import Modal from "./components/Modal";
 import LapTimesModal from "./components/LapTimesModal";
 import DriverDetails from "./components/DriverDetails";
 import Info from "./components/Info";
-import { formatClock } from "./session";
+import { formatClock, posAt } from "./session";
+import { downloadShareCard } from "./shareCard";
 import {
   addRecent,
   clearRecents,
@@ -848,6 +849,46 @@ export default function App() {
                       </label>
                       <button
                         className="ghost small"
+                        onClick={async () => {
+                          if (!geo.data?.outline.length) return;
+                          const cars = (drivers.data ?? []).flatMap((d) => {
+                            const driver = replayMap.get(d.driver_number);
+                            if (!driver) return [];
+                            const pos = posAt(driver, playT);
+                            if (!pos) return [];
+                            return [
+                              {
+                                x: pos.x,
+                                y: pos.y,
+                                color:
+                                  towerRows.find((r) => r.driver === d.driver_number)?.color ??
+                                  "#8A94A6",
+                                code: d.name_acronym,
+                                label: towerRows
+                                  .slice(0, 5)
+                                  .some((r) => r.driver === d.driver_number),
+                              },
+                            ];
+                          });
+                          await downloadShareCard(
+                            {
+                              title: gpName,
+                              subtitle: `${sessName} · ${drivers.data?.length ?? 0} drivers`,
+                              lap: `LAP ${Math.max(1, progress.lap)}/${progress.total}`,
+                              clock: formatClock(playT),
+                              outline: geo.data.outline as [number, number][],
+                              cars,
+                            },
+                            theme,
+                          );
+                        }}
+                        disabled={playT < 0.5 || !geo.data?.outline.length}
+                        title="Download a 1200×630 PNG of this moment"
+                      >
+                        Share card
+                      </button>
+                      <button
+                        className="ghost small"
                         onClick={() => {
                           const url = momentUrl();
                           setPausedAt(playT);
@@ -1009,6 +1050,8 @@ export default function App() {
                 playback={playback}
                 totalLaps={info.data?.total_laps ?? 0}
                 colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
+                table={gapTable}
+                markers={lapMarkers}
               />
             )}
             {view === "pit" && sessionKey && (

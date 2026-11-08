@@ -3,6 +3,7 @@ import { api } from "../api";
 import { compoundColor } from "../format";
 import { formatClock } from "../session";
 import { stintSlope } from "../perf";
+import { gapAt, type GapTable, type LapMarker } from "../session";
 import Info from "./Info";
 import WeatherChart from "./WeatherChart";
 import LapChart from "./LapChart";
@@ -26,6 +27,8 @@ interface Props {
   playback: Playback;
   totalLaps: number;
   colors: Map<number, string>;
+  table: GapTable;
+  markers: LapMarker[];
 }
 
 interface Feed {
@@ -151,11 +154,18 @@ export default function PerformancePanel(p: Props) {
                   const start = s.lap_start ?? 1;
                   const end = s.lap_end ?? maxLap;
                   const compound = s.compound ?? "?";
+                  const age = s.tyre_age_at_start;
+                  const startT = p.markers.find((m) => m.lap_number === start)?.t;
+                  const gap = startT != null ? gapAt(p.table, driver, startT) : null;
+                  const ageText =
+                    age == null ? "" : ` · tyres ${age}→${age + Math.max(0, end - start)} laps`;
+                  const gapText =
+                    gap == null ? " · gap —" : ` · gap +${gap.toFixed(3)}s at the start`;
                   return (
                     <div
                       key={i}
                       className="stint-block"
-                      title={`${p.driverCode(driver)} · ${compound} · laps ${start}–${s.lap_end ?? maxLap}`}
+                      title={`${p.driverCode(driver)} · ${compound} · laps ${start}–${end}${ageText}${gapText}`}
                       style={{
                         left: `${((start - 1) / maxLap) * 100}%`,
                         width: `${Math.max(0.6, ((end - start + 1) / maxLap) * 100)}%`,

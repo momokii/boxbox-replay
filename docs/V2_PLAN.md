@@ -9,9 +9,10 @@ step.
 
 ## Order and why
 
-**Status (2026-11-03):** V2.1–V2.4 shipped and verified in production.
-V2.2 adds the AI layer: grounded Q&A and a race recap through OpenCode Go
-(`deepseek-v4.1-flash`), server-side key, budget and cache (see §V2.8 below).
+**Status (2026-11-08):** V2.1–V2.4 and V2.6–V2.7 shipped and verified in
+production. V2.5 remains deferred for the measured reasons below. V2.2 adds the
+AI layer: grounded Q&A and a recap through OpenCode Go (`deepseek-v4.1-flash`),
+server-side key, budget and cache (see §V2.8).
 V2.5 deferred with measured reasons (§V2.5). V2.6–V2.7 remain backlog.
 
 | Step | Milestone | Depends on | Why first |
@@ -21,8 +22,8 @@ V2.5 deferred with measured reasons (§V2.5). V2.6–V2.7 remain backlog.
 | V2.3 | Lap Duel (UI) | V2.2 | First visible v2 surface |
 | V2.4 | Telemetry traces | V2.1 | Reuses per-lap `car_data` windows |
 | V2.5 | Fight Finder | V2.1 | **Deferred** — the gap feed is too noisy for an honest list (see below) |
-| V2.6 | Pit strategy Gantt | — | Already-cached `stints`/`pit` |
-| V2.7 | Share card PNG | V2.3 | Exports the duel/replay frame |
+| V2.6 | Pit strategy Gantt | — | **Shipped** — the Performance stint timeline; hover now has tyre age and gap |
+| V2.7 | Share card PNG | V2.3 | **Shipped** — 1200×630 PNG from the player bar |
 
 Qualifying mini-sectors stay out of v2 (see research §7).
 
@@ -175,21 +176,23 @@ rows in a test; entries never point outside the session window.
 
 ---
 
-## V2.6 — Pit strategy Gantt
+## V2.6 — Pit strategy Gantt (shipped)
 
-- Bars per driver on a shared lap axis, compound colour, pit windows marked,
-  hover for tyre age and the gap at that lap.
-- Data already cached (`stints`, `pit`); no new requests.
-- Acceptance: every bar maps to a stint row; gaps between bars are pit laps and
-  are visibly labelled as such.
+- Bars per driver on a shared lap axis, compound colour, pit notches, and a
+  summary of stops/compounds per driver. Hover now includes the tyre age
+  (`tyres 0→15 laps`) and the gap to the leader at the stint's first lap.
+- Data is already cached (`stints`, `pit`); no new requests.
+- Acceptance: every bar maps to a stint row; pit gaps are marked; the hover
+  carries compound, lap range, tyre age and gap.
 
-## V2.7 — Share card
+## V2.7 — Share card (shipped)
 
-- 1200×630 canvas export: track outline, the two duel cars or the replay frame,
-  session name, lap, clock, drivers.
-- Client-side only; no new endpoint.
-- Acceptance: exported PNG opens standalone, text is legible at 50% scale, and
-  the export path is covered by a unit test for the layout maths.
+- **Share card** in the player bar downloads a 1200×630 PNG: brand, session
+  name, lap, clock, circuit outline and every car at the current frame. Only the
+  top five get labels, so a pack of cars stays readable.
+- Client-side only (`web/src/shareCard.ts`); no endpoint, no key.
+- Acceptance: the PNG opens standalone at 1200×630, text is legible at 50%, and
+  the layout maths (fit, centring, empty outline) are unit-tested.
 
 ---
 

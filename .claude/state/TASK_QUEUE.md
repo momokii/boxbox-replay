@@ -93,7 +93,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-17 | Session-aware Ask (quali/practice) | DONE | 67 pytest |
 | V2-18 | Docs aligned with the shipped app | DONE | README/ARCH/DEPLOY/TESTING |
 | V2-19 | Corner coach via AI + measured fallback | DONE | CLI removed |
-| V2-20 | Tag releases | DONE | v1.0.0 … v2.10.1; v2.11.0 next |
+| V2-20 | Backlog: share card + stint hover details | DONE | 50 vitest |
+| V2-21 | Tag releases | DONE | v1.0.0 … v2.11.0; v2.12.0 next |
 
 ---
 
