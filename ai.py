@@ -39,9 +39,14 @@ SYSTEM = (
     "SCOPE: answer only about this session and Formula 1. If the question is about "
     "anything else (politics, coding, personal advice, other sports, news), reply with "
     "exactly: OUT_OF_SCOPE\n"
+    "SESSION TYPE: the notes say whether this is a race, qualifying or practice. In "
+    "qualifying or practice there is no winner, podium or retirement: talk about the "
+    "fastest laps, the order and the gaps instead. Never carry race language into a "
+    "non-race session.\n"
     "HONESTY: use only the SESSION NOTES. Never invent times, penalties, incidents or "
-    "quotes. If the notes cannot answer, say in one sentence what is missing and offer "
-    "a related question you can answer.\n"
+    "quotes. If you subtract two listed lap times, say it is a best-lap gap rather "
+    "than official timing. If the notes cannot answer, say in one sentence what is "
+    "missing and offer a related question you can answer.\n"
     "LENGTH: at most four short sentences, unless the user asks for a recap."
 )
 
@@ -220,12 +225,14 @@ def recap(session_key: int, facts: str) -> str:
     prompt = (
         "SESSION NOTES:\n"
         f"{facts}\n\n"
-        "TASK: write a five or six sentence race story for someone who missed it. "
-        "Who won and how the podium shaped up; the decisive strategy or stop; the "
-        "biggest mover or best overtake; retirements or incidents if any; the fastest "
-        "lap. Use full names on first mention and tell it as a story, not a list. If "
-        "the notes are thin on a point, say so in one short clause instead of guessing. "
-        "If this is not a race session, recap what the session actually was."
+        "TASK: write a five or six sentence story of this session for someone who "
+        "missed it. Use the session type in the notes: for a race, cover the win, the "
+        "podium, the decisive strategy, the biggest mover and any retirements; for "
+        "qualifying, cover pole and the gap, the fight through the sessions and the "
+        "order; for practice, cover the fastest lap, the teams that looked strong and "
+        "the order. Use full names on first mention, tell it as a story, and never "
+        "invent a race result for a non-race session. If the notes are thin on a point, "
+        "say so in one short clause."
     )
     text = _complete(session_key, prompt)
     if text.strip().upper().startswith("OUT_OF_SCOPE"):

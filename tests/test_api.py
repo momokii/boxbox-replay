@@ -469,3 +469,61 @@ def test_session_replay_zeroes_time_and_counts_drivers(monkeypatch):
     assert body["drivers_included"] == 1 and body["drivers_expected"] == 1
     assert body["duration_s"] == 5400.0  # the race clock, not position coverage
     assert body["laps"][0]["lap_number"] == 1
+
+
+def test_ai_facts_non_race_has_no_race_language(monkeypatch):
+    drivers = _frame(
+        [
+            {
+                "driver_number": 1,
+                "name_acronym": "ANT",
+                "full_name": "Kimi ANTONELLI",
+                "team_name": "Mercedes",
+            }
+        ]
+    )
+    result = _frame(
+        [
+            {
+                "position": 1.0,
+                "driver_number": 1,
+                "gap_to_leader": 0.0,
+                "points": 0.0,
+                "number_of_laps": 18,
+            }
+        ]
+    )
+    laps = _frame(
+        [
+            {
+                "driver_number": 1,
+                "lap_number": 10,
+                "lap_duration": 90.0,
+                "duration_sector_1": 30.0,
+                "duration_sector_2": 31.0,
+                "duration_sector_3": 29.0,
+            }
+        ]
+    )
+    monkeypatch.setattr(m.data_loader, "list_drivers", lambda *a, **k: drivers)
+    monkeypatch.setattr(m.data_loader, "get_session_result", lambda *a, **k: result)
+    monkeypatch.setattr(m.data_loader, "list_laps", lambda *a, **k: laps)
+    monkeypatch.setattr(m.data_loader, "get_pit", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "get_stints", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "get_overtakes", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "get_weather", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(m.data_loader, "get_race_control", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(
+        m,
+        "session_info",
+        lambda sk: {"session_name": "Qualifying", "total_laps": 18, "drivers": 1},
+    )
+
+    facts, used = m._ai_facts(1)
+
+    assert facts.startswith("Session: Qualifying")
+    assert "Qualifying classification" in facts
+    assert " winner" not in facts
+    assert "Retirements" not in facts
+    assert "overtakes" not in used and "pit stops" not in used
+    assert "Do not call the classified leader the fastest" in facts

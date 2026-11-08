@@ -992,6 +992,7 @@ export default function App() {
               <AskPanel
                 sessionKey={sessionKey}
                 sessionLabel={`${gpName} · ${sessName}`}
+                sessionName={sessName}
               />
             )}
             {view === "performance" && (

@@ -819,8 +819,22 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
     used: list[str] = []
 
     info = session_info(session_key)
+    session_name = str(info.get("session_name") or "")
+    lowered = session_name.lower()
+    is_race = "race" in lowered or lowered == "sprint"
+    is_quali = "qualifying" in lowered or "shootout" in lowered
+    is_practice = "practice" in lowered
+    kind = (
+        "race"
+        if is_race
+        else "qualifying"
+        if is_quali
+        else "practice"
+        if is_practice
+        else "session"
+    )
     lines.append(
-        f"Session: {info.get('session_name')}, {info.get('total_laps')} laps, "
+        f"Session: {session_name or kind}, {info.get('total_laps')} laps, "
         f"{info.get('drivers')} entrants."
     )
     used.append("session")
@@ -850,21 +864,36 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
                     f" +{float(gap):.3f}s"
                     if pd.notna(gap) and float(gap) > 0
                     else " winner"
-                    if int(row.position) == 1
+                    if is_race and int(row.position) == 1
                     else ""
                 )
                 points = getattr(row, "points", None)
-                pts = f" {float(points):g}pts" if pd.notna(points) else ""
+                pts = (
+                    f" {float(points):g}pts"
+                    if is_race and pd.notna(points) and float(points) > 0
+                    else ""
+                )
                 laps_done = getattr(row, "number_of_laps", None)
                 laps_txt = f" {int(laps_done)} laps" if pd.notna(laps_done) else ""
                 classified.append(f"P{int(row.position)} {who}{gap_txt}{pts}{laps_txt}.")
             else:
                 retired.append(f"{who} {status or 'not classified'}")
         if classified:
-            lines.append("Full classification:\n" + "\n".join(classified))
+            label = (
+                "Full classification"
+                if kind == "race"
+                else "Qualifying classification"
+                if kind == "qualifying"
+                else "Practice order (as recorded)"
+                if kind == "practice"
+                else "Session order"
+            )
+            lines.append(f"{label}:\n" + "\n".join(classified))
             used.append("classification")
         # First position recorded for each driver, for "gained/lost" questions.
         try:
+            if kind != "race":
+                raise LookupError("not a race")
             positions_feed = data_loader.get_position(session_key)
             if not positions_feed.empty and {"driver_number", "position", "date"} <= set(
                 positions_feed.columns
@@ -905,14 +934,30 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
         except Exception:
             pass
 
-        if retired:
-            lines.append("Did not finish / not classified: " + "; ".join(retired) + ".")
-            used.append("retirements")
-        else:
+        if kind == "qualifying":
             lines.append(
-                "Retirements: none — every entrant was classified at the finish."
+                "Note: this is the official qualifying classification; the fastest lap "
+                "line can belong to a driver classified lower (a deleted lap or no "
+                "improvement). Do not call the classified leader the fastest unless the "
+                "fastest-lap line agrees."
             )
-            used.append("retirements")
+            used.append("session note")
+        if kind == "practice":
+            lines.append(
+                "Note: the practice order is the recorded classification and may not "
+                "match the fastest lap. Do not call the first driver the fastest unless "
+                "the fastest-lap line says so."
+            )
+            used.append("session note")
+        if kind == "race":
+            if retired:
+                lines.append("Did not finish / not classified: " + "; ".join(retired) + ".")
+                used.append("retirements")
+            else:
+                lines.append(
+                    "Retirements: none — every entrant was classified at the finish."
+                )
+                used.append("retirements")
 
     laps = data_loader.list_laps(session_key)
     winner = None
@@ -1028,7 +1073,7 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
                             f"{float(win_best['lap_duration']):.3f}s): {win_sectors}."
                         )
 
-    pit = data_loader.get_pit(session_key)
+    pit = data_loader.get_pit(session_key) if kind == "race" else pd.DataFrame()
     if not pit.empty and "driver_number" in pit.columns and "stop_duration" in pit.columns:
         stops = pit.copy()
         stops["stop_duration"] = pd.to_numeric(stops["stop_duration"], errors="coerce")
@@ -1083,7 +1128,7 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
             lines.append("Tyre plans, top five (compound, lap range): " + " | ".join(plans) + ".")
             used.append("tyre plans")
 
-    overtakes = data_loader.get_overtakes(session_key)
+    overtakes = data_loader.get_overtakes(session_key) if kind == "race" else pd.DataFrame()
     if not overtakes.empty and "overtaking_driver_number" in overtakes.columns:
         made = overtakes.groupby("overtaking_driver_number").size().sort_values(ascending=False)
         top = ", ".join(f"{name(d)} {int(n)}" for d, n in made.head(3).items())

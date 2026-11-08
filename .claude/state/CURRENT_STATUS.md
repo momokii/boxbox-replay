@@ -23,6 +23,7 @@ DEPLOYED prod, healthy at http://<host>:8501.
 - [x] V2.15: test-suite audit (164 -> 113), dead code removed, docs/TESTING.md
 - [x] V2.16: chat messenger layout + no-store HTML cache headers
 - [x] V2.17: narrow-window chat order fix + responsive pit source table
+- [x] V2.18: session-aware Ask (race/qualifying/practice facts, prompts, recap)
 - [ ] V2.6 pit Gantt · V2.7 share card · V2.5 fight finder deferred (feed too noisy)
 - [x] fix: glitch filter no longer truncates a circuit after one telemetry gap
 - [x] R1: all-driver canvas replay (map, tower, playback, synced trace)
@@ -42,7 +43,7 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-11-08: narrow chat + pit table fixes; v2.9.1
+2026-11-08: session-aware Ask; v2.10.0
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
 
 - [x] U9: smoothness (60fps), chart hover + responsive widths, stacked stints, honest pit model

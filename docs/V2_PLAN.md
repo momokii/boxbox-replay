@@ -371,3 +371,28 @@ Two layout bugs found at ~8:9 and phone widths:
   478 px wide. It now stacks its cells under 640 px.
 
 Screenshots: `docs/screenshots/15-chat-narrow.png` (720 px).
+
+## V2.16 — Session-aware Ask (shipped)
+
+The AI was race-centric: on qualifying or practice it still labelled P1 as the
+"winner", claimed "Retirements: none — every entrant was classified at the
+finish", and offered race prompts. Fixed end to end:
+
+- `_ai_facts` detects the session type from its name and labels the order
+  correctly: "Full classification" (race), "Qualifying classification",
+  "Practice order (as recorded)". Points, "winner", retirements, position
+  changes, pit stops and overtakes are race-only.
+- Non-race facts add the caveat that the classified leader and the fastest lap
+  can differ (a deleted lap, or practice run plans), so the model does not call
+  P1 "fastest" when the fastest-lap line disagrees.
+- The system prompt knows the session type and forbids carrying race language
+  into qualifying/practice; it also asks the model to label a gap it computed
+  from two lap times as a best-lap gap, not official timing.
+- The recap prompt is session-specific (pole fight for qualifying, fastest lap
+  and team strength for practice).
+- The Ask UI gets the session name: chips, recap button label and placeholder
+  switch between race, qualifying and practice. Chat history stays per session.
+
+Verified live: a qualifying recap talks pole/red flags with no race language; a
+practice answer identifies Verstappen's fastest lap while correctly noting
+Leclerc topped the order. 67 pytest (new non-race facts test).

@@ -437,3 +437,11 @@ above every engineer bubble (me/me/me then ai/ai/ai). Chat classes renamed to
 ask-user/ask-engineer and the rail rules scoped to direct layout children.
 Also stacked the pit source table under 640px (it was 478px wide at 390px).
 Verified at 1440, 800, 720, 640, 560, 500, 390.
+
+Session-aware Ask: _ai_facts now labels the order per session type (Full
+classification / Qualifying classification / Practice order), keeps points,
+winner, retirements, positions, pit stops and overtakes to races, and warns that
+the classified leader may not hold the fastest lap. The prompt knows the session
+type, the recap is session-specific, and the Ask chips/recap label switch for
+qualifying and practice. Chat history stays per session. Verified live with a
+qualifying recap and a practice question; 67 pytest.

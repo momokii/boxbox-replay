@@ -10,9 +10,10 @@ import {
 interface Props {
   sessionKey: number;
   sessionLabel: string;
+  sessionName: string;
 }
 
-const SUGGESTIONS = [
+const RACE_PROMPTS = [
   "Summarise this race in four sentences",
   "Where did the winner lose time on their best lap?",
   "Who had the fastest and slowest pit stop?",
@@ -20,10 +21,33 @@ const SUGGESTIONS = [
   "Which drivers retired, and what happened?",
 ];
 
+const QUALI_PROMPTS = [
+  "Who took pole, and what was the gap?",
+  "Where did the pole lap gain its time?",
+  "How close was the field?",
+  "Who was quickest in each sector?",
+  "Summarise this qualifying session",
+];
+
+const PRACTICE_PROMPTS = [
+  "Who set the fastest lap?",
+  "Which teams looked strongest?",
+  "How close was the field?",
+  "Who did the most laps?",
+  "Summarise this practice session",
+];
+
+function sessionKind(name: string): "qualifying" | "practice" | "race" {
+  const lowered = name.toLowerCase();
+  if (lowered.includes("qualifying") || lowered.includes("shootout")) return "qualifying";
+  if (lowered.includes("practice")) return "practice";
+  return "race";
+}
+
 const MAX_QUESTION = 400;
 
 /** Chat with the race engineer, grounded in this session; the key stays server-side. */
-export default function AskPanel({ sessionKey, sessionLabel }: Props) {
+export default function AskPanel({ sessionKey, sessionLabel, sessionName }: Props) {
   const [status, setStatus] = useState<{ ready: boolean; model: string } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -170,6 +194,15 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
   };
 
   const empty = messages.length === 0;
+  const kind = sessionKind(sessionName);
+  const prompts =
+    kind === "qualifying" ? QUALI_PROMPTS : kind === "practice" ? PRACTICE_PROMPTS : RACE_PROMPTS;
+  const recapLabel =
+    kind === "qualifying"
+      ? "Qualifying recap"
+      : kind === "practice"
+        ? "Practice recap"
+        : "Race recap";
 
   return (
     <section className="ask" aria-label="Ask the race engineer">
@@ -254,8 +287,8 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
               <div className="ask-empty">
                 <p className="ask-empty-title">Ask about {sessionLabel}</p>
                 <p className="dim small">
-                  Strategy, pace, pit stops, retirements — follow-ups keep the thread. Answers
-                  use this session's timings only.
+                  Pace, strategy, gaps, incidents — follow-ups keep the thread. Answers use
+                  this session's timings only.
                 </p>
               </div>
             )}
@@ -314,9 +347,9 @@ export default function AskPanel({ sessionKey, sessionLabel }: Props) {
                 onClick={recap}
                 disabled={busy !== null}
               >
-                Race recap
+                {recapLabel}
               </button>
-              {SUGGESTIONS.map((s) => (
+              {prompts.map((s) => (
                 <button
                   key={s}
                   type="button"
