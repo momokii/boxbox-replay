@@ -87,10 +87,6 @@ export const api = {
     get<SessionGaps>(`/session/gaps?session_key=${sessionKey}`),
   sessionSpeed: (sessionKey: number, driver: number) =>
     get<SpeedPoint[]>(`/session/speed?session_key=${sessionKey}&driver_number=${driver}`),
-  inputs: (sessionKey: number, driver: number, lap: number) =>
-    get<InputsPayload>(
-      `/session/inputs?session_key=${sessionKey}&driver_number=${driver}&lap=${lap}`,
-    ),
   inputsWindow: (sessionKey: number, driver: number, t0: number, t1: number) =>
     get<InputsPayload>(
       `/session/inputs?session_key=${sessionKey}&driver_number=${driver}` +
@@ -128,15 +124,9 @@ export const api = {
         traffic_penalty_s: number;
       };
     }>("/ai/pit", body),
-  aiAsk: (sessionKey: number, question: string) =>
-    post<{ answer: string; model: string; grounded_on: string[] }>("/ai/ask", {
-      session_key: sessionKey,
-      question,
-    }),
   aiRecap: (sessionKey: number) =>
     post<{ answer: string; model: string; grounded_on: string[] }>("/ai/recap", {
       session_key: sessionKey,
-      question: "",
     }),
   duel: (sessionKey: number, aDriver: number, aLap: number, bDriver: number, bLap: number) =>
     get<DuelPayload>(

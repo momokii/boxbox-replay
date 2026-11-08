@@ -34,28 +34,19 @@ const trace: TracePoint[] = [
 ];
 
 describe("progressAt", () => {
-  it("interpolates between samples", () => {
+  it("interpolates, clamps and survives an empty trace", () => {
     expect(progressAt(trace, 1.25)).toBeCloseTo(0.125, 6);
     expect(progressAt(trace, 6.25)).toBeCloseTo(0.625, 6);
-  });
-
-  it("clamps before the start and after the finish", () => {
     expect(progressAt(trace, -1)).toBe(0);
     expect(progressAt(trace, 99)).toBe(1);
-  });
-
-  it("survives an empty trace", () => {
     expect(progressAt([], 3)).toBe(0);
   });
 });
 
 describe("pointAt", () => {
-  it("returns the endpoints", () => {
+  it("returns the endpoints and interpolates between them", () => {
     expect(pointAt(trace, 0)).toEqual([0, 0]);
     expect(pointAt(trace, 1)).toEqual([0, 0]);
-  });
-
-  it("interpolates a position", () => {
     expect(pointAt(trace, 0.5)).toEqual([10, 10]);
     expect(pointAt(trace, 0.125)[0]).toBeCloseTo(5, 6);
   });
@@ -91,57 +82,40 @@ describe("frameAt", () => {
     ],
   };
 
-  it("identifies the leader and the gap", () => {
+  it("identifies the leader, the gap, and a tie at the start", () => {
     const frame = frameAt(payload, 5);
     expect(frame.leader).toBe("a");
     expect(frame.fa).toBeGreaterThan(frame.fb);
     expect(frame.gap).toBeGreaterThan(0);
     expect(frame.signed).toBeGreaterThan(0);
-  });
 
-  it("is a tie at the start", () => {
-    const frame = frameAt(payload, 0);
-    expect(frame.leader).toBe("tie");
-    expect(frame.gap).toBe(0);
+    const start = frameAt(payload, 0);
+    expect(start.leader).toBe("tie");
+    expect(start.gap).toBe(0);
   });
 });
 
-describe("fastestLap", () => {
-  it("ignores untimed laps and picks the minimum", () => {
-    const laps = [lap(1, 1, 95), lap(1, 2, 92.5), lap(1, 3, null), lap(2, 1, 90)];
+describe("fastestLap and defaultPair", () => {
+  const laps = [lap(1, 1, 92.5), lap(1, 2, 90), lap(1, 3, null), lap(2, 1, 91), lap(3, 1, null)];
+
+  it("ignores untimed laps, ignores unknown drivers and picks the minimum", () => {
     expect(fastestLap(laps, 1)?.lap_number).toBe(2);
     expect(fastestLap(laps, 3)).toBeNull();
   });
-});
 
-describe("defaultPair", () => {
-  const laps = [lap(1, 1, 90), lap(2, 1, 91), lap(3, 1, null)];
-
-  it("prefers the followed drivers", () => {
+  it("prefers followed drivers, falls back to the first two, never repeats", () => {
     expect(defaultPair([1, 2, 3], laps, [2, 1])).toEqual([2, 1]);
-  });
-
-  it("falls back to the first two drivers with timed laps", () => {
     expect(defaultPair([3, 1, 2], laps, [])).toEqual([1, 2]);
-  });
-
-  it("never picks the same driver twice when there is an alternative", () => {
     expect(defaultPair([1, 2], laps, [1])).toEqual([1, 2]);
   });
 });
 
 describe("rotatePoint", () => {
-  it("leaves points alone at zero degrees", () => {
+  it("is a no-op at zero, a quarter turn at 90, and invertible", () => {
     expect(rotatePoint(3, 4, 0)).toEqual([3, 4]);
-  });
-
-  it("rotates a quarter turn", () => {
-    const [x, y] = rotatePoint(1, 0, 90);
-    expect(x).toBeCloseTo(0, 9);
-    expect(y).toBeCloseTo(1, 9);
-  });
-
-  it("is invertible", () => {
+    const [qx, qy] = rotatePoint(1, 0, 90);
+    expect(qx).toBeCloseTo(0, 9);
+    expect(qy).toBeCloseTo(1, 9);
     const [x, y] = rotatePoint(...rotatePoint(7, -2, 37), -37);
     expect(x).toBeCloseTo(7, 9);
     expect(y).toBeCloseTo(-2, 9);

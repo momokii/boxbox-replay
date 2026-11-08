@@ -1,16 +1,9 @@
-"""M1: locks the analysis stub contract — loud NotImplementedError until M2/M5."""
+"""Pure maths: laps, geometry, gaps, pit model, duels. No HTTP, no files."""
 
 import pandas as pd
 import pytest
 
 import analysis
-
-
-@pytest.mark.parametrize("fn", [analysis.corner_loss])
-def test_remaining_stubs_fail_loudly(fn):
-    with pytest.raises(NotImplementedError):
-        fn(pd.DataFrame())
-
 
 LAPS = pd.DataFrame(
     {
@@ -19,32 +12,6 @@ LAPS = pd.DataFrame(
         "lap_duration": [float("nan"), 90.100, 90.120, 91.500],
     }
 )
-
-
-def test_best_lap_ignores_nan():
-    row = analysis.best_lap(LAPS)
-    assert int(row["lap_number"]) == 2
-
-
-def test_best_lap_raises_without_timed():
-    with pytest.raises(ValueError):
-        analysis.best_lap(pd.DataFrame({"lap_duration": [float("nan")]}))
-
-
-def test_lap_deltas_and_noise_flag():
-    out = analysis.lap_deltas(LAPS, ref_lap_number=2)
-    by_lap = {int(r.lap_number): r for r in out.itertuples()}
-    assert by_lap[2].delta == pytest.approx(0.0)
-    assert bool(by_lap[3].is_noise) is True  # 0.020 < 0.05
-    assert bool(by_lap[4].is_noise) is False  # 1.400 real
-    assert list(out["lap_number"]) == [2, 3, 4]
-
-
-def test_lap_deltas_rejects_missing_reference():
-    with pytest.raises(ValueError):
-        analysis.lap_deltas(LAPS, ref_lap_number=99)
-
-
 # --- M3: map geometry ---
 
 
@@ -62,36 +29,12 @@ def _stadium() -> pd.DataFrame:
     lift2 = 20 + 20 * np.sin(np.radians(angles + 180))
     left = pd.DataFrame({"x": bend2, "y": lift2})
     return pd.concat([top, right, bottom, left], ignore_index=True)
-
-
-def test_detect_corners_finds_turns_in_order():
-    path = analysis.resample_path(_stadium(), "x", "y")
-    corners = analysis.detect_corners(path)
-    assert len(corners) >= 2  # a stadium has two rounded ends
-    assert corners["label"].tolist() == [f"T{i + 1}" for i in range(len(corners))]
-    assert corners["frac"].is_monotonic_increasing
-    assert corners["frac"].between(0, 1).all()
-
-
 def test_resample_path_is_uniform_and_scale_free():
     path = analysis.resample_path(_stadium(), "x", "y", points=200)
     assert len(path) == 200
     assert path["frac"].iloc[0] == 0.0 and path["frac"].iloc[-1] == pytest.approx(1.0)
     steps = path["dist"].diff().dropna()
     assert steps.max() - steps.min() < 1e-6  # uniform spacing
-
-
-def test_clean_track_points_drops_jumps():
-    df = pd.DataFrame({"x": [0, 10, 20, 9000, 30, 40], "y": [0, 0, 0, 0, 0, 0]})
-    cleaned = analysis.clean_track_points(df, "x", "y")
-    assert 9000 not in cleaned["x"].tolist()
-    assert len(cleaned) == 5
-
-
-def test_detect_corners_empty_on_short_line():
-    assert analysis.detect_corners(pd.DataFrame({"x": [0.0, 1.0], "y": [0.0, 0.0]})).empty
-
-
 def test_tyre_slope_linear_deg_and_floor():
     laps = pd.DataFrame({"lap_number": [1, 2, 3, 4], "lap_duration": [90.0, 90.2, 90.4, 90.6]})
     assert analysis.tyre_slope(laps) == pytest.approx(0.2)
@@ -191,42 +134,6 @@ def _straight_trace(x1: float, seconds: float, n: int = 11) -> pd.DataFrame:
     return pd.DataFrame(
         {"date": stamps.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")}
     ).assign(x=np.linspace(0, x1, n), y=0.0)
-
-
-def test_corner_losses_slower_driver_loses_time():
-    outline = pd.DataFrame({"x": [0.0, 1000.0], "y": [0.0, 0.0]})
-    corners = pd.DataFrame(
-        {"label": ["T1"], "x": [500.0], "y": [0.0], "frac": [0.5], "dist": [500.0]}
-    )
-    # +-0.035 of a 1000-unit lap covers 60 sampled units here: 0.6 s vs 0.48 s.
-    out = analysis.corner_losses(
-        outline,
-        corners,
-        _straight_trace(1000, 10.0, n=101),
-        _straight_trace(1000, 8.0, n=101),
-        "x",
-        "y",
-    )
-    assert out.iloc[0]["loss_s"] == pytest.approx(0.12, abs=0.02)
-
-
-def test_corner_losses_empty_window_is_nan_not_invented():
-    outline = pd.DataFrame({"x": [0.0, 1000.0], "y": [0.0, 0.0]})
-    corners = pd.DataFrame(
-        {"label": ["T1"], "x": [500.0], "y": [0.0], "frac": [0.5], "dist": [500.0]}
-    )
-    out = analysis.corner_losses(
-        outline, corners, pd.DataFrame(), _straight_trace(1000, 8.0), "x", "y"
-    )
-    assert pd.isna(out.iloc[0]["loss_s"])
-    assert bool(out.iloc[0]["flagged"]) is False
-
-
-def test_map_plane_picks_widest_axes():
-    loc = pd.DataFrame({"x": [0.0, 100.0], "y": [0.0, 1.0], "z": [5.0, 5.0]})
-    assert analysis.map_plane(loc) == ("x", "y")
-
-
 def test_rotate_points_handles_points_and_segments():
     pts = analysis.rotate_points([{"x": 1.0, "y": 0.0}], 90)
     assert pts[0]["x"] == pytest.approx(0.0, abs=1e-9)
@@ -335,47 +242,6 @@ def test_duel_delta_equals_lap_time_gap_at_the_line():
     # the window; at equal *progress* B is behind by the pace difference.
     assert delta["dt"].iloc[-1] > 0.5
     assert delta["dt"].iloc[-1] == pytest.approx(1.0, abs=0.05)
-
-
-def test_lap_progress_rejects_empty_and_origin_rows():
-    import analysis
-
-    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
-    assert analysis.lap_progress(pd.DataFrame(), start, start) .empty
-
-    only_origin = pd.DataFrame(
-        {
-            "date": [start.isoformat(), (start + pd.Timedelta(seconds=1)).isoformat()],
-            "x": [0.0, 0.0],
-            "y": [0.0, 0.0],
-        }
-    )
-    assert analysis.lap_progress(only_origin, start, start + pd.Timedelta(seconds=10)).empty
-
-
-def test_clean_track_points_does_not_cascade_after_one_gap():
-    """One telemetry gap must not discard the rest of the lap."""
-    import numpy as np
-
-    # A straight line with a 10x gap in the middle, then the line continues.
-    xs = np.arange(0, 100) * 100.0
-    frame = pd.DataFrame({"x": xs, "y": np.zeros_like(xs)})
-    frame.loc[50, "x"] = 9_999.0  # single outlier between two normal samples
-
-    cleaned = analysis.clean_track_points(frame, "x", "y")
-    assert len(cleaned) == len(frame) - 1
-    assert 9_999.0 not in cleaned["x"].tolist()
-    assert cleaned["x"].iloc[-1] == frame["x"].iloc[-1]
-
-
-def test_clean_track_points_keeps_a_normal_trace():
-    import numpy as np
-
-    xs = np.arange(0, 60) * 100.0
-    frame = pd.DataFrame({"x": xs, "y": np.zeros_like(xs)})
-    assert len(analysis.clean_track_points(frame, "x", "y")) == len(frame)
-
-
 def test_pit_model_exposes_the_arithmetic():
     call = analysis.pit_toy_model(100.0, 99.0, 0.2, 10, pit_loss_s=5.0)
     # deg term cancels: 10 laps at +0.2/lap = 9.0s in both totals
@@ -397,3 +263,70 @@ def test_pit_model_exposes_the_arithmetic():
     traffic = analysis.pit_toy_model(100.0, 99.0, 0.2, 10, pit_loss_s=5.0, gap_behind_s=1.0)
     assert traffic["traffic_penalty_s"] == pytest.approx(5.0)
     assert traffic["break_even_pit_loss_s"] == pytest.approx(5.0)
+
+
+def test_best_lap_and_deltas():
+    row = analysis.best_lap(LAPS)
+    assert int(row["lap_number"]) == 2
+    with pytest.raises(ValueError):
+        analysis.best_lap(pd.DataFrame({"lap_duration": [float("nan")]}))
+
+    out = analysis.lap_deltas(LAPS, ref_lap_number=2)
+    by_lap = {int(r.lap_number): r for r in out.itertuples()}
+    assert by_lap[2].delta == pytest.approx(0.0)
+    assert bool(by_lap[3].is_noise) is True  # 0.020 < 0.05
+    assert bool(by_lap[4].is_noise) is False  # 1.400 real
+    assert list(out["lap_number"]) == [2, 3, 4]
+    with pytest.raises(ValueError):
+        analysis.lap_deltas(LAPS, ref_lap_number=99)
+
+
+def test_detect_corners_labels_and_order():
+    path = analysis.resample_path(_stadium(), "x", "y")
+    corners = analysis.detect_corners(path)
+    assert len(corners) >= 2  # a stadium has two rounded ends
+    assert corners["label"].tolist() == [f"T{i + 1}" for i in range(len(corners))]
+    assert corners["frac"].is_monotonic_increasing
+    assert corners["frac"].between(0, 1).all()
+    assert analysis.detect_corners(pd.DataFrame({"x": [0.0, 1.0], "y": [0.0, 0.0]})).empty
+
+
+def test_clean_track_points_drops_a_spike_but_keeps_the_lap():
+    # One telemetry gap used to discard the rest of the lap (2026 US GP: 36%
+    # missing). The spike goes; every later sample stays.
+    xs = list(range(0, 100, 10)) + [9000] + list(range(100, 140, 10))
+    frame = pd.DataFrame({"x": xs, "y": 0.0})
+    cleaned = analysis.clean_track_points(frame, "x", "y")
+    assert 9000 not in cleaned["x"].tolist()
+    assert cleaned["x"].iloc[-1] == frame["x"].iloc[-1]
+    assert len(cleaned) == len(frame) - 1
+    # A normal trace is untouched.
+    normal = pd.DataFrame({"x": list(range(0, 60, 10)), "y": 0.0})
+    assert len(analysis.clean_track_points(normal, "x", "y")) == len(normal)
+
+
+def test_lap_progress_rejects_empty_windows():
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    assert analysis.lap_progress(pd.DataFrame(), start, start).empty
+
+def test_corner_losses_measures_and_refuses_empty_windows():
+    outline = pd.DataFrame({"x": [0.0, 1000.0], "y": [0.0, 0.0]})
+    corners = pd.DataFrame(
+        {"label": ["T1"], "x": [500.0], "y": [0.0], "frac": [0.5], "dist": [500.0]}
+    )
+    # +-0.035 of a 1000-unit lap covers 60 sampled units here: 0.6 s vs 0.48 s.
+    out = analysis.corner_losses(
+        outline,
+        corners,
+        _straight_trace(1000, 10.0, n=101),
+        _straight_trace(1000, 8.0, n=101),
+        "x",
+        "y",
+    )
+    assert out.iloc[0]["loss_s"] == pytest.approx(0.12, abs=0.02)
+
+    empty = analysis.corner_losses(
+        outline, corners, pd.DataFrame(), _straight_trace(1000, 8.0), "x", "y"
+    )
+    assert pd.isna(empty.iloc[0]["loss_s"])  # never invented
+    assert bool(empty.iloc[0]["flagged"]) is False

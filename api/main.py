@@ -238,44 +238,20 @@ def _trace_rows(trace: pd.DataFrame) -> list[list[float]]:
 def session_inputs(
     session_key: int,
     driver_number: int,
-    lap: int | None = None,
-    t0: float | None = None,
-    t1: float | None = None,
+    t0: float,
+    t1: float,
 ) -> dict:
-    """One driver's inputs for a lap, or for a session-time window.
+    """One driver's inputs over a session-time window (seconds on the replay clock).
 
-    Window mode (`t0`/`t1`, seconds on the replay clock) lets several drivers
-    share one axis for comparison. Times in the response are seconds from the
-    window start; missing channels come back as nulls, never as guesses.
+    Several drivers can share the same window, which is what the comparison
+    strip needs. Missing channels come back as nulls, never as guesses.
     """
-    if t0 is not None and t1 is not None and t1 > t0:
-        clock_start, _end, markers, _dur = _session_clock(session_key)
-        base = float(markers["t"].min()) if not markers.empty else 0.0
-        win_start = clock_start + pd.Timedelta(seconds=base + t0)
-        win_end = clock_start + pd.Timedelta(seconds=base + t1)
-        duration = float(t1 - t0)
-        window_t0: float | None = float(t0)
-        lap_value: int | None = None
-    else:
-        if lap is None:
-            raise HTTPException(400, "lap or t0/t1 required")
-        laps_df = data_loader.list_laps(session_key, driver_number=driver_number)
-        start, end = data_loader.lap_window(laps_df, lap)
-        if start is None:
-            raise HTTPException(404, f"lap {lap} not found for driver {driver_number}")
-        row = laps_df[laps_df.get("lap_number") == lap].tail(1)
-        duration = None
-        measured = (
-            row["lap_duration"].iloc[0]
-            if not row.empty and "lap_duration" in row.columns
-            else None
-        )
-        if measured is not None and pd.notna(measured):
-            duration = float(measured)
-        win_start = start
-        win_end = end if end is not None else start + pd.Timedelta(seconds=duration or 150)
-        window_t0 = None
-        lap_value = lap
+    if t1 <= t0:
+        raise HTTPException(422, "t1 must be after t0")
+    clock_start, _end, markers, _dur = _session_clock(session_key)
+    base = float(markers["t"].min()) if not markers.empty else 0.0
+    win_start = clock_start + pd.Timedelta(seconds=base + t0)
+    win_end = clock_start + pd.Timedelta(seconds=base + t1)
 
     car = data_loader.get_car_data(session_key, driver_number=driver_number)
     if car.empty or "date" not in car.columns:
@@ -297,9 +273,9 @@ def session_inputs(
 
     return {
         "driver_number": driver_number,
-        "lap": lap_value,
-        "lap_duration": duration,
-        "window_t0": window_t0,
+        "lap": None,
+        "lap_duration": t1 - t0,
+        "window_t0": t0,
         "t": [round(float(v), 3) for v in t],
         "speed": channel("speed"),
         "throttle": channel("throttle"),
@@ -1162,9 +1138,8 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
     return "\n".join(lines), ordered_used
 
 
-class AskRequest(BaseModel):
+class RecapRequest(BaseModel):
     session_key: int
-    question: str
 
 
 class ChatTurn(BaseModel):
@@ -1188,23 +1163,6 @@ class PitExplainRequest(PitCallRequest):
 @app.get("/ai/status")
 def ai_status() -> dict:
     return {**ai.status(), "ready": ai.configured()}
-
-
-@app.post("/ai/ask")
-def ai_ask(body: AskRequest) -> dict:
-    if not ai.configured():
-        raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
-    question = body.question.strip()
-    if not 3 <= len(question) <= 300:
-        raise HTTPException(422, "question must be between 3 and 300 characters")
-    facts, used = _ai_facts(body.session_key)
-    try:
-        text = ai.answer(body.session_key, facts, question)
-    except ai.AINotConfigured as exc:
-        raise HTTPException(503, str(exc)) from exc
-    except ai.AIError as exc:
-        raise HTTPException(502, "the AI provider did not answer, try again") from exc
-    return {"answer": text, "model": ai.MODEL, "grounded_on": used}
 
 
 @app.post("/ai/chat")
@@ -1284,7 +1242,7 @@ def ai_pit_explain(body: PitExplainRequest) -> dict:
 
 
 @app.post("/ai/recap")
-def ai_recap(body: AskRequest) -> dict:
+def ai_recap(body: RecapRequest) -> dict:
     if not ai.configured():
         raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
     facts, used = _ai_facts(body.session_key)

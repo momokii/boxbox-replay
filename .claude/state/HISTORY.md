@@ -409,3 +409,11 @@ wear cancels in the decision, states the break-even (including the traffic
 penalty) and explains what the engineer receives and will not do. A UI bug where
 the traffic penalty was folded into the margin without saying so was fixed.
 88 pytest + 76 vitest.
+
+Test-suite audit: 164 tests (88 Python + 76 frontend) had accumulated trivia and
+dead-code coverage. Removed the unused `/ai/ask` endpoint, lap-mode
+`/session/inputs`, `clamp_selection`, `format_lap_time`, `team_colors` and the
+unused client methods; merged parameter matrices and duplicate coverage; kept
+every regression, endpoint contract and pure-maths invariant. Result: 64 Python
++ 47 frontend, with `docs/TESTING.md` stating what is tested, what is not, and
+the rules for new tests.

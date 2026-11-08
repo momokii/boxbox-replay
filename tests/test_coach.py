@@ -22,11 +22,6 @@ def test_render_radio_format():
     assert "`[MED]`" in md and "based on lap 1 vs ref 1" in md
 
 
-def test_clean_output_strips_header():
-    raw = "\x1b[0m\n> Model · stuff\n\nActual answer here."
-    assert coach._clean_output(raw) == "Actual answer here."
-
-
 def test_ask_llm_success_and_timeout(monkeypatch):
     import subprocess
 

@@ -26,15 +26,12 @@ function fakeStorage(): StorageLike & { data: Record<string, string> } {
 const turn = (role: "user" | "assistant", content: string): ChatMessage => ({ role, content });
 
 describe("parseChat", () => {
-  it("rejects broken data and bad roles", () => {
+  it("rejects broken data and bad roles, and keeps the most recent turns", () => {
     expect(parseChat("{oops")).toEqual([]);
     expect(parseChat('{"role":"user"}')).toEqual([]);
     expect(parseChat(JSON.stringify([turn("user", "hi"), { role: "system", content: "x" }]))).toEqual([
       turn("user", "hi"),
     ]);
-  });
-
-  it("keeps the most recent turns only", () => {
     const many = Array.from({ length: 30 }, (_, i) => turn("user", `q${i}`));
     const parsed = parseChat(JSON.stringify(many));
     expect(parsed).toHaveLength(CHAT_MAX);
@@ -43,7 +40,7 @@ describe("parseChat", () => {
 });
 
 describe("per-session chat", () => {
-  it("stores independently per session", () => {
+  it("stores independently per session and loads it back", () => {
     const store = fakeStorage();
     saveChat(1, [turn("user", "one")], store);
     saveChat(2, [turn("user", "two")], store);

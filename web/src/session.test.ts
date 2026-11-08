@@ -20,21 +20,17 @@ const drv: ReplayDriver = {
 };
 
 describe("indexAt", () => {
-  it("finds the last sample at or before t", () => {
+  it("finds the last sample at or before t, or -1 before the first", () => {
     expect(indexAt([0, 10, 20], 15)).toBe(1);
     expect(indexAt([0, 10, 20], 0)).toBe(0);
     expect(indexAt([0, 10, 20], 99)).toBe(2);
-  });
-  it("returns -1 before the first sample", () => {
     expect(indexAt([5, 10], 1)).toBe(-1);
   });
 });
 
 describe("posAt", () => {
-  it("interpolates between samples", () => {
+  it("interpolates between samples and clamps at the ends", () => {
     expect(posAt(drv, 15)).toEqual({ x: 150, y: 50 });
-  });
-  it("clamps to the ends", () => {
     expect(posAt(drv, -1)).toEqual({ x: 0, y: 0 });
     expect(posAt(drv, 999)).toEqual({ x: 300, y: 100 });
   });
@@ -47,22 +43,17 @@ describe("trailAt", () => {
     expect(trail[0].x).toBeGreaterThanOrEqual(100);
   });
 
-  it("stops at a telemetry gap instead of drawing across the circuit", () => {
+  it("never draws across a telemetry gap", () => {
     const jumped: ReplayDriver = {
       driver_number: 9,
       t: [0, 1, 2, 20],
       x: [0, 10, 20, 900],
       y: [0, 0, 0, 900],
     };
-    const trail = trailAt(jumped, 20, 30, 50);
-    expect(trail).toEqual([{ x: 900, y: 900 }]);
-  });
-});
-
-describe("posAt step guard", () => {
-  it("holds the earlier sample across a jump", () => {
-    const jumped: ReplayDriver = { driver_number: 9, t: [0, 10], x: [0, 900], y: [0, 900] };
-    expect(posAt(jumped, 9, 50)).toEqual({ x: 0, y: 0 });
+    expect(trailAt(jumped, 20, 30, 50)).toEqual([{ x: 900, y: 900 }]);
+    // The position guard holds the earlier sample across the same jump.
+    const simple: ReplayDriver = { driver_number: 9, t: [0, 10], x: [0, 900], y: [0, 900] };
+    expect(posAt(simple, 9, 50)).toEqual({ x: 0, y: 0 });
   });
 });
 
@@ -73,11 +64,10 @@ describe("gaps", () => {
     { driver_number: 2, t: 20, gap_to_leader: 3.0 },
     { driver_number: 3, t: 0, gap_to_leader: null },
   ]);
-  it("interpolates and skips nulls", () => {
+
+  it("interpolates, skips nulls and holds the first sample before timing", () => {
     expect(gapAt(table, 2, 10)).toBeCloseTo(2.0, 6);
     expect(gapAt(table, 3, 10)).toBeNull();
-  });
-  it("uses the first sample before timing starts", () => {
     expect(gapAt(table, 1, -5)).toBe(0);
     expect(gapAt(table, 3, -5)).toBeNull();
   });
@@ -89,7 +79,8 @@ describe("lapAt", () => {
     { lap_number: 2, index: 2, t: 90 },
     { lap_number: 3, index: 3, t: 180 },
   ];
-  it("tracks progress", () => {
+
+  it("tracks progress and clamps outside the session", () => {
     expect(lapAt(markers, -1)).toEqual({ lap: 0, total: 3 });
     expect(lapAt(markers, 100)).toEqual({ lap: 2, total: 3 });
     expect(lapAt(markers, 500)).toEqual({ lap: 3, total: 3 });
@@ -104,7 +95,6 @@ describe("formatClock", () => {
   });
 });
 
-
 describe("official positions", () => {
   const rows = [
     { driver_number: 1, t: 0, position: 3 },
@@ -113,13 +103,10 @@ describe("official positions", () => {
   ];
   const table = buildPositionTable(rows);
 
-  it("reads the latest official position", () => {
+  it("reads the latest position and is null before a driver's first sample", () => {
     expect(positionAt(table, 1, 60)).toBe(3);
     expect(positionAt(table, 1, 150)).toBe(1);
     expect(positionAt(table, 2, 60)).toBe(4);
-  });
-
-  it("is null before a driver's first sample", () => {
     expect(positionAt(table, 2, 10)).toBeNull();
     expect(positionAt(new Map(), 1, 10)).toBeNull();
   });

@@ -285,26 +285,6 @@ def session_has_telemetry(session_key: int) -> tuple[bool, str]:
     return True, ""
 
 
-def format_lap_time(seconds: float | None) -> str:
-    """Pit-wall format: M:SS.mmm, always 3 decimals; unmeasurable -> em dash."""
-    if seconds is None:
-        return "—"
-    try:
-        total = float(seconds)
-    except (TypeError, ValueError):
-        return "—"
-    if total != total:  # NaN check without importing math
-        return "—"
-    minutes = int(total // 60)
-    rest = total - minutes * 60
-    return f"{minutes}:{rest:06.3f}"
-
-
-def clamp_selection(items: list, limit: int = 3) -> list:
-    """Keep at most `limit` selections, preserving order (driver picker: max 3)."""
-    return list(items)[:limit]
-
-
 def lap_window(driver_laps: pd.DataFrame, lap_number: int):
     """(window_start, window_end) timestamps for exactly one lap.
 
@@ -580,18 +560,6 @@ def get_intervals(session_key: int) -> pd.DataFrame:
         df = df.copy()
         df["date"] = to_dt(df["date"])
     return df
-
-
-def team_colors(session_key: int) -> dict[int, str]:
-    """driver_number -> '#RRGGBB' team colour (identity on lines/dots/labels only)."""
-    drivers = list_drivers(session_key)
-    if drivers.empty:
-        return {}
-    colors = {}
-    for r in drivers.itertuples():
-        raw = str(getattr(r, "team_colour", "") or "").lstrip("#")
-        colors[int(r.driver_number)] = f"#{raw}" if len(raw) == 6 else "#8A94A6"
-    return colors
 
 
 def lap_car_data(session_key: int, driver_number: int, lap_number: int) -> pd.DataFrame:

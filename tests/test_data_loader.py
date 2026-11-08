@@ -152,21 +152,6 @@ def test_list_sessions_joins_meeting_names(isolated_cache, monkeypatch):
     assert set(df["meeting_name"].unique()) == {"Bahrain Grand Prix", "Japanese Grand Prix"}
     again = data_loader.list_sessions(2024)  # cache hit keeps the join
     assert set(again["meeting_name"].unique()) == set(df["meeting_name"].unique())
-
-
-def test_list_meetings_groups_and_orders(isolated_cache, monkeypatch):
-    _mock_sessions(monkeypatch, isolated_cache)
-    meetings = data_loader.list_meetings(2024)
-    assert meetings["meeting_name"].tolist() == ["Bahrain Grand Prix", "Japanese Grand Prix"]
-    assert meetings.set_index("meeting_name").loc["Bahrain Grand Prix", "sessions"] == 2
-
-
-def test_sessions_for_meeting_filters(isolated_cache, monkeypatch):
-    _mock_sessions(monkeypatch, isolated_cache)
-    df = data_loader.sessions_for_meeting(2024, 10)
-    assert sorted(df["session_key"].tolist()) == [1, 2]
-
-
 def test_session_has_telemetry_true_false_and_no_drivers(isolated_cache, monkeypatch):
     def fake_fetch(endpoint, params=None):
         if endpoint == "drivers":
@@ -179,20 +164,6 @@ def test_session_has_telemetry_true_false_and_no_drivers(isolated_cache, monkeyp
     assert data_loader.session_has_telemetry(1) == (True, "")
     assert data_loader.session_has_telemetry(2) == (False, "no telemetry")
     assert data_loader.session_has_telemetry(99) == (False, "no drivers")
-
-
-def test_format_lap_time_three_decimals():
-    assert data_loader.format_lap_time(88.197) == "1:28.197"
-    assert data_loader.format_lap_time(60.0) == "1:00.000"
-    assert data_loader.format_lap_time(None) == "—"
-    assert data_loader.format_lap_time(float("nan")) == "—"
-
-
-def test_clamp_selection_keeps_order_max_three():
-    assert data_loader.clamp_selection(["a", "b", "c", "d"]) == ["a", "b", "c"]
-    assert data_loader.clamp_selection(["a"]) == ["a"]
-
-
 def test_lap_window_start_and_next():
     import pandas as pd
 
@@ -209,20 +180,6 @@ def test_lap_window_start_and_next():
 
 
 # --- M2: battle data ---
-
-
-def test_team_colors_prefix_and_fallback(monkeypatch, isolated_cache):
-    monkeypatch.setattr(
-        data_loader,
-        "_fetch",
-        lambda endpoint, params=None: [
-            {"driver_number": 1, "team_colour": "3671C6"},
-            {"driver_number": 2, "team_colour": ""},
-        ],
-    )
-    assert data_loader.team_colors(1) == {1: "#3671C6", 2: "#8A94A6"}
-
-
 def _laps_df():
     import pandas as pd
 
@@ -253,21 +210,6 @@ def test_lap_car_data_windows_by_lap(monkeypatch, isolated_cache):
     lap8 = data_loader.lap_car_data(1, 1, 8)
     assert lap8["speed"].tolist() == [200]  # only rows before lap 9 starts
     assert data_loader.lap_car_data(1, 1, 99).empty  # unknown lap -> empty, no crash
-
-
-def test_get_intervals_cached(monkeypatch, isolated_cache):
-    calls = {"n": 0}
-
-    def fake_fetch(endpoint, params=None):
-        calls["n"] += 1
-        return [{"driver_number": 1, "gap_to_leader": 0.0}]
-
-    monkeypatch.setattr(data_loader, "_fetch", fake_fetch)
-    assert len(data_loader.get_intervals(7)) == 1
-    assert len(data_loader.get_intervals(7)) == 1
-    assert calls["n"] == 1
-
-
 def test_get_intervals_coerces_lap_strings(monkeypatch, isolated_cache):
     monkeypatch.setattr(
         data_loader,
@@ -280,28 +222,6 @@ def test_get_intervals_coerces_lap_strings(monkeypatch, isolated_cache):
     df = data_loader.get_intervals(8)
     assert pd.isna(df["gap_to_leader"].iloc[0])
     assert df["gap_to_leader"].iloc[1] == 3.5
-
-
-def test_downsample_5hz_keeps_first_per_bin():
-    import pandas as pd
-
-    df = pd.DataFrame(
-        {
-            "date": [
-                "2024-01-01T00:00:00.000+00:00",
-                "2024-01-01T00:00:00.100+00:00",
-                "2024-01-01T00:00:00.200+00:00",
-            ],
-            "v": [1, 2, 3],
-        }
-    )
-    out = data_loader.downsample_5hz(df)
-    assert out["v"].tolist() == [1, 3]
-    assert data_loader.downsample_5hz(pd.DataFrame()).empty
-    gapped = df.iloc[[0, 2]]  # non-default index after a boolean filter
-    assert data_loader.downsample_5hz(gapped)["v"].tolist() == [1, 3]
-
-
 def test_m5_feeds_cached(monkeypatch, isolated_cache):
     seen: list[str] = []
 

@@ -114,8 +114,8 @@ retired cars (result feed, or no fresh laps) are classified last.
 | `GET /ai/status` | `{configured, ready, model}` — never the key |
 | `POST /ai/chat` | Multi-turn: last 10 turns, user ≤400 chars, facts in the system message |
 | `POST /ai/pit` | Explains a `pit_toy_model` result; the server recomputes the numbers |
-| `POST /ai/ask` · `/ai/recap` | One-shot answers and the recap; 503 unconfigured, 422 bad question, 502 upstream |
-| `GET /session/inputs` | `t[]`, `speed[]`, `throttle[]`, `brake[]`, `gear[]`, `drs[]` (nulls when a channel is absent); `lap=` or `t0`/`t1` window mode for comparing drivers on one axis |
+| `POST /ai/recap` | Session recap; 503 unconfigured, 502 upstream |
+| `GET /session/inputs` | `t[]`, `speed[]`, `throttle[]`, `brake[]`, `gear[]`, `drs[]` over a `t0`/`t1` window (nulls when a channel is absent) |
 | `GET /session/duel` | `traces.a/b: [[f,x,y,t]]` (600 points, anchored to official lap duration) + `delta: [[f,dt]]` |
 | `GET /session/gaps` | `source: intervals \| lap_times \| none` + points |
 | `GET /session/pit` | `summary[]` (stops, best/total) + `stops[]` |

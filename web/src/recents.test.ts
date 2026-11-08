@@ -33,13 +33,10 @@ function setup(session: number, savedAt = session): RecentSetup {
 }
 
 describe("parseRecents", () => {
-  it("survives broken JSON and non-arrays", () => {
+  it("survives broken JSON, non-arrays and entries of the wrong shape", () => {
     expect(parseRecents("{not json")).toEqual([]);
     expect(parseRecents('{"a":1}')).toEqual([]);
     expect(parseRecents(null)).toEqual([]);
-  });
-
-  it("drops entries that do not match the shape", () => {
     const raw = JSON.stringify([setup(1), { session: "x" }, { year: 2026 }]);
     expect(parseRecents(raw)).toHaveLength(1);
   });
@@ -66,24 +63,19 @@ describe("addRecent", () => {
 });
 
 describe("remove and clear", () => {
-  it("removes one entry and persists", () => {
+  it("removes one persisted entry and clears the rest", () => {
     const store = fakeStorage();
     const list = addRecent(addRecent([], setup(1), store), setup(2), store);
     const left = removeRecent(list, 1, store);
     expect(left.map((item) => item.session)).toEqual([2]);
     expect(loadRecents(store).map((item) => item.session)).toEqual([2]);
-  });
-
-  it("clears everything", () => {
-    const store = fakeStorage();
-    addRecent([], setup(1), store);
     expect(clearRecents(store)).toEqual([]);
     expect(loadRecents(store)).toEqual([]);
   });
 });
 
-describe("loadRecents", () => {
-  it("returns [] when storage is unavailable", () => {
+describe("storage failures", () => {
+  it("returns an empty list instead of throwing", () => {
     const broken: StorageLike = {
       getItem: () => {
         throw new Error("denied");

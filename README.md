@@ -178,9 +178,9 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ## Quality gates
 
 ```bash
-pytest                       # 54 Python tests, all HTTP mocked
+pytest                       # 64 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 45 frontend tests (vitest)
+cd web && npm test           # 47 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```

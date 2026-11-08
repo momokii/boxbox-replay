@@ -6,15 +6,10 @@ const pts = (ts: number[]): LocPoint[] =>
   ts.map((t) => ({ t, date: "", x: t * 10, y: t * 5, z: 0 }));
 
 describe("interpolateAt", () => {
-  it("lerps between bracketing points", () => {
-    const p = interpolateAt(pts([0, 10, 20]), 5);
-    expect(p).toEqual({ x: 50, y: 25 });
-  });
-  it("clamps outside the range", () => {
+  it("lerps, clamps outside the range and returns null when empty", () => {
+    expect(interpolateAt(pts([0, 10, 20]), 5)).toEqual({ x: 50, y: 25 });
     expect(interpolateAt(pts([0, 10]), -5)).toEqual({ x: 0, y: 0 });
     expect(interpolateAt(pts([0, 10]), 99)).toEqual({ x: 100, y: 50 });
-  });
-  it("returns null when empty", () => {
     expect(interpolateAt([], 5)).toBeNull();
   });
 });
@@ -46,7 +41,7 @@ describe("sampleAt", () => {
 });
 
 describe("gapsAt", () => {
-  it("tracks latest gap per driver up to t", () => {
+  it("tracks the latest gap per driver up to t", () => {
     const rows = [
       { date: "2024-01-01T00:00:00+00:00", driver_number: 1, gap_to_leader: 0 },
       { date: "2024-01-01T00:00:05+00:00", driver_number: 2, gap_to_leader: 1.5 },

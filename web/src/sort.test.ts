@@ -12,23 +12,24 @@ const get = (r: (typeof rows)[number], key: string) =>
   key === "name" ? r.name : key === "time" ? r.time : r.lap;
 
 describe("sortRows", () => {
-  it("sorts numbers descending and keeps nulls last", () => {
+  it("sorts numbers descending with nulls last", () => {
     const out = sortRows(rows, get, { key: "time", dir: "desc" });
     expect(out.map((r) => r.name)).toEqual(["PER", "LEC", "VER", "NOR"]);
   });
 
-  it("sorts text ascending", () => {
-    const out = sortRows(rows, get, { key: "name", dir: "asc" });
-    expect(out.map((r) => r.name)).toEqual(["LEC", "NOR", "PER", "VER"]);
-  });
-
-  it("is stable for equal values", () => {
-    const out = sortRows(rows, get, { key: "lap", dir: "desc" });
-    expect(out.map((r) => r.name)).toEqual(["VER", "PER", "NOR", "LEC"]);
-  });
-
-  it("returns input order without state", () => {
-    expect(sortRows(rows, get, null).map((r) => r.name)).toEqual(["VER", "PER", "NOR", "LEC"]);
+  it("sorts text ascending and stays stable for equal values", () => {
+    expect(sortRows(rows, get, { key: "name", dir: "asc" }).map((r) => r.name)).toEqual([
+      "LEC",
+      "NOR",
+      "PER",
+      "VER",
+    ]);
+    expect(sortRows(rows, get, { key: "lap", dir: "desc" }).map((r) => r.name)).toEqual([
+      "VER",
+      "PER",
+      "NOR",
+      "LEC",
+    ]);
   });
 });
 

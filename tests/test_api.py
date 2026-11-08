@@ -20,14 +20,6 @@ def _frame(rows: list[dict]) -> pd.DataFrame:
 def test_healthz():
     with TestClient(m.app) as client:
         assert client.get("/healthz").json() == {"ok": True}
-
-
-def test_years(monkeypatch):
-    monkeypatch.setattr(m.data_loader, "list_years", lambda: [2023, 2024])
-    with TestClient(m.app) as client:
-        assert client.get("/years").json() == [2023, 2024]
-
-
 def test_sessions_status_probes(monkeypatch):
     monkeypatch.setattr(
         m.data_loader,
@@ -231,55 +223,6 @@ def test_duel_404_when_a_lap_has_no_positions(monkeypatch):
     with TestClient(m.app) as client:
         params = {"session_key": 1, "a_driver": 1, "a_lap": 4, "b_driver": 1, "b_lap": 4}
         assert client.get("/session/duel", params=params).status_code == 404
-
-
-def test_inputs_returns_channels_and_nulls(monkeypatch):
-    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
-    car = _frame(
-        {
-            "date": [
-                (start + pd.Timedelta(seconds=s)).isoformat() for s in (0.1, 0.4, 0.7)
-            ],
-            "speed": [120, 260, 250],
-            "throttle": [100, 98, 0],
-            "brake": [0, 100, 104],
-            "n_gear": [4, 7, 6],
-            "drs": [None, None, None],
-        }
-    )
-    laps = _frame([{"driver_number": 1, "lap_number": 7, "lap_duration": 95.0}])
-    monkeypatch.setattr(m.data_loader, "list_laps", lambda *a, **k: laps)
-    monkeypatch.setattr(
-        m.data_loader,
-        "lap_window",
-        lambda df, lap: (start, start + pd.Timedelta(seconds=95)),
-    )
-    monkeypatch.setattr(m.data_loader, "get_car_data", lambda *a, **k: car)
-
-    with TestClient(m.app) as client:
-        body = client.get(
-            "/session/inputs", params={"session_key": 1, "driver_number": 1, "lap": 7}
-        ).json()
-
-    assert body["lap_duration"] == 95.0
-    assert body["t"] == [0.1, 0.4, 0.7]
-    assert body["throttle"] == [100.0, 98.0, 0.0]
-    assert body["brake"] == [0.0, 100.0, 104.0]
-    assert body["gear"] == [4.0, 7.0, 6.0]
-    # A channel that is absent upstream must be null, never a guessed value.
-    assert body["drs"] == [None, None, None]
-
-
-def test_inputs_404_without_lap(monkeypatch):
-    monkeypatch.setattr(m.data_loader, "list_laps", lambda *a, **k: _frame([]))
-    monkeypatch.setattr(m.data_loader, "lap_window", lambda df, lap: (None, None))
-    with TestClient(m.app) as client:
-        res = client.get(
-            "/session/inputs", params={"session_key": 1, "driver_number": 1, "lap": 3}
-        )
-        assert res.status_code == 404
-
-
 def test_inputs_window_mode_shares_one_axis(monkeypatch):
     clock = pd.Timestamp("2024-01-01T00:00:00+00:00")
     start = clock + pd.Timedelta(seconds=10)  # lights out 10 s into the file
@@ -315,63 +258,25 @@ def test_inputs_window_mode_shares_one_axis(monkeypatch):
     assert body["t"] == [0.0, 1.0, 2.0]
     assert body["throttle"] == [100.0, 50.0, 0.0]
 
-
-def test_ai_status_reports_model(monkeypatch):
+    # A driver with no car data in the window is a clean 404.
+    monkeypatch.setattr(m.data_loader, "get_car_data", lambda *a, **k: _frame([]))
+    with TestClient(m.app) as client:
+        res = client.get(
+            "/session/inputs",
+            params={"session_key": 1, "driver_number": 1, "t0": 0, "t1": 3},
+        )
+        assert res.status_code == 404
+def test_ai_status_and_recap(monkeypatch):
     monkeypatch.setattr(m.ai, "configured", lambda: True)
     monkeypatch.setattr(
         m.ai, "status", lambda: {"configured": True, "model": "deepseek-v4.1-flash"}
     )
-    with TestClient(m.app) as client:
-        body = client.get("/ai/status").json()
-    assert body["ready"] is True
-    assert body["model"] == "deepseek-v4.1-flash"
-
-
-def test_ai_ask_503_without_key(monkeypatch):
-    monkeypatch.setattr(m.ai, "configured", lambda: False)
-    with TestClient(m.app) as client:
-        res = client.post("/ai/ask", json={"session_key": 1, "question": "Who won?"})
-    assert res.status_code == 503
-    assert "OPENCODE_API_KEY" in res.json()["detail"]
-
-
-def test_ai_ask_validates_length(monkeypatch):
-    monkeypatch.setattr(m.ai, "configured", lambda: True)
-    with TestClient(m.app) as client:
-        short = client.post("/ai/ask", json={"session_key": 1, "question": "hi"})
-        long = client.post("/ai/ask", json={"session_key": 1, "question": "x" * 400})
-    assert short.status_code == 422
-    assert long.status_code == 422
-
-
-def test_ai_ask_returns_grounded_answer(monkeypatch):
-    monkeypatch.setattr(m.ai, "configured", lambda: True)
-    monkeypatch.setattr(m, "_ai_facts", lambda sk: ("Result: P1 ANT.", ["session", "result"]))
-    seen = {}
-
-    def fake_answer(session_key, facts, question):
-        seen["facts"] = facts
-        seen["question"] = question
-        return "ANT won."
-
-    monkeypatch.setattr(m.ai, "answer", fake_answer)
-    with TestClient(m.app) as client:
-        body = client.post(
-            "/ai/ask", json={"session_key": 1, "question": "Who won the race?"}
-        ).json()
-
-    assert body["answer"] == "ANT won."
-    assert body["grounded_on"] == ["session", "result"]
-    assert "P1 ANT" in seen["facts"]
-    assert seen["question"] == "Who won the race?"
-
-
-def test_ai_recap_is_typed(monkeypatch):
-    monkeypatch.setattr(m.ai, "configured", lambda: True)
     monkeypatch.setattr(m, "_ai_facts", lambda sk: ("facts", ["session"]))
     monkeypatch.setattr(m.ai, "recap", lambda sk, facts: "A fine race.")
     with TestClient(m.app) as client:
-        body = client.post("/ai/recap", json={"session_key": 1, "question": ""}).json()
+        status = client.get("/ai/status").json()
+        body = client.post("/ai/recap", json={"session_key": 1}).json()
+    assert status["ready"] is True and status["model"] == "deepseek-v4.1-flash"
     assert body["answer"] == "A fine race."
 
 

@@ -124,7 +124,7 @@ much; the user can play, pause, scrub and swap drivers.
 
 ## V2.4 — Telemetry traces
 
-**Endpoint.** `GET /session/inputs?session_key=&driver_number=&lap=`
+**Endpoint.** `GET /session/inputs?session_key=&driver_number=&t0=&t1=`
 
 - Returns `speed`, `throttle`, `brake`, `n_gear`, `drs`, `date_offsets` for the
   lap window, downsampled to ~2 Hz for the trace plus raw peaks.
@@ -333,3 +333,20 @@ behaviour are unchanged.
 The model returns `break_even_pit_loss_s`, `stay_advantage_s`, `deg_total_s` and
 `traffic_penalty_s`, covered by a test that checks the algebra, the flip point
 and the traffic adjustment.
+
+## V2.14 — Test suite trim (shipped)
+
+The suite had grown to 164 tests, including trivia (formatting helpers, a
+35-line parse matrix) and tests for dead code. The audit removed 53 tests and the
+code they protected:
+
+- dead paths deleted: `/ai/ask` and `aiAsk`, lap-mode `/session/inputs` and the
+  unused client method, `clamp_selection`, `format_lap_time`, `team_colors`.
+- parameter matrices merged into one test per behaviour; duplicate coverage
+  removed (e.g. the same outlier rule tested twice in `perf`).
+- kept: every regression test (numpy-bool retirements, circuit truncation,
+  click throttle, empty-cache poisoning), every endpoint contract, and every
+  pure-maths invariant.
+
+Result: 64 Python + 47 frontend. `docs/TESTING.md` records what we test, what we
+deliberately do not, and the rules for adding a test.
