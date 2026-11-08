@@ -54,7 +54,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 ```
                  browser (React SPA, TypeScript, hand-drawn canvas)
                 ┌───────────────────────────────────────────────────┐
-                │ tower · session map · timeline · charts · coach   │
+                │ map · timeline · charts · chat · pit wall         │
                 └───────────────▲───────────────────────────────────┘
                                 │  JSON over /api (same origin)
                 ┌───────────────┴───────────────────────────────────┐
@@ -64,25 +64,26 @@ Free, no account, no live-timing subscription. Data comes from public archives a
                 ┌───────────────┴───────────────────────────────────┐
                 │ FastAPI (api/main.py)                             │
                 │  serialises DataFrames → JSON, clamps windows,    │
-                │  exposes session/replay, gaps, pit, overtakes …   │
+                │  session/chat/pit endpoints, session-aware facts  │
                 └───────┬───────────────────────────────┬───────────┘
                         │                               │
         ┌───────────────┴──────────────┐   ┌────────────┴─────────────┐
-        │ analysis.py (pure functions) │   │ coach.py (LLM, on ask)   │
-        │ corners, deltas, wear, model │   │ opencode run, grounded   │
+        │ analysis.py (pure functions) │   │ ai.py · coach.py         │
+        │ corners, deltas, wear, model │   │ grounded AI answers;     │
+        │                              │   │ legacy corner coach      │
         └───────────────▲──────────────┘   └────────────┬─────────────┘
                         │                               │
                 ┌───────┴───────────────────────────────▼───────────┐
-                │ data_loader.py                                    │
+                │ data_loader.py · ratelimit.py                     │
                 │ 3/s + 30/min bucket · retry · session clamp       │
                 │ parquet cache in ./data/cache                     │
                 └───────▲───────────────────────────────▲───────────┘
                         │                               │
                 ┌───────┴────────┐              ┌───────┴────────────┐
-                │ OpenF1 (chief) │              │ local LLM CLI      │
-                │ sessions, laps │              │ (optional, on ask) │
-                │ location, car… │              └────────────────────┘
-                └────────────────┘
+                │ OpenF1         │              │ OpenCode Go (AI)   │
+                │ sessions, laps │              │ optional, keyed    │
+                │ location, car… │              │ chat/recap/pit     │
+                └────────────────┘              └────────────────────┘
 ```
 
 **How a replay is built.** Selecting a session triggers three stages: the lap
@@ -101,6 +102,17 @@ computed from them; when a feed is missing the UI says so and hides the block
 rather than inventing a value. Retired cars are classified last. The tower is
 ordered by classification gap (what a timing screen shows), not by physical
 track order. The pit model prints its inputs and its assumptions.
+
+**How a visit works.** The landing dashboard offers your recently opened
+sessions and a random picker; choosing one loads the replay, tower and panels.
+A session can be a race, qualifying or practice, and the Ask tab adapts its
+prompts, recap and facts to that session type. AI features are optional: without
+`OPENCODE_API_KEY` the chat and pit explanation say they are disabled; every
+other panel still works.
+
+**Credentials.** OpenF1 needs no account or key. The only optional credential is
+`OPENCODE_API_KEY` (OpenCode Go) for the AI answers; it stays on the server and
+in `.env`. See [`.env.example`](.env.example).
 
 More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · UI decisions in
 [`docs/UI_REDESIGN_V2.md`](docs/UI_REDESIGN_V2.md) · data-source research in
@@ -146,7 +158,7 @@ cd web && npm install && npm run dev                    # SPA on :5173, proxies 
 | `AI_MAX_TOKENS` | `1200` | Answer budget (reasoning tokens count) |
 | `AI_RATE_PER_MIN` | `6` | Server-side AI budget |
 | `CACHE_DIR` | `data/cache` | Where parquet caches live |
-| `BOXBOX_MODEL` | empty | Optional model override for the coach (`opencode run -m …`) |
+| `BOXBOX_MODEL` | empty | Optional model override for the legacy corner coach (`opencode run -m …`); the Ask tab uses `OPENCODE_MODEL` |
 
 Every variable is documented with a placeholder in [`.env.example`](.env.example).
 `.env` is gitignored; never commit real values.
@@ -166,6 +178,11 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 | `GET /session/gaps` | Gaps to leader (live intervals, else derived from lap times) |
 | `GET /session/speed?driver_number=` | One driver's speed for the session |
 | `GET /session/duel?a_driver=&a_lap=&b_driver=&b_lap=` | Two laps aligned by distance: traces plus the time delta at equal progress |
+| `GET /session/inputs?t0=&t1=` | Throttle, brake, gear and DRS over a session-time window |
+| `GET /ai/status` | Whether AI is configured and which model is used |
+| `POST /ai/chat` | Multi-turn grounded chat (bounded history) |
+| `POST /ai/recap` | Session recap in the session's own terms |
+| `POST /ai/pit` | Explains a computed pit call; never recalculates it |
 | `GET /session/pit` · `/overtakes` · `/result` · `/positions` | Stops, passes, classification, official order |
 | `GET /laps`, `/stints`, `/weather`, `/radio`, `/race-control` | Session feeds |
 | `POST /corner-loss` | Measured time lost at a corner vs a reference lap |
@@ -194,14 +211,17 @@ and `vite build` — plus a secret scan (gitleaks), dependency audits (`pip-audi
 ## Project layout
 
 ```
-api/main.py          FastAPI: endpoints, JSON serialisation, error mapping
-data_loader.py       OpenF1 client: throttle, retry, clamp, parquet cache
-analysis.py          Pure math: corners, deltas, wear, positions, pit model
-coach.py             Grounded LLM prompts and radio-style rendering
+api/main.py          FastAPI: endpoints, JSON serialisation, AI facts
+data_loader.py       OpenF1 client: fetch, retry, clamp, parquet cache
+ratelimit.py         Sliding-window request budget (3/s + 30/min)
+analysis.py          Pure math: corners, deltas, wear, positions, pit model, duels
+ai.py                OpenCode Go client: chat, recap, pit explainer, scope guard
+coach.py             Legacy corner coach (local opencode CLI)
 web/src/             React SPA: api client, playback store, canvas map,
-                     charts, panels, modals
+                     charts, chat, dashboard, panels, modals
+tests/               pytest suites (pure maths, API contracts, cache, AI)
+docs/                Architecture, deployment, testing, design notes, screenshots
 scripts/setup.sh     One-command dev/prod stack
-docs/                Architecture, deployment, design notes, screenshots
 Dockerfile           API image (non-root, healthcheck)
 web/Dockerfile       Multi-stage SPA build → nginx
 compose*.yaml        base / dev override / prod override
@@ -214,8 +234,8 @@ compose*.yaml        base / dev override / prod override
   results. Anonymous access is rate-limited; this app enforces both documented
   limits (3 req/s and 30 req/min) with one bucket, single-flights concurrent
   builds, and caches every response to disk.
-- **[Jolpica (Ergast)](https://api.jolpi.ca/ergast/)** — historical schedule and
-  results context.
+- **[OpenCode Go](https://opencode.ai/docs/go/)** — optional AI answers in the
+  Ask tab and pit-wall explainer (a paid subscription; the key stays server-side).
 
 Known limitations, stated plainly:
 

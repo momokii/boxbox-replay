@@ -9,9 +9,11 @@ trade-offs were made on purpose. Pairs with the README's diagram.
 |---|---|---|
 | `web` (nginx) | Serve the built SPA, proxy `/api`, gzip JSON, mime types | Any data logic |
 | `api` (FastAPI) | Validate request params, clamp windows, serialise DataFrames, map upstream errors | Business maths (lives in `analysis.py`) |
-| `data_loader.py` | Talk to OpenF1: throttle, retry, session-window clamp, parquet cache | Formatting, aggregation decisions |
-| `analysis.py` | Pure functions: corners, deltas, wear, gap derivation, pit model | I/O |
-| `coach.py` | Build a grounded prompt, call the local LLM CLI, render a radio card | Measuring anything |
+| `data_loader.py` | Talk to OpenF1: fetch, retry, session-window clamp, parquet cache | Formatting, aggregation decisions |
+| `ratelimit.py` | Enforce the OpenF1 budget (3 req/s and 30 req/min) | Any I/O of its own |
+| `analysis.py` | Pure functions: corners, deltas, wear, gap derivation, pit model, duel alignment | I/O |
+| `ai.py` | OpenCode Go client: chat, recap, pit explanation, scope guard, budget, cache | Measuring anything; it never computes race numbers |
+| `coach.py` | Legacy corner coach: grounded prompt, local `opencode run`, radio card | Measuring anything |
 
 The split is deliberate: everything in `analysis.py` is pure and unit-tested,
 the loader is the only component that touches the network, and the API layer only
@@ -25,7 +27,7 @@ browser ── GET /api/session/replay?session_key=9496 ──► nginx ──�
                           data_loader.build_session_replay(key) ◄───┘
                               │
                               ├─ cache hit?  data/cache/by_session_key/9496/session_pos_v2_1hz.parquet
-                              └─ miss: for each driver → /location (throttled 3/s, retried)
+                              └─ miss: for each driver → /location (3/s + 30/min, retried)
                                        clamp to [session.date_start, session.date_end]
                                        drop (0,0) placeholders, downsample to 1–2 Hz
                                        write parquet (never an empty one)
@@ -154,3 +156,25 @@ offers a retry.
 - UI behaviour is verified with a headless browser during development
   (screenshots + canvas pixel checks + frame-timing measurements); those scripts
   are development tools, not part of CI.
+
+## AI boundary
+
+`api/main.py` builds the facts; `ai.py` only talks to the model. The split keeps
+the model away from anything it could get wrong.
+
+- `_ai_facts` compresses the cached session into a few kilobytes: result/order,
+  fastest lap, sectors, ideal lap, clean-lap pace, consistency, pit stops, tyre
+  plans, overtakes, weather and race control. It reads the session type and
+  labels the order accordingly; race-only sections (winner, points, retirements,
+  positions, pit stops, overtakes) are omitted for qualifying and practice.
+- The system prompt makes the model the app's engineer: full names, no "the
+  data"/"the feed" phrasing, no race language in a non-race session, and a
+  sentinel (`OUT_OF_SCOPE`) for anything unrelated to the session or F1.
+- `POST /ai/chat` sends the session notes in the system message and at most the
+  last 10 turns; `/ai/recap` is cached per session; `/ai/pit` recomputes the pit
+  model server-side and only asks for an explanation.
+- The key is read from `OPENCODE_API_KEY` at process start and never leaves the
+  server. Requests carry a custom user agent and a stable
+  `x-opencode-session` header; a sliding budget (6/min) and an answer cache
+  protect the subscription. Missing key → `503` with a plain message and the
+  rest of the app unaffected.

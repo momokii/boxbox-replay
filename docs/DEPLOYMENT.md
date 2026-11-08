@@ -91,14 +91,40 @@ The key is sent as `Authorization: Bearer …` and as `api_key=…`, never logge
 
 - **One shared cache.** All visitors read the same parquet cache, so the cost of
   a race is paid once, not per visitor.
-- **Upstream rate limit.** The app spaces requests to OpenF1 at ~3/s. A very busy
-  instance that opens many *new* sessions concurrently can still hit that limit;
-  the client then sees a clear "feed did not answer" message plus a retry.
+- **Upstream rate limit.** The app enforces both documented OpenF1 limits
+  (3 req/s and 30 req/min) with one bucket and single-flights concurrent builds.
+  A busy instance that opens many *new* sessions can still hit the per-minute
+  ceiling; the client then sees a clear "feed did not answer" message plus a
+  retry. Pre-warming is the mitigation.
 - **Pre-warming.** Opening the races you expect people to visit is the cheapest
   way to make a public demo feel instantaneous.
-- **No API key is required today.** Anonymous access works; `OPENF1_API_KEY`
-  exists only so a future credential requirement can be met without a code
-  change.
+- **OpenF1 needs no key today.** Anonymous access works; `OPENF1_API_KEY` exists
+  only so a future credential requirement can be met without a code change.
+- **AI is optional and keyed.** The Ask tab and the pit-wall explanation need
+  `OPENCODE_API_KEY` (OpenCode Go). Without it they return a plain "AI is not
+  configured" message and every other panel keeps working.
+
+### Enabling the AI
+
+```bash
+# .env (gitignored)
+OPENCODE_BASE_URL=https://opencode.ai/inference/go/openai/v1
+OPENCODE_API_KEY=oc_...
+OPENCODE_MODEL=deepseek-v4.1-flash
+AI_MAX_TOKENS=1200
+AI_RATE_PER_MIN=6
+```
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d --force-recreate api
+curl -s localhost:8501/api/ai/status   # {"configured":true,"ready":true,...}
+```
+
+The key is server-only: the browser calls our API, never the provider. The
+server sends the session facts, not the key. Use a dedicated key, keep `.env`
+at `chmod 600`, never paste it into an issue or a chat, and rotate it if it has
+been exposed. Chat history stays in the visitor's tab (`sessionStorage`), not on
+the server.
 
 ## Cache behaviour
 

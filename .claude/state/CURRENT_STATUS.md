@@ -43,7 +43,7 @@ None
 - API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
 
 ## Last Updated
-2026-11-08: session-aware Ask; v2.10.0
+2026-11-08: docs aligned to code; v2.10.1
 (Update this line and keep this file under ~80 lines; move history to HISTORY.md.)
 
 - [x] U9: smoothness (60fps), chart hover + responsive widths, stacked stints, honest pit model

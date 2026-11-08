@@ -91,7 +91,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-15 | Chat two-sided layout + no-store HTML | DONE | v2.9.0 |
 | V2-16 | Narrow chat order + pit table | DONE | 7 widths verified |
 | V2-17 | Session-aware Ask (quali/practice) | DONE | 67 pytest |
-| V2-18 | Tag releases | DONE | v1.0.0 … v2.9.1; v2.10.0 next |
+| V2-18 | Docs aligned with the shipped app | DONE | README/ARCH/DEPLOY/TESTING |
+| V2-19 | Tag releases | DONE | v1.0.0 … v2.10.0; v2.10.1 next |
 
 ---
 

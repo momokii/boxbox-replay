@@ -445,3 +445,10 @@ the classified leader may not hold the fastest lap. The prompt knows the session
 type, the recap is session-specific, and the Ask chips/recap label switch for
 qualifying and practice. Chat history stays per session. Verified live with a
 qualifying recap and a practice question; 67 pytest.
+
+Docs audit: README architecture now shows ai.py and OpenCode Go instead of the
+legacy coach only; repo layout includes ai.py, ratelimit.py and tests/; the API
+table includes inputs/duel/AI endpoints; Jolpica was removed (never used in the
+code); credentials and workflow are explicit; ARCHITECTURE gained an AI boundary
+section; DEPLOYMENT gained "Enabling the AI" (key, model, restart, rotation) and
+the corrected 3/s + 30/min wording. TESTING/README counts at 67 + 47.

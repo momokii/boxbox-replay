@@ -350,7 +350,7 @@ code they protected:
   click throttle, empty-cache poisoning), every endpoint contract, and every
   pure-maths invariant.
 
-Result: 66 Python + 47 frontend. A coverage review found two backbone paths with
+Result: 67 Python + 47 frontend. A coverage review found two backbone paths with
 no test — the replay contract (time zeroing, duration from the race clock) and
 the token-cap retry that stopped truncated answers — so those two were added;
 nothing else was. `docs/TESTING.md` records what we test, what we deliberately do
