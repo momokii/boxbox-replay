@@ -10,11 +10,10 @@ step.
 ## Order and why
 
 **Status (2026-11-08):** V2.1–V2.7 shipped and verified in production. V2.5
-ships as a live **Battles now** list; the historical scan remains rejected for
-the measured reasons below. V2.2 adds the
-AI layer: grounded Q&A and a recap through OpenCode Go (`deepseek-v4.1-flash`),
-server-side key, budget and cache (see §V2.8).
-V2.5 deferred with measured reasons (§V2.5). V2.6–V2.7 remain backlog.
+ships as a live **Battles now** list; its historical scan remains rejected for
+the measured reasons in §V2.5. V2.2 adds the AI layer: grounded Q&A and a recap
+through OpenCode Go (`deepseek-v4.1-flash`), server-side key, budget and cache
+(see §V2.8).
 
 | Step | Milestone | Depends on | Why first |
 |---|---|---|---|
