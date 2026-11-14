@@ -209,3 +209,20 @@ export interface StrategyResult {
   model?: string;
   toy?: boolean;
 }
+
+export interface TelemetrySeries {
+  driver_number: number;
+  speed: (number | null)[];
+  throttle: (number | null)[];
+  brake: (number | null)[];
+  drs: (number | null)[];
+  gear: (number | null)[];
+}
+
+export interface TelemetryResult {
+  axis: "time" | "distance";
+  t: number[];
+  series: TelemetrySeries[];
+  window: { t0: number; t1: number };
+  coverage: Record<string, unknown>;
+}

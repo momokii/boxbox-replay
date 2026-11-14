@@ -14,8 +14,9 @@ recorded in `.claude/state/DECISIONS_LOG.md`. **Implementation-ready end-to-end
 design for the committed core** lives in
 `docs/V3_CORE_IMPLEMENTATION_PLAN.md` (V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e +
 gated V3.4a/c, with interface alternatives/synthesis, contracts, acceptance).
-v2 shipped through `v2.13.1`; **V3.1 shipped** (strategy engine + `/session/strategy`
-+ Strategy tab). V3.2 is next.
+v2 shipped through `v2.13.1`; **V3.1 shipped** (strategy engine) and **V3.2
+shipped** (same-clock Telemetry Lab; distance alignment remains Lap duel). V3.3
+is next.
 
 ## Recommended headline (why these three)
 
@@ -121,7 +122,7 @@ bounded; no secrets; rate-limiter/cache behaviour unchanged.
 
 ---
 
-## V3.2 — Telemetry Lab 2.0
+## V3.2 — Telemetry Lab 2.0 (shipped, same-clock scope)
 
 **Goal.** Generalise lap duel + inputs into a comparison workspace: any
 supported drivers/laps on shared distance, with throttle/brake/gear/speed/DRS

@@ -291,7 +291,7 @@ behaviour for one release (deprecated in UI copy) to avoid breakage.**
   where `null`.
 - `ruff`, `pytest`, `npm test`, `npm run build` green.
 
-## 4. V3.2 — Telemetry Lab 2.0 (committed)
+## 4. V3.2 — Telemetry Lab 2.0 (shipped, same-clock scope)
 
 ### 4.1 Goal
 Generalise duel/inputs into a comparison workspace: N followed/selected drivers
@@ -304,6 +304,10 @@ markers where geometry allows.
 - **Inputs:** cached `car_data` (speed/throttle/brake/n_gear/drs), `location`
   (x,y for distance), `laps` (lap windows/durations/sectors/speed traps),
   session geometry/corners (existing).
+- **Shipped scope:** the Lab compares drivers on the **same clock** (`axis:"time"`)
+  over the current lap window; the distance-aligned lap comparison remains
+  `/session/duel`, where each lap has its own distance axis. The distance mode
+  below stays the target for a later pass.
 - **Alignment (pure helpers, synthesis C):** two explicit modes, never mixed.
   `axis:"distance"` requires a **lap window** (a reference driver+lap); every
   driver is resampled to progress `f` in [0,1] along that lap's distance using

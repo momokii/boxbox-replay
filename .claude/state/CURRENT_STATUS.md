@@ -1,5 +1,5 @@
 ## Project Phase
-v2 shipped (`v1.0.0`…`v2.13.1`). v3 **in progress**: V3.0 decisions recorded; **V3.1 strategy model shipped** (pure `strategy.py`, `/session/strategy`, Strategy tab). Next: V3.2 Telemetry Lab.
+v2 shipped (`v1.0.0`…`v2.13.1`). v3 **in progress**: V3.0 decisions recorded; **V3.1 strategy model** and **V3.2 Telemetry Lab** shipped. Next: V3.3 grounded explain.
 DEPLOYED prod, healthy at http://<host>:8501.
 
 ## Completed
@@ -7,7 +7,8 @@ DEPLOYED prod, healthy at http://<host>:8501.
 - [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
 - [x] V3.1 strategy engine (clean laps, pace/wear profile, ranked scenarios, break-even, coverage) + tests + Strategy tab
-- [ ] V3.2 Telemetry Lab · V3.3 AI explain · V3.4b/e/d
+- [x] V3.2 Telemetry Lab (same-clock multi-driver traces + hover)
+- [ ] V3.3 AI explain · V3.4b/e/d
 
 ## Blocked / Deferred (deliberate, documented)
 - V3.2 implementation not started; V3.0 gate closed

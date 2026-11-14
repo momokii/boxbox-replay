@@ -10,6 +10,7 @@ import GapChart from "./components/GapChart";
 import PerformancePanel from "./components/PerformancePanel";
 import PitPanel from "./components/PitPanel";
 import StrategyPanel from "./components/StrategyPanel";
+import TelemetryLabPanel from "./components/TelemetryLabPanel";
 import SessionMap from "./components/SessionMap";
 import SpeedChart, { type SpeedSeries } from "./components/SpeedChart";
 import Timeline from "./components/Timeline";
@@ -149,7 +150,7 @@ export default function App() {
   const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
   const [selectedCorner, setSelectedCorner] = useState<string | null>(null);
   const [view, setView] = useState<
-    "replay" | "battle" | "duel" | "performance" | "pit" | "strategy" | "ask"
+    "replay" | "battle" | "duel" | "telemetry" | "performance" | "pit" | "strategy" | "ask"
   >("replay");
   const [showLaps, setShowLaps] = useState(false);
   const [lapsModal, setLapsModal] = useState(false);
@@ -763,7 +764,7 @@ export default function App() {
 
           <section className="stage">
             <div className="tabbar" role="tablist" aria-label="Views">
-              {(["replay", "battle", "duel", "performance", "pit", "strategy", "ask"] as const).map((v) => (
+              {(["replay", "battle", "duel", "telemetry", "performance", "pit", "strategy", "ask"] as const).map((v) => (
                 <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
                   {v === "pit" ? "Pit wall" : v}
                 </button>
@@ -1049,6 +1050,23 @@ export default function App() {
                 defaultDriver={highlight[0] ?? selectedDriver ?? towerRows[0]?.driver ?? 0}
                 currentLap={progress.lap}
                 totalLaps={progress.total}
+              />
+            )}
+            {view === "telemetry" && sessionKey && (
+              <TelemetryLabPanel
+                sessionKey={sessionKey}
+                drivers={drivers.data ?? []}
+                codes={new Map((drivers.data ?? []).map((d) => [d.driver_number, d.name_acronym]))}
+                colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
+                windowStart={lapStartT}
+                windowEnd={lapEndT}
+                preferred={
+                  highlight.length
+                    ? highlight
+                    : selectedDriver != null
+                      ? [selectedDriver]
+                      : []
+                }
               />
             )}
             {view === "performance" && (

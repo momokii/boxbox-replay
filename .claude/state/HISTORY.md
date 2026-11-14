@@ -509,3 +509,9 @@ Strategy tab renders ranked options and limits, keeping the v2 toy in Pit Wall.
 Real check: NOR at lap 43 -> stay 1426.1s vs pit HARD 1433.6s, pit loss 24.2s
 from median lane time, break-even 16.7s. Dockerfile copies strategy.py (the
 image import guard caught it in CI locally). 73 pytest + 53 vitest.
+
+V3.2 shipped: POST /session/telemetry returns up to five drivers' speed, throttle,
+brake, gear and DRS over one session-time window, with nulls preserved; a new
+Telemetry tab draws speed traces and a hover readout for up to three drivers.
+Scope is explicitly same-clock; distance-aligned comparison stays in Lap duel.
+Tested on the US GP (NOR/VER hover values). 74 pytest + 53 vitest.

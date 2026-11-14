@@ -331,10 +331,12 @@ def session_duel(
     }
 
 
-def _lap_merged_car_loc(session_key: int, driver_number: int, start, end_ts) -> pd.DataFrame:
+def _lap_merged_car_loc(
+    session_key: int, driver_number: int, start, end_ts, require_drs: bool = True
+) -> pd.DataFrame:
     car = data_loader.get_car_data(session_key, driver_number=driver_number)
     loc = data_loader.get_location(session_key, driver_number=driver_number)
-    if car.empty or loc.empty or "drs" not in car.columns:
+    if car.empty or loc.empty or (require_drs and "drs" not in car.columns):
         return pd.DataFrame()
     car_s = car.sort_values("date").reset_index(drop=True)
     loc_s = loc.sort_values("date").reset_index(drop=True)
@@ -1187,6 +1189,90 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
 
 class RecapRequest(BaseModel):
     session_key: int
+
+
+class TelemetryRequest(BaseModel):
+    session_key: int
+    drivers: list[int]
+    t0: float
+    t1: float
+    points: int = 600
+
+
+@app.post("/session/telemetry")
+def session_telemetry(req: TelemetryRequest) -> dict:
+    """Multi-driver traces over one session-time window (same clock).
+
+    Distance-aligned lap comparison stays in /session/duel; this endpoint is
+    the shared-clock lab. Channels the feed does not carry come back null.
+    """
+    drivers = list(dict.fromkeys(int(d) for d in req.drivers))
+    if not 1 <= len(drivers) <= 5:
+        raise HTTPException(422, "pick between 1 and 5 drivers")
+    if req.t1 <= req.t0:
+        raise HTTPException(422, "t1 must be after t0")
+    points = max(300, min(1200, int(req.points)))
+    start, _end, markers, _dur = _session_clock(req.session_key)
+    base = float(markers["t"].min()) if not markers.empty else 0.0
+    win_start = start + pd.Timedelta(seconds=base + req.t0)
+    win_end = start + pd.Timedelta(seconds=base + req.t1)
+    grid = np.linspace(0.0, req.t1 - req.t0, points)
+
+    known = set(data_loader.list_drivers(req.session_key)["driver_number"].astype(int))
+    missing = [d for d in drivers if d not in known]
+    if missing:
+        raise HTTPException(404, f"driver not in this session: {missing[0]}")
+
+    series = []
+    for driver in drivers:
+        merged = _lap_merged_car_loc(
+            req.session_key, driver, win_start, win_end, require_drs=False
+        )
+        if merged.empty:
+            continue
+        local = (data_loader.to_dt(merged["date"]) - win_start).dt.total_seconds().to_numpy(float)
+        order = np.argsort(local)
+        local = local[order]
+        merged = merged.iloc[order]
+        channels: dict[str, list] = {}
+        for name in ("speed", "throttle", "brake", "drs"):
+            if name not in merged.columns:
+                channels[name] = [None] * points
+                continue
+            values = pd.to_numeric(merged[name], errors="coerce").to_numpy(float)
+            finite = np.isfinite(values)
+            if name == "drs":
+                # DRS is a state, not a continuous signal: hold the last known.
+                filled = pd.Series(values).ffill().bfill().to_numpy(float)
+                finite = np.isfinite(filled)
+                values = filled
+            channels[name] = (
+                [round(float(v), 3) for v in np.interp(grid, local[finite], values[finite])]
+                if finite.sum() >= 2
+                else [None] * points
+            )
+        gears = merged["n_gear"] if "n_gear" in merged.columns else None
+        if gears is not None:
+            values = pd.to_numeric(gears, errors="coerce").to_numpy(float)
+            finite = np.isfinite(values)
+            channels["gear"] = (
+                [int(round(v)) for v in np.interp(grid, local[finite], values[finite])]
+                if finite.sum() >= 2
+                else [None] * points
+            )
+        else:
+            channels["gear"] = [None] * points
+        series.append({"driver_number": driver, **channels})
+
+    if not series:
+        raise HTTPException(404, "no telemetry in this window")
+    return {
+        "axis": "time",
+        "t": [round(float(v), 2) for v in grid],
+        "series": series,
+        "window": {"t0": req.t0, "t1": req.t1},
+        "coverage": {"requested": len(drivers), "returned": len(series), "points": points},
+    }
 
 
 class StrategyRequest(BaseModel):

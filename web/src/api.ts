@@ -17,7 +17,7 @@ import type {
   Stint,
 } from "./types";
 import type { DuelPayload } from "./duel";
-import type { StrategyResult } from "./types";
+import type { StrategyResult, TelemetryResult } from "./types";
 
 const BASE = "/api";
 
@@ -93,6 +93,13 @@ export const api = {
       `/session/inputs?session_key=${sessionKey}&driver_number=${driver}` +
         `&t0=${t0.toFixed(2)}&t1=${t1.toFixed(2)}`,
     ),
+  telemetry: (body: {
+    session_key: number;
+    drivers: number[];
+    t0: number;
+    t1: number;
+    points?: number;
+  }) => post<TelemetryResult>("/session/telemetry", body),
   strategy: (body: {
     session_key: number;
     driver_number: number;

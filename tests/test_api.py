@@ -58,7 +58,6 @@ def test_car_window_serializes(monkeypatch):
 
 
 def test_geometry_shape(monkeypatch):
-    import numpy as np
 
     n = 200
     days = pd.date_range("2024-01-01", periods=n, freq="1s")
@@ -307,7 +306,6 @@ def test_ai_status_and_recap(monkeypatch):
 
 
 def test_ai_facts_include_names_retirements_and_ideal_lap(monkeypatch):
-    import numpy as np
 
     drivers = _frame(
         [
@@ -594,3 +592,51 @@ def test_strategy_endpoint_happy_and_degenerate(monkeypatch):
             "/session/strategy", json={"session_key": 1, "driver_number": 1}
         )
         assert missing.status_code == 422
+
+
+def test_telemetry_endpoint_shapes_and_validation(monkeypatch):
+
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    stamps = [(start + pd.Timedelta(seconds=s)).isoformat() for s in (0, 1, 2)]
+    frame = _frame(
+        {
+            "date": stamps,
+            "speed": [100, 200, 300],
+            "throttle": [50, 80, 100],
+            "brake": [0, 0, 100],
+            "n_gear": [3, 5, 7],
+            "drs": [None, None, None],
+        }
+    )
+    monkeypatch.setattr(
+        m.data_loader, "list_drivers", lambda *a, **k: _frame([{"driver_number": 1}])
+    )
+    monkeypatch.setattr(
+        m,
+        "_session_clock",
+        lambda sk: (
+            start,
+            start + pd.Timedelta(hours=1),
+            _frame([{"lap_number": 1, "t": 0.0}]),
+            3600.0,
+        ),
+    )
+    monkeypatch.setattr(m, "_lap_merged_car_loc", lambda *a, **k: frame)
+
+    with TestClient(m.app) as client:
+        body = client.post(
+            "/session/telemetry",
+            json={"session_key": 1, "drivers": [1], "t0": 0, "t1": 10, "points": 300},
+        ).json()
+        assert body["axis"] == "time"
+        assert len(body["t"]) == 300
+        series = body["series"][0]
+        assert series["driver_number"] == 1
+        assert series["speed"][0] == 100
+        assert series["drs"] == [None] * 300
+
+        bad = client.post(
+            "/session/telemetry",
+            json={"session_key": 1, "drivers": [1], "t0": 10, "t1": 5},
+        )
+        assert bad.status_code == 422
