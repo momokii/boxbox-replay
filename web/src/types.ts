@@ -226,3 +226,24 @@ export interface TelemetryResult {
   window: { t0: number; t1: number };
   coverage: Record<string, unknown>;
 }
+
+export interface TimelineWeatherPoint {
+  t: number;
+  track: number | null;
+  air: number | null;
+  rain: number | null;
+}
+
+export interface TimelineEvent {
+  t: number;
+  category: string;
+  message: string;
+  flag: string | null;
+}
+
+export interface SessionTimeline {
+  duration_s: number;
+  weather: TimelineWeatherPoint[];
+  events: TimelineEvent[];
+  counts: { safety_car: number; vsc: number; red_flag: number; yellow: number };
+}

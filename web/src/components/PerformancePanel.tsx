@@ -6,6 +6,7 @@ import { stintSlope } from "../perf";
 import { gapAt, type GapTable, type LapMarker } from "../session";
 import Info from "./Info";
 import { downloadFile, toCsv } from "../export";
+import TimelinePanel from "./TimelinePanel";
 import WeatherChart from "./WeatherChart";
 import LapChart from "./LapChart";
 import Modal from "./Modal";
@@ -120,6 +121,8 @@ export default function PerformancePanel(p: Props) {
 
   return (
     <div>
+      <TimelinePanel sessionKey={p.sessionKey} duration={p.duration} />
+
       <div className="export-actions">
         <span className="dim small">Export this session (client-side, no new requests):</span>
         <button

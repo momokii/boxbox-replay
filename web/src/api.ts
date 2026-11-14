@@ -17,7 +17,7 @@ import type {
   Stint,
 } from "./types";
 import type { DuelPayload } from "./duel";
-import type { StrategyResult, TelemetryResult } from "./types";
+import type { SessionTimeline, StrategyResult, TelemetryResult } from "./types";
 
 const BASE = "/api";
 
@@ -93,6 +93,8 @@ export const api = {
       `/session/inputs?session_key=${sessionKey}&driver_number=${driver}` +
         `&t0=${t0.toFixed(2)}&t1=${t1.toFixed(2)}`,
     ),
+  sessionTimeline: (sessionKey: number) =>
+    get<SessionTimeline>(`/session/timeline?session_key=${sessionKey}`),
   aiExplain: (body: {
     session_key: number;
     kind: string;

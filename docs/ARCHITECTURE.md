@@ -113,6 +113,7 @@ retired cars (result feed, or no fresh laps) are classified last.
 | `GET /session/geometry` | `outline[]`, `corners[]`, `zones[]`, `angle` |
 | `GET /session/replay` | `drivers[{driver_number,t[],x[],y[]}]`, `laps[]`, `positions_end_s`, coverage counts |
 | `GET /session/speed?driver_number=` | 1 Hz speed |
+| `GET /session/timeline` | Weather + race-control events normalized to the replay clock; counts and bands |
 | `POST /session/telemetry` | Multi-driver traces over a session-time window; channels, not distance alignment (that is `/session/duel`) |
 | `POST /session/strategy` | Ranked stay-vs-pit options, break-even, undercut, coverage, assumptions (`strategy.py`) |
 | `GET /ai/status` | `{configured, ready, model}` — never the key |

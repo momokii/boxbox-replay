@@ -720,3 +720,52 @@ def test_ai_quota_returns_429(monkeypatch):
         )
     assert res.status_code == 429
     assert "usage limit" in res.json()["detail"]
+
+
+def test_timeline_normalizes_weather_and_events(monkeypatch):
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    weather = _frame(
+        [
+            {
+                "date": (start + pd.Timedelta(seconds=60)).isoformat(),
+                "track_temperature": 36.5,
+                "air_temperature": 26.1,
+                "rainfall": 0.0,
+            }
+        ]
+    )
+    control = _frame(
+        [
+            {
+                "date": (start + pd.Timedelta(seconds=30)).isoformat(),
+                "category": "SafetyCar",
+                "message": "VSC DEPLOYED",
+                "flag": None,
+            },
+            {
+                "date": (start + pd.Timedelta(seconds=50)).isoformat(),
+                "category": "SafetyCar",
+                "message": "VSC ENDING",
+                "flag": None,
+            },
+        ]
+    )
+    monkeypatch.setattr(
+        m,
+        "_session_clock",
+        lambda sk: (
+            start,
+            start + pd.Timedelta(hours=2),
+            _frame([{"lap_number": 1, "t": 10.0}]),
+            3600.0,
+        ),
+    )
+    monkeypatch.setattr(m.data_loader, "get_weather", lambda *a, **k: weather)
+    monkeypatch.setattr(m.data_loader, "get_race_control", lambda *a, **k: control)
+
+    body = m.session_timeline(1)
+
+    assert body["duration_s"] == 3600.0
+    assert body["weather"][0]["t"] == 50.0  # 60 - lights out at 10
+    assert body["events"][0]["t"] == 20.0
+    assert body["counts"]["vsc"] == 2

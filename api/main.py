@@ -1279,6 +1279,79 @@ def session_telemetry(req: TelemetryRequest) -> dict:
     }
 
 
+@app.get("/session/timeline")
+def session_timeline(session_key: int) -> dict:
+    """Weather and race-control events on the replay clock. Descriptive only."""
+    start, _end, markers, duration = _session_clock(session_key)
+    base = float(markers["t"].min()) if not markers.empty else 0.0
+
+    def normalized(frame: pd.DataFrame) -> pd.DataFrame:
+        if frame.empty or "date" not in frame.columns:
+            return pd.DataFrame()
+        stamps = data_loader.to_dt(frame["date"])
+        frame = frame.assign(t=(stamps - start).dt.total_seconds() - base)
+        return frame[(frame["t"] >= 0) & (frame["t"] <= duration)]
+
+    weather = normalized(data_loader.get_weather(session_key))
+    control = normalized(data_loader.get_race_control(session_key))
+
+    weather_rows = []
+    if not weather.empty:
+        for row in weather.itertuples():
+            weather_rows.append(
+                {
+                    "t": round(float(row.t), 1),
+                    "track": (
+                        round(float(row.track_temperature), 1)
+                        if hasattr(row, "track_temperature") and pd.notna(row.track_temperature)
+                        else None
+                    ),
+                    "air": (
+                        round(float(row.air_temperature), 1)
+                        if hasattr(row, "air_temperature") and pd.notna(row.air_temperature)
+                        else None
+                    ),
+                    "rain": (
+                        round(float(row.rainfall), 1)
+                        if hasattr(row, "rainfall") and pd.notna(row.rainfall)
+                        else None
+                    ),
+                }
+            )
+
+    events = []
+    if not control.empty:
+        for row in control.itertuples():
+            events.append(
+                {
+                    "t": round(float(row.t), 1),
+                    "category": str(getattr(row, "category", "") or ""),
+                    "message": str(getattr(row, "message", "") or ""),
+                    "flag": (
+                        str(row.flag)
+                        if hasattr(row, "flag") and pd.notna(row.flag)
+                        else None
+                    ),
+                }
+            )
+
+    messages = [event["message"].upper() for event in events]
+    counts = {
+        "safety_car": sum("SAFETY CAR" in m and "VIRTUAL" not in m for m in messages),
+        "vsc": sum("VSC" in m or "VIRTUAL SAFETY" in m for m in messages),
+        "red_flag": sum("RED FLAG" in m for m in messages),
+        "yellow": sum(
+            "YELLOW" in m and "DOUBLE" not in m for m in messages
+        ),
+    }
+    return {
+        "duration_s": round(float(duration), 1),
+        "weather": weather_rows,
+        "events": events,
+        "counts": counts,
+    }
+
+
 class ExplainRequest(BaseModel):
     session_key: int
     kind: str

@@ -398,7 +398,7 @@ The model never recalculates or invents numbers.
   fields trigger honest "cannot see"; off-topic sentinel preserved; token/size
   caps enforced; no key in client.
 
-## 6. V3.4b — Weather impact & race-control timeline (committed)
+## 6. V3.4b — Weather impact & race-control timeline (shipped)
 
 - **Data:** cached `weather`, `race_control`, `laps`/stints. No prediction.
 - **Compute (pure):** align events to session/lap time; derive descriptive

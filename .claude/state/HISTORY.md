@@ -528,3 +528,9 @@ V3.4e shipped: client-side CSV export of laps and stints from the loaded
 session (no endpoint, no secrets); Performance tab gained export buttons.
 Verified download: boxbox-11396-laps.csv, 1,166 rows, correct headers.
 56 frontend tests (3 new CSV tests).
+
+V3.4b shipped: GET /session/timeline normalizes weather and race-control rows to
+the replay clock, counts VSC/SC/red/yellow, and the Performance tab draws the
+track-temperature trace, neutralisation bands and flag markers on one axis.
+Verified on the US GP: 95 weather points, 148 events, 2 VSC bands, 26 markers.
+79 pytest + 56 vitest.

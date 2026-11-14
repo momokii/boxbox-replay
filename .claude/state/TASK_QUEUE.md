@@ -99,7 +99,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 
 ## v3 backlog — planned (see `docs/V3_RESEARCH.md`, `docs/V3_PLAN.md`, `docs/V3_CORE_IMPLEMENTATION_PLAN.md`)
 
-Status: **V3.1–V3.3 and V3.4e shipped**; V3.4b/d next. V3.0 decisions recorded. Committed core (sure, data+rate-limit feasible now): V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e. Conditional (data-gated): V3.4a, V3.4c. Stretch (go/no-go): V3.5a–c. See `docs/V3_CORE_IMPLEMENTATION_PLAN.md` for end-to-end design/contracts/acceptance.
+Status: **V3.1–V3.3, V3.4b and V3.4e shipped**; V3.4d (layouts/PWA/offline) is the only core item left. Committed core (sure, data+rate-limit feasible now): V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e. Conditional (data-gated): V3.4a, V3.4c. Stretch (go/no-go): V3.5a–c. See `docs/V3_CORE_IMPLEMENTATION_PLAN.md` for end-to-end design/contracts/acceptance.
 
 | ID | Task | Status | Depends | Scope (summary) | Acceptance (summary) | Notes / gates |
 |----|------|--------|---------|-----------------|----------------------|---------------|
@@ -108,7 +108,7 @@ Status: **V3.1–V3.3 and V3.4e shipped**; V3.4b/d next. V3.0 decisions recorded
 | V3-2 | Telemetry Lab 2.0 | DONE (same-clock traces; distance = Duel) | V3-0 | Multi-driver aligned traces (speed/throttle/brake/gear/DRS), hover readout, corner deltas; extend duel/inputs; own clock, no global rAF work when hidden | Alignment/delta/downsample tests; null channels as "—"; perf scoped | Feeds V3-3 facts |
 | V3-3 | AI race engineer 2.0 | DONE (strategy/compare explain; quota mapped) | V3-0, V3-1, V3-2 | Grounded explanations of key moments/strategy/compare from computed fact bundles (strategy+trace+session); on-demand default, proactive only if opted-in | Claims map to fact-bundle fields (fixtures); off-topic/unanswerable safe; bounded size/cost; server-side key | No invention/recompute |
 | V3-4a | Quali/practice mini-sectors & sector analysis | TODO | V3-0 | Revisit V2-7 for sessions where `segments_sector_*` meaningful; show strips/analysis only with real data | Honest degradation/placeholders with reason; race sessions unaffected | Feasibility per session type/data |
-| V3-4b | Weather impact & race-control timeline | TODO | V3-0 | Descriptive correlation/timeline (weather/SC/VSC/flags vs pace/stints) | No predictive claims; uses cached feeds | Bounded |
+| V3-4b | Weather impact & race-control timeline | DONE (timeline + counts) | V3-0 | Descriptive correlation/timeline (weather/SC/VSC/flags vs pace/stints) | No predictive claims; uses cached feeds | Bounded |
 | V3-4c | Pit crew & overtake analytics | TODO | V3-0 | Stop duration distribution/lane-vs-stationary (or "—"); overtake events/zones with incompleteness noted | Honest on gaps; no historical fight-scan revival | `pit`, `overtakes` |
 | V3-4d | Director layouts & PWA/offline | TODO | V3-0 | Preset layouts; installable PWA; cached sessions offline with clear not-cached state | Frontend-only where possible; cache/versioning discipline | Bounded UX |
 | V3-4e | Data export | DONE (laps/stints CSV, client-side) | V3-0 | CSV/JSON export of shown session/lap/stint/trace data | No licence breach, no secrets, non-commercial | Bounded |
