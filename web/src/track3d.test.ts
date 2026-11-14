@@ -21,6 +21,7 @@ describe("buildTrackMesh", () => {
     const mesh = buildTrackMesh(square);
     expect(mesh.positions.length).toBe(square.length * 2 * 3);
     expect(mesh.indices.length).toBe(square.length * 6);
+    expect(mesh.uvs.length).toBe(square.length * 2 * 2);
     expect(mesh.edges.length).toBe(square.length * 12);
     expect(mesh.normals[1]).toBe(1);
     const left = new THREE.Vector3(mesh.positions[0], mesh.positions[1], mesh.positions[2]);

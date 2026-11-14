@@ -15,6 +15,10 @@ import type {
   SessionInfoFull,
   SpeedPoint,
   Stint,
+  StandingsPayload,
+  ProgressionPayload,
+  ArchiveSeasonsPayload,
+  ArchiveResultsPayload,
 } from "./types";
 import type { DuelPayload } from "./duel";
 import type { SessionTimeline, StrategyResult, TelemetryResult } from "./types";
@@ -201,6 +205,17 @@ export const api = {
     lap_delta_s: number | null;
     session_key: number;
   }) => post<CoachReply>("/coach/ask", body),
+  standings: (year: number, round?: number) =>
+    get<StandingsPayload>(`/standings?year=${year}${round ? `&round=${round}` : ""}`),
+  standingsProgression: (year: number, round: number) =>
+    get<ProgressionPayload>(`/standings/progression?year=${year}&round=${round}`),
+  archiveSeasons: () => get<ArchiveSeasonsPayload>("/archive/seasons"),
+  archiveRaces: (year: number) =>
+    get<{ year: number; races: import("./types").ArchiveRace[]; source: string; license: string }>(
+      `/archive/${year}/races`,
+    ),
+  archiveResults: (year: number, round: number) =>
+    get<ArchiveResultsPayload>(`/archive/${year}/${round}/results`),
 };
 
 export const tyreAtLap = (

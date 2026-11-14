@@ -250,3 +250,89 @@ export interface SessionTimeline {
   events: TimelineEvent[];
   counts: { safety_car: number; vsc: number; red_flag: number; yellow: number };
 }
+
+export interface StandingsDriver {
+  position: number;
+  points: number;
+  wins: number;
+  driver_id: string;
+  code: string;
+  name: string;
+  number?: string | null;
+  constructor: string;
+}
+
+export interface StandingsConstructor {
+  position: number;
+  points: number;
+  wins: number;
+  constructor_id: string;
+  name: string;
+}
+
+export interface StandingsPayload {
+  year: number;
+  round: number | null;
+  drivers: StandingsDriver[];
+  constructors: StandingsConstructor[];
+  source: string;
+  license: string;
+  license_url?: string;
+}
+
+export interface ProgressionSeries {
+  driver_id: string;
+  code: string;
+  name: string;
+  constructor: string;
+  points: number[];
+}
+
+export interface ProgressionPayload {
+  year: number;
+  rounds: number[];
+  series: ProgressionSeries[];
+  source: string;
+  license: string;
+  license_url?: string;
+}
+
+export interface ArchiveRace {
+  round: number;
+  race_name: string;
+  date: string | null;
+  circuit: string;
+  locality: string;
+  country: string;
+}
+
+export interface ArchiveResult {
+  position: number;
+  position_text: string;
+  points: number;
+  driver_id: string;
+  code: string;
+  name: string;
+  team: string;
+  grid: number;
+  laps: number;
+  status: string;
+  time: string | null;
+  fastest_lap: string | null;
+}
+
+export interface ArchiveResultsPayload {
+  year: number;
+  round: number;
+  race: ArchiveRace | null;
+  results: ArchiveResult[];
+  source: string;
+  license: string;
+}
+
+export interface ArchiveSeasonsPayload {
+  seasons: number[];
+  source: string;
+  license: string;
+  license_url?: string;
+}

@@ -103,7 +103,7 @@ and a globe/terrain (would invent geometry the feed does not contain).
 - `2D · 3D` switch in the Replay map; 2D is still the default and owns corners,
   DRS, hover and corner clicks. 3D adds orbit, zoom, click-to-select and the
   same followed/selected highlighting.
-- `three` is a **separate lazy chunk** (523 KB minified, 131 KB gzip); it is not
+- `three` is a **separate lazy chunk** (529 KB minified, 133 KB gzip); it is not
   requested until the first 3D switch. The main bundle stays ~395 KB / 119 KB
   gzip.
 - Geometry is a flat ribbon with a constant 2.4-unit half-width (stated in the
@@ -117,3 +117,9 @@ and a globe/terrain (would invent geometry the feed does not contain).
 - Verified in Chromium at 1440 and 390: toggle, orbit, click-to-select, day/night,
   Focus layout, repeated toggles with no page errors, and offline reload with
   22 tower rows.
+- v3.6 visual pass: procedural F1 cars (chassis, nose, front/rear wings, four
+  wheels with team-coloured hubs, helmet, rain light), asphalt texture, white
+  edge lines, a checkered start strip, a cone at every detected corner and DRS
+  zone lines. The camera now fits the projected ribbon to ~86% of the viewport
+  instead of a fixed distance, so portrait phones fill the frame. Labels are
+  larger; they may overlap in a pack, and zoom remains available.

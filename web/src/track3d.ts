@@ -12,6 +12,7 @@ export interface Projection {
 export interface TrackMesh {
   positions: Float32Array;
   normals: Float32Array;
+  uvs: Float32Array;
   indices: number[];
   edges: Float32Array;
   projection: Projection;
@@ -48,6 +49,7 @@ export function buildTrackMesh(outline: number[][], halfWidth = HALF_WIDTH_WORLD
     return {
       positions: new Float32Array(),
       normals: new Float32Array(),
+      uvs: new Float32Array(),
       indices: [],
       edges: new Float32Array(),
       projection: makeProjection(outline.length ? outline : [[0, 0], [1, 1]]),
@@ -57,6 +59,7 @@ export function buildTrackMesh(outline: number[][], halfWidth = HALF_WIDTH_WORLD
   const p = makeProjection(outline);
   const positions = new Float32Array(n * 2 * 3);
   const normals = new Float32Array(n * 2 * 3);
+  const uvs = new Float32Array(n * 2 * 2);
   const edges = new Float32Array(n * 12);
   const indices: number[] = [];
   const at = (i: number) => outline[(i + n) % n];
@@ -68,6 +71,12 @@ export function buildTrackMesh(outline: number[][], halfWidth = HALF_WIDTH_WORLD
     const len = Math.hypot(dx, dy) || 1;
     return { x: -dy / len, y: dx / len };
   };
+  const cumulative = new Float32Array(n + 1);
+  for (let i = 1; i < n; i++) {
+    const prev = at(i - 1);
+    const cur = at(i);
+    cumulative[i] = cumulative[i - 1] + Math.hypot(cur[0] - prev[0], cur[1] - prev[1]) * p.scale;
+  }
   const put = (row: number, col: number, x: number, y: number) => {
     const i = (row * 2 + col) * 3;
     positions[i] = x;
@@ -76,6 +85,9 @@ export function buildTrackMesh(outline: number[][], halfWidth = HALF_WIDTH_WORLD
     normals[i] = 0;
     normals[i + 1] = 1;
     normals[i + 2] = 0;
+    const u = (row * 2 + col) * 2;
+    uvs[u] = col;
+    uvs[u + 1] = cumulative[row] / 5;
   };
   for (let i = 0; i < n; i++) {
     const [x, y] = at(i);
@@ -103,5 +115,5 @@ export function buildTrackMesh(outline: number[][], halfWidth = HALF_WIDTH_WORLD
       e,
     );
   }
-  return { positions, normals, indices, edges, projection: p, halfWidth };
+  return { positions, normals, uvs, indices, edges, projection: p, halfWidth };
 }

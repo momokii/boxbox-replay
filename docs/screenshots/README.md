@@ -30,6 +30,12 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `26-3d-replay.png` | Optional 3D replay (night, desktop) |
 | `27-3d-mobile.png` | 3D replay at 390 px (fitted track) |
 | `28-3d-day.png` | 3D replay in the day theme |
+| `29-standings.png` | Championship standings after the current round |
+| `30-standings-chart.png` | Points-by-round chart for the top five |
+| `31-archive.png` | 2022 results archive with final standings |
+| `32-archive-1950.png` | 1950 Italian Grand Prix, shared drives and retirements |
+| `33-3d-upgraded.png` | 3D replay with procedural F1 cars and circuit detail |
+| `34-standings-mobile.png` | Standings at 390 px |
 | `13-pit-ai.png` | Pit wall: step-by-step arithmetic, break-even, engineer explanation |
 | `11-dashboard.png` | Landing dashboard with suggestions |
 | `12-dashboard-recent.png` | Continue list with the filter and remove controls |

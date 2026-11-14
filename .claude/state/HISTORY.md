@@ -557,3 +557,13 @@ camera fit, WebGL fallback and disposal are verified at 1440 and 390. The 3D
 button is disabled offline because the lazy chunk is not in the shell cache.
 AI key was replaced in `.env` and `/ai/explain` works live again. 79 pytest +
 68 vitest; tagged `v3.5.0`.
+
+v3.6.0: Jolpica F1 adapter for championship standings and the 1950–2022 results
+archive (free non-commercial, CC BY-NC-SA 4.0, custom UA, 4/s + 500/h, 1h
+cache). Standings tab maps the weekend to a round by name/date and draws a
+top-five points chart; archive is a separate results-only surface with explicit
+"no telemetry" and missing-round messages. 3D upgraded with procedural F1 cars
+(chassis/wings/wheels/helmet), asphalt texture, checkered start, corner/DRS
+markers, larger labels and a viewport-fitted camera. Caught and fixed a CSS
+class collision between mini-sector cells and the player/standings segmented
+control. 86 pytest + 68 vitest; tagged `v3.6.0`.

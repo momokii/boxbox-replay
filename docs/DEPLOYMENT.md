@@ -126,6 +126,12 @@ plan also has a monthly usage allowance: when it is exhausted the provider
 returns 429, the API maps it to a clear "usage limit reached" response, and the
 UI says so. It resets automatically; nothing else stops working.
 
+Jolpica (standings and the pre-2023 archive) needs no key. It uses
+`JOLPICA_BASE_URL`, `JOLPICA_CACHE_TTL` (default 3600s), `JOLPICA_RATE_PER_SEC`
+(default 4) and `JOLPICA_RATE_PER_HOUR` (default 500). Responses share the cache
+volume; attribution is in the UI. If the source is down, those surfaces show a
+retry message and the replay keeps working.
+
 The optional 3D view is a separate lazy JavaScript chunk; nginx serves it with
 the immutable asset cache. It is deliberately not part of the offline app shell,
 so the 3D button is disabled while offline.

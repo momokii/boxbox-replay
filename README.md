@@ -20,6 +20,8 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
 - **Qualifying mini-sectors (v3).** Real segment strips (green/purple/yellow) for qualifying and practice, with placeholder detection; races show nothing rather than fake segments.
 - **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds.
+- **Championship standings (v3.6).** A Standings tab resolves the current weekend to its championship round and shows the driver/team table plus a points-by-round chart for the top five. Source: Jolpica F1 (CC BY-NC-SA 4.0), attributed in the panel.
+- **Results archive (v3.6).** A separate, full-screen archive for 1950–2022: season → race → result, with final standings beside it. Results and standings only — there is no telemetry or replay for this era, and the UI says so. Missing rounds and source outages have explicit fallback messages.
 - **Optional 3D replay (v3.5).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock, with orbit and click-to-select. 2D stays the default and the analytical surface (corners, DRS, hover). The track ribbon is flat and its width is a visual constant, not measured data.
 - **Telemetry lab (v3).** Up to three drivers on the same clock: speed traces, throttle/brake/gear/DRS at the cursor, and explicit nulls when a channel is missing. Distance-aligned lap comparison stays in Lap duel.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
@@ -166,7 +168,10 @@ cd web && npm install && npm run dev                    # SPA on :5173, proxies 
 | `OPENCODE_MODEL` | `deepseek-v4.1-flash` | Model id used for answers |
 | `AI_MAX_TOKENS` | `1200` | Answer budget (reasoning tokens count) |
 | `AI_RATE_PER_MIN` | `6` | Server-side AI budget |
-| `CACHE_DIR` | `data/cache` | Where parquet caches live |
+| `JOLPICA_BASE_URL` | `https://api.jolpi.ca/ergast/f1` | Archive/standings base URL |
+| `JOLPICA_CACHE_TTL` | `3600` | Seconds before an archive response is refetched |
+| `JOLPICA_RATE_PER_SEC` / `_PER_HOUR` | `4` / `500` | Jolpica free-tier budget |
+| `CACHE_DIR` | `data/cache` | Where OpenF1 parquet and Jolpica JSON caches live |
 
 Every variable is documented with a placeholder in [`.env.example`](.env.example).
 `.env` is gitignored; never commit real values.
@@ -187,6 +192,12 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 | `GET /session/speed?driver_number=` | One driver's speed for the session |
 | `GET /session/duel?a_driver=&a_lap=&b_driver=&b_lap=` | Two laps aligned by distance: traces plus the time delta at equal progress |
 | `GET /session/inputs?t0=&t1=` | Throttle, brake, gear and DRS over a session-time window |
+| `POST /session/strategy` | Ranked stay/pit options with assumptions and coverage |
+| `POST /session/telemetry` | Up to five drivers on one clock; null channels preserved |
+| `GET /session/timeline` | Weather and race-control events on the replay clock |
+| `GET /standings?year=&round=` | Driver/team standings after a round (Jolpica) |
+| `GET /standings/progression?year=&round=` | Points after each round, top series |
+| `GET /archive/seasons` · `/archive/{year}/races` · `/archive/{year}/{round}/results` | 1950–2022 results archive (Jolpica) |
 | `GET /ai/status` | Whether AI is configured and which model is used |
 | `POST /ai/chat` | Multi-turn grounded chat (bounded history) |
 | `POST /ai/recap` | Session recap in the session's own terms |
@@ -203,7 +214,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ## Quality gates
 
 ```bash
-pytest                       # 79 Python tests, all HTTP mocked
+pytest                       # 87 Python tests, all HTTP mocked
 ruff check .                 # lint
 cd web && npm test           # 68 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle

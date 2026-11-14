@@ -2754,25 +2754,25 @@ tr.driver-marked td {
   gap: 2px;
   margin-right: 5px;
 }
-.seg {
+.mini-seg {
   width: 9px;
   height: 12px;
   border-radius: 2px;
   background: var(--line);
 }
-.seg-purple {
+.mini-seg-purple {
   background: var(--purple);
 }
-.seg-green {
+.mini-seg-green {
   background: var(--green);
 }
-.seg-yellow {
+.mini-seg-yellow {
   background: var(--amber);
 }
-.seg-pit {
+.mini-seg-pit {
   background: #ff5a52;
 }
-.seg-none {
+.mini-seg-none {
   background: var(--panel-2);
 }
 .pit-analytics-grid {
@@ -2872,5 +2872,226 @@ tr.driver-marked td {
   }
   .map3d-note {
     font-size: 0.62rem;
+  }
+}
+
+/* ── Championship standings & results archive (v3.6) ─────────────────── */
+.archive-open {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--dim);
+  font: 600 0.72rem var(--font-sans, system-ui);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.archive-open:hover {
+  color: var(--ink);
+  border-color: var(--amber);
+}
+.standings-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: var(--space-4);
+}
+.standings-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.standings-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.standings-head .seg {
+  margin: 0;
+}
+.standings-table-scroll {
+  max-height: 46vh;
+  overflow: auto;
+  margin-top: var(--space-3);
+}
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.standings-table th,
+.standings-table td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.standings-table th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 1;
+  color: var(--dim);
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.standings-table td:nth-child(1),
+.standings-table td:nth-last-child(-n + 2) {
+  font-variant-numeric: tabular-nums;
+}
+.team-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.standings-progress {
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+}
+.standings-progress h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 0.82rem;
+}
+.chart-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  color: var(--dim);
+}
+.chart-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 4px;
+}
+.standings-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--panel-2);
+  border-radius: var(--radius);
+}
+.standings-source {
+  margin: var(--space-3) 0 0;
+}
+.archive-view {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: auto;
+  background: var(--bg);
+  padding: var(--space-4);
+}
+.archive-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  max-width: 1200px;
+  margin: 0 auto var(--space-4);
+}
+.archive-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+.archive-close {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.archive-pickers {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto var(--space-3);
+}
+.archive-pickers label {
+  display: grid;
+  gap: 4px;
+  color: var(--dim);
+  font-size: 0.72rem;
+}
+.archive-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.archive-grid section {
+  min-width: 0;
+}
+.archive-grid h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 0.85rem;
+}
+.archive-scroll {
+  max-height: 62vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.archive-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.archive-table th,
+.archive-table td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.archive-table th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  color: var(--dim);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.archive-source {
+  max-width: 1200px;
+  margin: var(--space-4) auto 0;
+}
+@media (max-width: 900px) {
+  .archive-grid {
+    grid-template-columns: 1fr;
+  }
+  .archive-scroll {
+    max-height: 42vh;
+  }
+}
+@media (max-width: 640px) {
+  .archive-open {
+    font-size: 0.68rem;
+    padding: 4px 7px;
+  }
+  .standings-panel {
+    padding: var(--space-3);
+  }
+  .standings-table th:nth-child(3),
+  .standings-table td:nth-child(3) {
+    display: none;
+  }
+  .archive-view {
+    padding: var(--space-3);
   }
 }

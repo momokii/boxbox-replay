@@ -16,6 +16,7 @@ import ai
 import analysis
 import coach
 import data_loader
+import jolpica
 import strategy
 
 app = FastAPI(title="BoxBox Replay API")
@@ -1651,3 +1652,69 @@ def ai_recap(body: RecapRequest) -> dict:
     except ai.AIError as exc:
         raise HTTPException(502, "the AI provider did not answer, try again") from exc
     return {"answer": text, "model": ai.MODEL, "grounded_on": used}
+
+# --- Season standings and the Jolpica archive ---------------------------------
+# Attribution: Jolpica F1, CC BY-NC-SA 4.0. Results/standings only; no telemetry.
+
+
+def _validate_year_round(year: int, round: int | None = None) -> None:
+    if not 1950 <= year <= 2100:
+        raise HTTPException(422, "year must be between 1950 and 2100")
+    if round is not None and not 1 <= round <= 40:
+        raise HTTPException(422, "round must be between 1 and 40")
+
+
+@app.get("/standings")
+def standings_table(year: int, round: int | None = None) -> dict:
+    """Driver and constructor standings at the end of a round (or the season)."""
+    _validate_year_round(year, round)
+    try:
+        return jolpica.standings(year, round)
+    except jolpica.JolpicaUnavailable as exc:
+        raise HTTPException(503, "The standings archive did not answer; retry.") from exc
+
+
+@app.get("/standings/progression")
+def standings_progression(year: int, round: int) -> dict:
+    """Points after every round, built from cached per-round standings."""
+    _validate_year_round(year, round)
+    try:
+        return jolpica.progression(year, round)
+    except jolpica.JolpicaUnavailable as exc:
+        raise HTTPException(503, "The standings archive did not answer; retry.") from exc
+
+
+@app.get("/archive/seasons")
+def archive_seasons() -> dict:
+    try:
+        return {
+            "seasons": jolpica.seasons(),
+            "source": jolpica.SOURCE,
+            "license": jolpica.LICENSE,
+            "license_url": jolpica.LICENSE_URL,
+        }
+    except jolpica.JolpicaUnavailable as exc:
+        raise HTTPException(503, "The archive did not answer; retry.") from exc
+
+
+@app.get("/archive/{year}/races")
+def archive_races(year: int) -> dict:
+    _validate_year_round(year)
+    try:
+        return {
+            "year": year,
+            "races": jolpica.races(year),
+            "source": jolpica.SOURCE,
+            "license": jolpica.LICENSE,
+        }
+    except jolpica.JolpicaUnavailable as exc:
+        raise HTTPException(503, "The archive did not answer; retry.") from exc
+
+
+@app.get("/archive/{year}/{round}/results")
+def archive_results(year: int, round: int) -> dict:
+    _validate_year_round(year, round)
+    try:
+        return jolpica.results(year, round)
+    except jolpica.JolpicaUnavailable as exc:
+        raise HTTPException(503, "The archive did not answer; retry.") from exc

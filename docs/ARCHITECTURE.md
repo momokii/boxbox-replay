@@ -87,8 +87,9 @@ retired cars (result feed, or no fresh laps) are classified last.
 - One `Playback` store owns `t`, `dur`, `playing`, `speed`, `calm`.
 - The map, timeline, speed strip and charts subscribe and redraw per frame.
 - The optional 3D view (`Track3D.tsx`) is a lazy-loaded three.js chunk built
-  from the same outline and replay positions. It renders a flat ribbon, cars and
-  labels only; corners, DRS zones and the hover readout stay on the 2D canvas.
+  from the same outline and replay positions. It renders a flat, textured ribbon
+  with edge lines, a checkered start, corner/DRS markers and procedural F1 cars;
+  corners, DRS zones and the hover readout stay on the 2D canvas.
   WebGL failure falls back to 2D, and the chunk is not cached offline, so the
   3D button is disabled offline rather than failing a dynamic import.
 - The page around them subscribes through a **trailing-edge throttle** (~8 Hz).
@@ -121,6 +122,9 @@ retired cars (result feed, or no fresh laps) are classified last.
 | `GET /session/timeline` | Weather + race-control events normalized to the replay clock; counts and bands |
 | `POST /session/telemetry` | Multi-driver traces over a session-time window; channels, not distance alignment (that is `/session/duel`) |
 | `POST /session/strategy` | Ranked stay-vs-pit options, break-even, undercut, coverage, assumptions (`strategy.py`) |
+| `GET /standings?year=&round=` | Driver + team standings after a round (Jolpica) |
+| `GET /standings/progression?year=&round=` | Points after each round (top 12 series) |
+| `GET /archive/seasons` · `/archive/{year}/races` · `/archive/{year}/{round}/results` | 1950–2022 results/standings archive |
 | `GET /ai/status` | `{configured, ready, model}` — never the key |
 | `POST /ai/chat` | Multi-turn: last 10 turns, user ≤400 chars, facts in the system message |
 | `POST /ai/pit` | Explains a `pit_toy_model` result; the server recomputes the numbers |
@@ -139,6 +143,17 @@ retired cars (result feed, or no fresh laps) are classified last.
 Errors: `404` means "this session genuinely has no such data"; `503` means the
 upstream feed did not answer (network, rate limit, or credentials) and the client
 offers a retry.
+
+## Archive and standings boundary
+
+`jolpica.py` is a separate, read-only adapter for pre-2023 results and season
+standings. It uses the same cache volume with a one-hour TTL, a custom
+`BoxBoxReplay/3.6.0` User-Agent, 4 req/s and 500 req/h limits, and returns empty
+lists for absent rounds instead of inventing data. The API exposes `/standings`,
+`/standings/progression`, `/archive/seasons`, `/archive/{year}/races` and
+`/archive/{year}/{round}/results`. The Standings tab maps the selected weekend to
+a round by name/date; the Archive is a separate full-screen surface and is
+explicitly results-only. Attribution: Jolpica F1, CC BY-NC-SA 4.0.
 
 ## Security and deployment
 
@@ -160,6 +175,8 @@ offers a retry.
   derivation, pit summary, overtake counts, rotation of points *and* segments).
 - `data_loader.py` tests use a mocked HTTP client: cache hit/miss, empty payloads,
   retry on 429, 404-as-empty, and "never cache an empty replay".
+- `jolpica.py` parsing is tested with fixture MRData and mocked fetches, including
+  an empty archive round and a missing progression round (never fabricated).
 - The SPA tests pure helpers (formatting, sector flags, gap maths, sorting,
   throttling, playback interpolation, 3D ribbon geometry) with vitest.
 - UI behaviour is verified with a headless browser during development

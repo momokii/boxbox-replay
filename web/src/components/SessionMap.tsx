@@ -302,6 +302,8 @@ export default function SessionMap(p: Props) {
               outline={p.outline}
               replay={p.replay}
               dots={p.dots}
+              corners={p.corners}
+              zones={p.zones}
               highlight={p.highlight}
               angle={p.angle}
               selectedDriver={p.selectedDriver}

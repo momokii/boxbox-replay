@@ -10,6 +10,8 @@ import GapChart from "./components/GapChart";
 import PerformancePanel from "./components/PerformancePanel";
 import PitPanel from "./components/PitPanel";
 import StrategyPanel from "./components/StrategyPanel";
+import StandingsPanel from "./components/StandingsPanel";
+import ArchiveView from "./components/ArchiveView";
 import TelemetryLabPanel from "./components/TelemetryLabPanel";
 import SessionMap from "./components/SessionMap";
 import SpeedChart, { type SpeedSeries } from "./components/SpeedChart";
@@ -156,8 +158,17 @@ export default function App() {
   const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
   const [selectedCorner, setSelectedCorner] = useState<string | null>(null);
   const [view, setView] = useState<
-    "replay" | "battle" | "duel" | "telemetry" | "performance" | "pit" | "strategy" | "ask"
+    | "replay"
+    | "battle"
+    | "duel"
+    | "telemetry"
+    | "performance"
+    | "pit"
+    | "strategy"
+    | "ask"
+    | "standings"
   >("replay");
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [showLaps, setShowLaps] = useState(false);
   const [lapsModal, setLapsModal] = useState(false);
   const [driverDetail, setDriverDetail] = useState<"stints" | "laps" | "overtakes" | "pits" | null>(null);
@@ -629,6 +640,7 @@ export default function App() {
 
   const gpName = meetings.data?.find((m: Meeting) => m.meeting_key === meetingKey)?.meeting_name ?? "";
   const sessName = sessions.data?.find((s: SessionInfo) => s.session_key === sessionKey)?.session_name ?? "";
+  const currentMeeting = meetings.data?.find((m) => m.meeting_key === meetingKey) ?? null;
   const sessionBlocked = sessionKey ? reasons[String(sessionKey)] || null : null;
 
   const seekToLap = (lapNumber: number) => {
@@ -663,6 +675,9 @@ export default function App() {
           {sessName ? ` · ${sessName}` : ""}
           {progress.total ? ` · LAP ${Math.max(1, progress.lap)}/${progress.total}` : ""}
         </span>
+        <button type="button" className="archive-open" onClick={() => setArchiveOpen(true)}>
+          Archive
+        </button>
         <div className="layout-switch" role="group" aria-label="Layout">
           {(["full", "focus", "data"] as const).map((value) => (
             <button
@@ -829,9 +844,9 @@ export default function App() {
 
           <section className="stage">
             <div className="tabbar" role="tablist" aria-label="Views">
-              {(["replay", "battle", "duel", "telemetry", "performance", "pit", "strategy", "ask"] as const).map((v) => (
+              {(["replay", "battle", "duel", "telemetry", "performance", "pit", "strategy", "ask", "standings"] as const).map((v) => (
                 <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
-                  {v === "pit" ? "Pit wall" : v}
+                  {v === "pit" ? "Pit wall" : v === "standings" ? "Standings" : v}
                 </button>
               ))}
             </div>
@@ -1145,6 +1160,13 @@ export default function App() {
                 sessionName={sessName}
               />
             )}
+            {view === "standings" && year && (
+              <StandingsPanel
+                year={year}
+                meetingName={currentMeeting?.meeting_name ?? ""}
+                meetingDate={currentMeeting?.date_start ?? null}
+              />
+            )}
             {view === "strategy" && sessionKey && (
               <StrategyPanel
                 sessionKey={sessionKey}
@@ -1448,6 +1470,7 @@ export default function App() {
 
         </section>
       )}
+      {archiveOpen && <ArchiveView onClose={() => setArchiveOpen(false)} />}
     </>
   );
 }

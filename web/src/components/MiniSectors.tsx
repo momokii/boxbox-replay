@@ -42,7 +42,7 @@ export default function MiniSectors({ laps, sessionName, driverCode }: Props) {
     return (values ?? []).map((value, index) => (
       <span
         key={`${sector}-${index}`}
-        className={`seg seg-${segmentTone(value)}`}
+        className={`mini-seg mini-seg-${segmentTone(value)}`}
         title={`S${sector} segment ${index + 1} · ${segmentTone(value)}`}
       />
     ));

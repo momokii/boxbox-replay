@@ -769,3 +769,30 @@ def test_timeline_normalizes_weather_and_events(monkeypatch):
     assert body["weather"][0]["t"] == 50.0  # 60 - lights out at 10
     assert body["events"][0]["t"] == 20.0
     assert body["counts"]["vsc"] == 2
+
+
+def test_standings_endpoint(monkeypatch):
+    monkeypatch.setattr(
+        m.jolpica,
+        "standings",
+        lambda year, round=None: {"year": year, "round": round, "drivers": [], "constructors": []},
+    )
+    with TestClient(m.app) as client:
+        got = client.get("/standings", params={"year": 2024, "round": 1})
+        assert got.status_code == 200
+        assert got.json()["round"] == 1
+
+
+def test_standings_archive_unavailable(monkeypatch):
+    def boom(*args, **kwargs):
+        raise m.jolpica.JolpicaUnavailable("down")
+
+    monkeypatch.setattr(m.jolpica, "standings", boom)
+    with TestClient(m.app) as client:
+        got = client.get("/standings", params={"year": 2024, "round": 1})
+        assert got.status_code == 503
+
+
+def test_standings_rejects_bad_year():
+    with TestClient(m.app) as client:
+        assert client.get("/standings", params={"year": 1900}).status_code == 422

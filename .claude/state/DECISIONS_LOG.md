@@ -143,6 +143,7 @@
 **Alternatives Rejected:** Jolpica adapter in v3
 **Security Implications:** No third-party archive data cached or redistributed
 **Impact:** Revisit only if the licence posture is explicitly accepted
+**Superseded:** D11 (non-commercial use accepted; shipped `v3.6.0`)
 ---
 
 ---
@@ -153,6 +154,7 @@
 **Alternatives Rejected:** Season tab in v3
 **Security Implications:** None new
 **Impact:** Documented as a future feature; no code
+**Superseded:** D11 (shipped `v3.6.0`)
 ---
 
 ## v3.5 3D Decision (2026-11-14)
@@ -165,6 +167,18 @@
 **Alternatives Rejected:** Top-level 3D menu (splits replay context); CSS-only 3D (no camera/scene); fabricated elevation/width (violates the honesty rule)
 **Security Implications:** three.js is a lazy frontend-only dependency; no new API, key or data source; the chunk is not cached offline
 **Impact:** V3.5a shipped in `v3.5.0`; D7 is superseded. V3.5b (Jolpica, D8) and V3.5c (standings, D9) are unchanged
+---
+
+## v3.6 Archive Decision (2026-11-15)
+
+---
+**Decision:** D11 — Use Jolpica F1 for season standings and the pre-2023 archive
+**Date:** 2026-11-15
+**Context:** The user asked for standings and a Jolpica archive with missing-data fallbacks; D8/D9 assumed a stricter licence posture
+**Rationale:** Jolpica's Terms allow free non-commercial use under CC BY-NC-SA 4.0 with attribution and a custom User-Agent. The app is non-commercial, displays the source/licence, caches responses, and does not redistribute dumps. One adapter serves both the standings tab and the archive.
+**Alternatives Rejected:** OpenF1 beta championship endpoints for progression (session-scoped, 2023+ only); scraping; paid archives
+**Security Implications:** Server-side only, validated year/round integers, 4/s + 500/h limits, one-hour cache, no key, no user URL passthrough
+**Impact:** V3.5b/V3.5c shipped in `v3.6.0`; D8/D9 superseded. Replay telemetry remains OpenF1-only from 2023
 ---
 
 ## Decision Template (copy for every new decision)
