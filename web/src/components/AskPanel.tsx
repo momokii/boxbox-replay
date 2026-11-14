@@ -118,7 +118,9 @@ export default function AskPanel({ sessionKey, sessionLabel, sessionName }: Prop
 
   const fail = (err: unknown) => {
     const message = err instanceof Error ? err.message : "";
-    if (message.includes("503")) {
+    if (message.includes("429")) {
+      setError("The engineer has reached its usage limit. Try again after it resets.");
+    } else if (message.includes("503")) {
       setError("The AI is turned off on this deployment: set OPENCODE_API_KEY on the server.");
     } else if (message.includes("422")) {
       setError("That question is outside the length the engineer accepts (3–400 characters).");

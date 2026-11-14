@@ -64,6 +64,10 @@ class AIError(RuntimeError):
     """Upstream failure; the caller surfaces a retryable message."""
 
 
+class AIQuotaExceeded(RuntimeError):
+    """The provider's monthly usage allowance is exhausted. Not retryable."""
+
+
 def configured() -> bool:
     return bool(API_KEY)
 
@@ -133,7 +137,20 @@ def _request(session_key: int, messages: list[dict]) -> str:
                 response = client.post(f"{BASE_URL}/chat/completions", headers=headers, json=body)
             if response.status_code in (401, 403):
                 raise AINotConfigured("the provider rejected the key")
-            if response.status_code in (429, 500, 502, 503, 504):
+            if response.status_code == 429:
+                try:
+                    payload = response.json()
+                except ValueError:
+                    payload = {}
+                error = payload.get("error", {}) if isinstance(payload, dict) else {}
+                message = str(error.get("message", ""))
+                if error.get("type") == "GoUsageLimitError" or "usage limit" in message.lower():
+                    raise AIQuotaExceeded("AI usage limit reached")
+                last_error = AIError("provider rate limit")
+                if attempt < 2:
+                    time.sleep(2 * (attempt + 1))
+                continue
+            if response.status_code in (500, 502, 503, 504):
                 last_error = AIError(f"provider HTTP {response.status_code}")
                 if attempt < 2:
                     time.sleep(2 * (attempt + 1))
@@ -180,6 +197,20 @@ def chat(session_key: int, facts: str, history: list[dict]) -> str:
         if role in ("user", "assistant") and content:
             messages.append({"role": role, "content": content[:1600]})
     text = _request(session_key, messages)
+    if text.strip().upper().startswith("OUT_OF_SCOPE"):
+        return OUT_OF_SCOPE
+    return text
+
+
+def explain(session_key: int, facts: str, prompt: str) -> str:
+    """Narrate a server-built fact bundle. The caller owns the facts."""
+    text = _request(
+        session_key,
+        [
+            {"role": "system", "content": SYSTEM + "\n\nSESSION NOTES:\n" + facts},
+            {"role": "user", "content": prompt},
+        ],
+    )
     if text.strip().upper().startswith("OUT_OF_SCOPE"):
         return OUT_OF_SCOPE
     return text

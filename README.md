@@ -197,7 +197,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ## Quality gates
 
 ```bash
-pytest                       # 74 Python tests, all HTTP mocked
+pytest                       # 76 Python tests, all HTTP mocked
 ruff check .                 # lint
 cd web && npm test           # 53 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
@@ -243,6 +243,7 @@ Known limitations, stated plainly:
 
 - **First open of a race takes ~1 minute** (dozens of telemetry requests), then
   it is served from cache. Popular sessions can be pre-warmed by opening them.
+- **AI quota.** OpenCode Go has a monthly allowance; when it runs out the AI returns a clear "usage limit reached" message (HTTP 429) and every non-AI panel keeps working.
 - **OpenF1 availability.** If the feed rate-limits or blocks a client, uncached
   sessions show a clear message and cached ones keep working. If it begins
   requiring credentials, set `OPENF1_API_KEY`.

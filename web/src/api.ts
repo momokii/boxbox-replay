@@ -93,6 +93,11 @@ export const api = {
       `/session/inputs?session_key=${sessionKey}&driver_number=${driver}` +
         `&t0=${t0.toFixed(2)}&t1=${t1.toFixed(2)}`,
     ),
+  aiExplain: (body: {
+    session_key: number;
+    kind: string;
+    subject: Record<string, unknown>;
+  }) => post<{ answer: string; model: string; grounded_on: string[] }>("/ai/explain", body),
   telemetry: (body: {
     session_key: number;
     drivers: number[];

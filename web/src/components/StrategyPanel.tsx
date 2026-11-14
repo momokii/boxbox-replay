@@ -26,6 +26,9 @@ export default function StrategyPanel(p: Props) {
   const [pitLoss, setPitLoss] = useState<string>("");
   const [result, setResult] = useState<StrategyResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [explain, setExplain] = useState<string | null>(null);
+  const [explainBusy, setExplainBusy] = useState(false);
+  const [explainError, setExplainError] = useState<string | null>(null);
 
   useEffect(() => {
     if (p.defaultDriver) setDriver(p.defaultDriver);
@@ -36,6 +39,11 @@ export default function StrategyPanel(p: Props) {
   }, [p.sessionKey, startLap, p.totalLaps]);
 
   const remaining = Math.max(1, (p.totalLaps || 1) - fromLap + 1);
+
+  useEffect(() => {
+    setExplain(null);
+    setExplainError(null);
+  }, [driver, fromLap, pitLoss]);
 
   useEffect(() => {
     if (!p.sessionKey || !driver) return;
@@ -211,6 +219,53 @@ export default function StrategyPanel(p: Props) {
               <p className="warn small">
                 Traffic on exit: {result.traffic_penalty_s?.toFixed(1)}s penalty included in the totals.
               </p>
+            )}
+          </div>
+
+          <div className="strategy-explain">
+            <button
+              type="button"
+              className="pit-explain-btn"
+              disabled={explainBusy}
+              onClick={async () => {
+                setExplainBusy(true);
+                setExplainError(null);
+                try {
+                  const reply = await api.aiExplain({
+                    session_key: p.sessionKey,
+                    kind: "strategy",
+                    subject: {
+                      driver,
+                      from_lap: fromLap,
+                      laps_remaining: remaining,
+                      pit_loss_s: pitLoss.trim() === "" ? undefined : Number(pitLoss),
+                    },
+                  });
+                  setExplain(reply.answer);
+                } catch (err: unknown) {
+                  const message = err instanceof Error ? err.message : "";
+                  setExplainError(
+                    message.includes("429")
+                      ? "The engineer has reached its usage limit. Try again after it resets."
+                      : message.includes("503")
+                        ? "The AI is not configured on this deployment."
+                        : "The engineer did not answer. The model above is unaffected.",
+                  );
+                } finally {
+                  setExplainBusy(false);
+                }
+              }}
+            >
+              {explainBusy ? "Asking the engineer…" : "Explain this strategy"}
+            </button>
+            {explainError && <p className="small warn">{explainError}</p>}
+            {explain && (
+              <div className="pit-explain-note">
+                <p>{explain}</p>
+                <footer className="dim small">
+                  AI explanation · the numbers above are the source of truth
+                </footer>
+              </div>
             )}
           </div>
 

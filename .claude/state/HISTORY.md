@@ -515,3 +515,11 @@ brake, gear and DRS over one session-time window, with nulls preserved; a new
 Telemetry tab draws speed traces and a hover readout for up to three drivers.
 Scope is explicitly same-clock; distance-aligned comparison stays in Lap duel.
 Tested on the US GP (NOR/VER hover values). 74 pytest + 53 vitest.
+
+V3.3 shipped: POST /ai/explain takes kind+subject, rebuilds the strategy or
+compare result server-side, builds a fact bundle and asks the model to narrate
+it; no client facts. Strategy and Telemetry Lab panels gained 'Explain'
+buttons. Verified that the Go monthly allowance is exhausted (provider 429,
+GoUsageLimitError): added AIQuotaExceeded -> HTTP 429 with a clear UI message
+instead of a generic 502; other endpoints unaffected. Live answer verification
+blocked by the quota; mocked tests cover the path. 76 pytest + 53 vitest.

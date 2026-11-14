@@ -1,5 +1,5 @@
 ## Project Phase
-v2 shipped (`v1.0.0`…`v2.13.1`). v3 **in progress**: V3.0 decisions recorded; **V3.1 strategy model** and **V3.2 Telemetry Lab** shipped. Next: V3.3 grounded explain.
+v2 shipped (`v1.0.0`…`v2.13.1`). v3 **in progress**: V3.0 decisions recorded; **V3.1 strategy model**, **V3.2 Telemetry Lab** and **V3.3 grounded explain** shipped. Next: V3.4b/e/d.
 DEPLOYED prod, healthy at http://<host>:8501.
 
 ## Completed
@@ -8,7 +8,8 @@ DEPLOYED prod, healthy at http://<host>:8501.
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
 - [x] V3.1 strategy engine (clean laps, pace/wear profile, ranked scenarios, break-even, coverage) + tests + Strategy tab
 - [x] V3.2 Telemetry Lab (same-clock multi-driver traces + hover)
-- [ ] V3.3 AI explain · V3.4b/e/d
+- [x] V3.3 grounded explain (server-built facts; AI quota mapped to 429)
+- [ ] V3.4b weather/RC timeline · V3.4e export · V3.4d PWA/offline
 
 ## Blocked / Deferred (deliberate, documented)
 - V3.2 implementation not started; V3.0 gate closed

@@ -777,6 +777,10 @@ def coach_ask(req: CoachRequest) -> dict:
         try:
             facts, _ = _ai_facts(req.session_key)
             answer = ai.answer_corner(req.session_key, facts, prompt) or None
+        except ai.AIQuotaExceeded as exc:
+            raise HTTPException(
+                429, "AI usage limit reached; it resets automatically"
+            ) from exc
         except (ai.AINotConfigured, ai.AIError):
             answer = None
     llm = answer is not None
@@ -1275,6 +1279,130 @@ def session_telemetry(req: TelemetryRequest) -> dict:
     }
 
 
+class ExplainRequest(BaseModel):
+    session_key: int
+    kind: str
+    subject: dict
+
+
+def _strategy_facts(result: dict, code: str) -> str:
+    lines = [
+        f"Kind: strategy for {code} from lap {result.get('from_lap')} "
+        f"with {result.get('laps_remaining')} laps remaining.",
+        f"Pit loss: {result.get('pit_loss_s')}s ({result.get('pit_loss_source')}).",
+    ]
+    for option in result.get("options", []):
+        lines.append(
+            f"Option {option['rank']}: {option['label']} — {option['total_s']:.2f}s "
+            f"(+{option['delta_to_best_s']:.2f}s vs best)."
+        )
+    lines.append(f"Break-even pit loss: {result.get('break_even_pit_loss_s')}s.")
+    undercut = result.get("undercut")
+    lines.append(
+        f"Undercut estimate: {undercut['laps_needed']} laps."
+        if undercut
+        else "Undercut estimate: not measurable."
+    )
+    lines.append(f"Coverage: {result.get('coverage')}.")
+    for note in result.get("assumptions", []):
+        lines.append(f"Assumption: {note}")
+    return "\n".join(lines)
+
+
+def _telemetry_facts(result: dict, codes: dict[int, str]) -> str:
+    lines = [
+        f"Kind: comparison over {result['window']['t0']:.0f}s to "
+        f"{result['window']['t1']:.0f}s."
+    ]
+    for series in result.get("series", []):
+        speeds = [v for v in series["speed"] if v is not None]
+        throttles = [v for v in series["throttle"] if v is not None]
+        brakes = [v for v in series["brake"] if v is not None]
+        gears = [v for v in series["gear"] if v is not None]
+        drs = sorted({v for v in series["drs"] if v is not None})
+        if not speeds:
+            lines.append(
+                f"{codes.get(series['driver_number'], series['driver_number'])}: "
+                "no speed data."
+            )
+            continue
+        lines.append(
+            f"{codes.get(series['driver_number'], series['driver_number'])}: "
+            f"max {max(speeds):.0f} km/h, mean throttle "
+            f"{sum(throttles) / max(1, len(throttles)):.0f}%, braking on "
+            f"{100 * sum(1 for v in brakes if v >= 50) / max(1, len(brakes)):.0f}% of samples, "
+            f"gears {min(gears) if gears else '—'}–{max(gears) if gears else '—'}, "
+            f"DRS {('values ' + str(drs)) if drs else 'not published'}."
+        )
+    return "\n".join(lines)
+
+
+@app.post("/ai/explain")
+def ai_explain(req: ExplainRequest) -> dict:
+    """Explain a computed result. The facts are built here, never sent by the client."""
+    if not ai.configured():
+        raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    kind = req.kind.strip().lower()
+    codes = {n: m["code"] for n, m in _driver_meta(req.session_key).items()}
+    if kind == "strategy":
+        try:
+            strategy_req = StrategyRequest(
+                session_key=req.session_key,
+                driver_number=int(req.subject["driver"]),
+                from_lap=int(req.subject["from_lap"]) if req.subject.get("from_lap") else None,
+                laps_remaining=(
+                    int(req.subject["laps_remaining"])
+                    if req.subject.get("laps_remaining")
+                    else None
+                ),
+                pit_loss_s=(
+                    float(req.subject["pit_loss_s"]) if req.subject.get("pit_loss_s") else None
+                ),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, "subject needs driver and lap context") from exc
+        result = session_strategy(strategy_req)
+        if not result.get("measurable"):
+            raise HTTPException(422, result.get("reason", "not measurable"))
+        facts = _strategy_facts(result, codes.get(strategy_req.driver_number, "driver"))
+        prompt = (
+            "TASK: explain this strategy result to a fan in three or four sentences. Say "
+            "which option wins and why, what the break-even pit loss means here, and name "
+            "the biggest assumption. Use only the numbers above; do not recalculate "
+            "anything. If the result is close, say it is close."
+        )
+        grounded = ["strategy result", "coverage", "assumptions"]
+    elif kind == "compare":
+        try:
+            telemetry_req = TelemetryRequest(
+                session_key=req.session_key,
+                drivers=[int(d) for d in req.subject["drivers"]],
+                t0=float(req.subject["t0"]),
+                t1=float(req.subject["t1"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, "subject needs drivers and a time window") from exc
+        result = session_telemetry(telemetry_req)
+        facts = _telemetry_facts(result, codes)
+        prompt = (
+            "TASK: compare these drivers over this window in three or four sentences. "
+            "Use only the aggregates above. Point out the clearest difference and say "
+            "when a channel is missing. Do not infer telemetry that is not listed."
+        )
+        grounded = ["comparison aggregates", "window", "coverage"]
+    else:
+        raise HTTPException(422, "kind must be strategy or compare")
+    try:
+        text = ai.explain(req.session_key, facts, prompt)
+    except ai.AINotConfigured as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ai.AIQuotaExceeded as exc:
+        raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
+    except ai.AIError as exc:
+        raise HTTPException(502, "the AI provider did not answer, try again") from exc
+    return {"answer": text, "model": ai.MODEL, "grounded_on": grounded}
+
+
 class StrategyRequest(BaseModel):
     session_key: int
     driver_number: int
@@ -1381,6 +1509,8 @@ def ai_chat(body: ChatRequest) -> dict:
         text = ai.chat(body.session_key, facts, history)
     except ai.AINotConfigured as exc:
         raise HTTPException(503, str(exc)) from exc
+    except ai.AIQuotaExceeded as exc:
+        raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
     except ai.AIError as exc:
         raise HTTPException(502, "the AI provider did not answer, try again") from exc
     return {"answer": text, "model": ai.MODEL, "grounded_on": used}
@@ -1427,6 +1557,8 @@ def ai_pit_explain(body: PitExplainRequest) -> dict:
         text = ai.explain_pit(body.session_key, notes)
     except ai.AINotConfigured as exc:
         raise HTTPException(503, str(exc)) from exc
+    except ai.AIQuotaExceeded as exc:
+        raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
     except ai.AIError as exc:
         raise HTTPException(502, "the AI provider did not answer, try again") from exc
     return {"answer": text, "model": ai.MODEL, "call": call}
@@ -1441,6 +1573,8 @@ def ai_recap(body: RecapRequest) -> dict:
         text = ai.recap(body.session_key, facts)
     except ai.AINotConfigured as exc:
         raise HTTPException(503, str(exc)) from exc
+    except ai.AIQuotaExceeded as exc:
+        raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
     except ai.AIError as exc:
         raise HTTPException(502, "the AI provider did not answer, try again") from exc
     return {"answer": text, "model": ai.MODEL, "grounded_on": used}

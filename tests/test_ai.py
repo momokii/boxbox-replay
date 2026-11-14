@@ -163,3 +163,39 @@ def test_length_finish_retries_with_a_bigger_cap(monkeypatch):
 
     assert ai._complete(1, "prompt") == "a complete answer"
     assert caps == [ai.MAX_TOKENS, min(ai.MAX_TOKENS * 2, 4000)]
+
+
+def test_quota_429_is_not_retried(monkeypatch):
+    calls = {"n": 0}
+
+    class Response:
+        status_code = 429
+
+        def json(self):
+            return {
+                "error": {
+                    "type": "GoUsageLimitError",
+                    "message": "OpenCode Go usage limit reached (monthly)",
+                }
+            }
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, *a, **k):
+            calls["n"] += 1
+            return Response()
+
+    monkeypatch.setattr(ai, "API_KEY", "k")
+    monkeypatch.setattr(ai.httpx, "Client", Client)
+    monkeypatch.setattr(ai, "_budget", lambda: None)
+    with pytest.raises(ai.AIQuotaExceeded):
+        ai._complete(1, "prompt")
+    assert calls["n"] == 1

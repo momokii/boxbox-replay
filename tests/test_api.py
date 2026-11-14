@@ -640,3 +640,83 @@ def test_telemetry_endpoint_shapes_and_validation(monkeypatch):
             json={"session_key": 1, "drivers": [1], "t0": 10, "t1": 5},
         )
         assert bad.status_code == 422
+
+
+def test_ai_explain_strategy_uses_server_built_facts(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(
+        m,
+        "session_strategy",
+        lambda req: {
+            "measurable": True,
+            "from_lap": 43,
+            "laps_remaining": 14,
+            "pit_loss_s": 24.2,
+            "pit_loss_source": "median pit-lane time",
+            "options": [
+                {
+                    "rank": 1,
+                    "label": "Stay out on HARD",
+                    "total_s": 1426.06,
+                    "delta_to_best_s": 0.0,
+                }
+            ],
+            "break_even_pit_loss_s": 16.66,
+            "undercut": None,
+            "coverage": {"clean": 51},
+            "assumptions": ["Wear is linear per stint."],
+        },
+    )
+    seen = {}
+
+    def fake_explain(session_key, facts, prompt):
+        seen["facts"] = facts
+        seen["prompt"] = prompt
+        return "Stay out is the call."
+
+    monkeypatch.setattr(m.ai, "explain", fake_explain)
+    with TestClient(m.app) as client:
+        body = client.post(
+            "/ai/explain",
+            json={
+                "session_key": 1,
+                "kind": "strategy",
+                "subject": {"driver": 1, "from_lap": 43, "laps_remaining": 14},
+            },
+        ).json()
+
+    assert body["answer"] == "Stay out is the call."
+    assert "Stay out on HARD" in seen["facts"]
+    assert "24.2" in seen["facts"]
+    assert "do not recalculate" in seen["prompt"]
+
+
+def test_ai_explain_rejects_unknown_kind(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    with TestClient(m.app) as client:
+        res = client.post(
+            "/ai/explain",
+            json={"session_key": 1, "kind": "weather", "subject": {}},
+        )
+    assert res.status_code == 422
+
+
+def test_ai_quota_returns_429(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "session_strategy", lambda req: {"measurable": True})
+    monkeypatch.setattr(
+        m.ai,
+        "explain",
+        lambda *a, **k: (_ for _ in ()).throw(m.ai.AIQuotaExceeded("limit")),
+    )
+    with TestClient(m.app) as client:
+        res = client.post(
+            "/ai/explain",
+            json={
+                "session_key": 1,
+                "kind": "strategy",
+                "subject": {"driver": 1, "from_lap": 10},
+            },
+        )
+    assert res.status_code == 429
+    assert "usage limit" in res.json()["detail"]

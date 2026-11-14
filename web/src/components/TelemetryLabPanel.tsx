@@ -26,6 +26,9 @@ export default function TelemetryLabPanel(p: Props) {
   const [data, setData] = useState<TelemetryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<{ t: number; x: number } | null>(null);
+  const [explain, setExplain] = useState<string | null>(null);
+  const [explainBusy, setExplainBusy] = useState(false);
+  const [explainError, setExplainError] = useState<string | null>(null);
   const { canvasRef, wrapRef, width, dpr } = useCanvasSize(H);
   const lastWindow = useRef("");
 
@@ -82,6 +85,11 @@ export default function TelemetryLabPanel(p: Props) {
   };
 
   const span = Math.max(1, p.windowEnd - p.windowStart);
+
+  useEffect(() => {
+    setExplain(null);
+    setExplainError(null);
+  }, [selected, p.windowStart, p.windowEnd]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -222,6 +230,52 @@ export default function TelemetryLabPanel(p: Props) {
               }}
               onMouseLeave={() => setHover(null)}
             />
+          </div>
+
+          <div className="strategy-explain">
+            <button
+              type="button"
+              className="pit-explain-btn"
+              disabled={explainBusy}
+              onClick={async () => {
+                setExplainBusy(true);
+                setExplainError(null);
+                try {
+                  const reply = await api.aiExplain({
+                    session_key: p.sessionKey,
+                    kind: "compare",
+                    subject: {
+                      drivers: selected,
+                      t0: p.windowStart,
+                      t1: p.windowEnd,
+                    },
+                  });
+                  setExplain(reply.answer);
+                } catch (err: unknown) {
+                  const message = err instanceof Error ? err.message : "";
+                  setExplainError(
+                    message.includes("429")
+                      ? "The engineer has reached its usage limit. Try again after it resets."
+                      : message.includes("503")
+                        ? "The AI is not configured on this deployment."
+                        : "The engineer did not answer. The traces are unaffected.",
+                  );
+                } finally {
+                  setExplainBusy(false);
+                }
+              }}
+            >
+              {explainBusy ? "Asking the engineer…" : "Explain this comparison"}
+            </button>
+            {explainError && <p className="small warn">{explainError}</p>}
+            {explain && (
+              <div className="pit-explain-note">
+                <p>{explain}</p>
+                <footer className="dim small">
+                  AI explanation · the traces above are the source of truth
+                </footer>
+              </div>
+            )}
           </div>
 
           <div className="lab-readout">

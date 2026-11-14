@@ -360,7 +360,7 @@ markers where geometry allows.
   laps; downsample preserves bounds (min/max within window or documented);
   `null` never coerced to 0; perf independent of replay rAF; 390 px responsive.
 
-## 5. V3.3 — AI race engineer 2.0 (committed, on-demand)
+## 5. V3.3 — AI race engineer 2.0 (shipped, on-demand)
 
 ### 5.1 Goal
 Explain key moments, strategy outcomes, and comparisons by narrating **computed

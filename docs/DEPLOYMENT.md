@@ -121,7 +121,10 @@ curl -s localhost:8501/api/ai/status   # {"configured":true,"ready":true,...}
 ```
 
 Without a key, the Ask tab and the pit-wall explanation say so, and the corner
-coach falls back to a measured sentence instead of an AI answer.
+coach falls back to a measured sentence instead of an AI answer. The OpenCode Go
+plan also has a monthly usage allowance: when it is exhausted the provider
+returns 429, the API maps it to a clear "usage limit reached" response, and the
+UI says so. It resets automatically; nothing else stops working.
 
 The key is server-only: the browser calls our API, never the provider. The
 server sends the session facts, not the key. Use a dedicated key, keep `.env`

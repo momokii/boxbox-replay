@@ -15,8 +15,9 @@ design for the committed core** lives in
 `docs/V3_CORE_IMPLEMENTATION_PLAN.md` (V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e +
 gated V3.4a/c, with interface alternatives/synthesis, contracts, acceptance).
 v2 shipped through `v2.13.1`; **V3.1 shipped** (strategy engine) and **V3.2
-shipped** (same-clock Telemetry Lab; distance alignment remains Lap duel). V3.3
-is next.
+shipped** (same-clock Telemetry Lab; distance alignment remains Lap duel) and
+**V3.3 shipped** (grounded strategy/compare explanations; live AI verification
+blocked by the Go monthly quota, unit-tested and error-mapped). V3.4b/e/d next.
 
 ## Recommended headline (why these three)
 
@@ -152,7 +153,7 @@ session geometry.
 
 ---
 
-## V3.3 — AI race engineer 2.0
+## V3.3 — AI race engineer 2.0 (shipped)
 
 **Goal.** Move from on-demand Q&A/recap to grounded explanations of key
 moments and strategy "why", citing computed facts.
