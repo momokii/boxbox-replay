@@ -2794,3 +2794,83 @@ tr.driver-marked td {
     gap: var(--space-2);
   }
 }
+
+/* ── Optional 3D replay (V3.5a) ───────────────────────────────────────── */
+.map-mode {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  backdrop-filter: blur(6px);
+}
+.map-mode button {
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--dim);
+  font: 600 0.72rem var(--font-sans, system-ui);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.map-mode button[aria-pressed="true"] {
+  background: var(--amber);
+  color: #0b0f16;
+}
+.map-mode button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.map3d,
+.map3d-loading,
+.map3d-fallback {
+  height: clamp(360px, 52vw, 620px);
+  width: 100%;
+  position: relative;
+  background: var(--panel-2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.map3d-note {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  z-index: 2;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--panel) 84%, transparent);
+  color: var(--dim);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  max-width: min(560px, calc(100% - 20px));
+  pointer-events: none;
+}
+.map3d-loading,
+.map3d-fallback {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  color: var(--dim);
+  padding: 24px;
+  text-align: center;
+}
+.map3d-fallback p {
+  margin: 0;
+  max-width: 340px;
+}
+@media (max-width: 640px) {
+  .map3d,
+  .map3d-loading,
+  .map3d-fallback {
+    height: 380px;
+  }
+  .map3d-note {
+    font-size: 0.62rem;
+  }
+}

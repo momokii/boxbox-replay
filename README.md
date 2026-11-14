@@ -20,6 +20,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
 - **Qualifying mini-sectors (v3).** Real segment strips (green/purple/yellow) for qualifying and practice, with placeholder detection; races show nothing rather than fake segments.
 - **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds.
+- **Optional 3D replay (v3.5).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock, with orbit and click-to-select. 2D stays the default and the analytical surface (corners, DRS, hover). The track ribbon is flat and its width is a visual constant, not measured data.
 - **Telemetry lab (v3).** Up to three drivers on the same clock: speed traces, throttle/brake/gear/DRS at the cursor, and explicit nulls when a channel is missing. Distance-aligned lap comparison stays in Lap duel.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
 - **Lap duel.** Two laps race the same circuit, aligned by distance around the lap, with a live delta that starts at 0.000 and closes exactly on the official lap-time difference.
@@ -204,7 +205,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 79 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 65 frontend tests (vitest)
+cd web && npm test           # 68 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```

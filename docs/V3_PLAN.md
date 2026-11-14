@@ -16,12 +16,13 @@ design for the committed core** lives in
 gated V3.4a/c, with interface alternatives/synthesis, contracts, acceptance).
 v2 shipped through `v2.13.1`; **V3.1 shipped** (strategy engine) and **V3.2
 shipped** (same-clock Telemetry Lab; distance alignment remains Lap duel) and
-**V3.3 shipped** (grounded strategy/compare explanations; live AI verification
-blocked by the Go monthly quota, unit-tested and error-mapped). **V3.4e shipped**
-(client-side CSV export), **V3.4b shipped** (weather/race-control timeline) and
-**V3.4d shipped** (layouts, PWA shell, explicit offline cache). **The v3 core is
-complete.** V3.4a and V3.4c shipped with strict data gates. V3.5 (3D, Jolpica,
-standings) is closed by recorded go/no-go decisions (D7–D9): no-go/deferred.
+**V3.3 shipped** (grounded strategy/compare explanations; live verification
+passes with the replacement key). **V3.4e shipped** (client-side CSV export),
+**V3.4b shipped** (weather/race-control timeline) and **V3.4d shipped** (layouts,
+PWA shell, explicit offline cache). **The v3 core is complete.** V3.4a and V3.4c
+shipped with strict data gates. **V3.5a shipped** as an optional, lazy 3D view
+(`v3.5.0`) after an explicit user request; V3.5b (Jolpica) stays no-go (D8) and
+V3.5c (standings) deferred (D9).
 
 ## Recommended headline (why these three)
 
@@ -48,7 +49,7 @@ feeds.
 | V3.2 | Telemetry Lab 2.0 | V3.0 | Reuses car_data/lap windows; extends duel/inputs |
 | V3.3 | AI race engineer 2.0 | V3.1, V3.2 | Narrates computed facts (strategy moments, trace insights) |
 | V3.4 | Supporting analytics & UX | V3.0 (parts after V3.1/2 as noted) | Bounded value: mini-sectors, weather/RC, pit/overtake, layouts/PWA/export |
-| V3.5 | Stretch (go/no-go) | V3.1–V3.3 | 3D/WebGL replay and/or Jolpica 1950+ era view, each separately gated |
+| V3.5 | Stretch (go/no-go) | V3.1–V3.3 | 3D view shipped (`v3.5.0`); Jolpica/standings remain gated |
 
 Supporting items in V3.4 can be sequenced independently after V3.0 except
 where they consume V3.1/V3.2 outputs; each ships as its own commit.
@@ -205,7 +206,7 @@ segments. V3.4c must not revive the rejected historical fight scan.
 
 ---
 
-## V3.5 — Stretch (closed: D7–D9 no-go/deferred)
+## V3.5 — Stretch (V3.5a shipped; V3.5b/c closed)
 
 | Sub | Task | Gate | Key risks |
 |---|---|---|---|
@@ -213,7 +214,9 @@ segments. V3.4c must not revive the rejected historical fight scan.
 | V3.5b | Jolpica 1950+ archive view (results/standings/laps/pit stops, head-to-head) | Licence posture accepted (CC BY-NC-SA, attribution, non-commercial, no dump redistribution) and UX kept separate from 2023+ replay | Share-alike/licence mixing, no telemetry pre-2023, scope creep |
 | V3.5c | Championship progression (OpenF1 beta / Jolpica adapter) | Adapter isolated; data freshness/beta stability acceptable | Beta endpoint changes, licence if Jolpica |
 
-None of V3.5 is required for the v3 headline.
+None of V3.5 is required for the v3 headline. V3.5a was later requested
+explicitly and shipped as an optional view (D10); Jolpica (D8) remains no-go and
+championship progression (D9) remains deferred.
 
 ---
 

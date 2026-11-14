@@ -99,7 +99,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 
 ## v3 backlog — planned (see `docs/V3_RESEARCH.md`, `docs/V3_PLAN.md`, `docs/V3_CORE_IMPLEMENTATION_PLAN.md`)
 
-Status: **v3 complete** (V3.1–V3.4d + V3.4a/c shipped). V3.5 closed by D7–D9. Committed core (sure, data+rate-limit feasible now): V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e. Conditional (data-gated): V3.4a, V3.4c. Stretch (go/no-go): V3.5a–c. See `docs/V3_CORE_IMPLEMENTATION_PLAN.md` for end-to-end design/contracts/acceptance.
+Status: **v3 complete** (V3.1–V3.4e + V3.4a/c + optional V3.5a 3D shipped, `v3.5.0`). V3.5b Jolpica is a no-go (D8); V3.5c standings is deferred (D9). See `docs/V3_CORE_IMPLEMENTATION_PLAN.md` and `docs/V3_5_3D_RESEARCH.md`.
 
 | ID | Task | Status | Depends | Scope (summary) | Acceptance (summary) | Notes / gates |
 |----|------|--------|---------|-----------------|----------------------|---------------|
@@ -112,7 +112,7 @@ Status: **v3 complete** (V3.1–V3.4d + V3.4a/c shipped). V3.5 closed by D7–D9
 | V3-4c | Pit crew & overtake analytics | DONE (distribution/outliers/top overtakes) | V3-0 | Stop duration distribution/lane-vs-stationary (or "—"); overtake events/zones with incompleteness noted | Honest on gaps; no historical fight-scan revival | `pit`, `overtakes` |
 | V3-4d | Director layouts & PWA/offline | DONE (layouts, SW shell, 25 MB explicit cache) | V3-0 | Preset layouts; installable PWA; cached sessions offline with clear not-cached state | Frontend-only where possible; cache/versioning discipline | Bounded UX |
 | V3-4e | Data export | DONE (laps/stints CSV, client-side) | V3-0 | CSV/JSON export of shown session/lap/stint/trace data | No licence breach, no secrets, non-commercial | Bounded |
-| V3-5a | 3D/WebGL replay (stretch) | REJECTED (D7) | V3-0, V3-1–V3-3 | GPS-derived/procedural 3D with camera modes and hard 2D fallback | Perf budget met (desktop+mobile), reduced-motion/off toggle | Go/no-go gate |
+| V3-5a | 3D/WebGL replay (optional view) | DONE (`v3.5.0`, supersedes D7) | V3-0, V3-1–V3-3 | GPS-derived/procedural 3D with camera modes and hard 2D fallback | Perf budget met (desktop+mobile), reduced-motion/off toggle | Go/no-go gate |
 | V3-5b | Jolpica 1950+ archive view (stretch) | REJECTED (D8) | V3-0 | Results/standings/laps/pit stops/head-to-head; separate from 2023+ replay; isolated adapter + attribution | Licence posture accepted (CC BY-NC-SA, non-commercial, no dump redistribution/share-alike care); no telemetry pre-2023 | Go/no-go gate |
 | V3-5c | Championship progression (stretch) | DEFERRED (D9) | V3-0 | Standings progression via OpenF1 beta and/or Jolpica adapter | Adapter isolated; freshness/beta/licence acceptable | Go/no-go gate |
 

@@ -888,6 +888,8 @@ export default function App() {
                         onCorner={setSelectedCorner}
                         onDriver={(n) => setSelectedDriver((cur) => (cur === n ? null : n))}
                         hoverInfo={hoverInfo}
+                        theme={theme}
+                        online={online}
                       />
                     </div>
 

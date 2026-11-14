@@ -7,8 +7,8 @@
 ## Project Snapshot
 
 BoxBox Replay: F1 telemetry viz, v2 shipped (React SPA + FastAPI). Replay, lap
-duel, inputs, pit wall, AI Ask and Battles now are live; 67 pytest + 53 vitest,
-CI green on `v2.13.1`.
+duel, inputs, pit wall, AI Ask, Battles and an optional 3D replay now are
+live; 79 pytest + 68 vitest, CI green on `v3.5.0`.
 
 ## Always-Loaded Context
 
@@ -40,9 +40,9 @@ Stack: FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, OpenCode Go for AI.
 
 | Purpose      | Command           | Status          |
 |--------------|-------------------|-----------------|
-| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | v2.13.1 verified |
+| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | v3.5.0 verified |
 | Test (API)   | `.venv/bin/python -m pytest` | 67 pass |
-| Test (web)   | `cd web && npm test` (vitest) | 53 pass |
+| Test (web)   | `cd web && npm test` (vitest) | 68 pass |
 | Lint (API)   | `.venv/bin/python -m ruff check .` | clean |
 | Build (web)  | `cd web && npm run build` | verified |
 | Type check   | `tsc -b` (runs inside `npm run build`) | verified |

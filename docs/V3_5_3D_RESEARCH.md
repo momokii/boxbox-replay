@@ -97,3 +97,23 @@ and a globe/terrain (would invent geometry the feed does not contain).
    <https://vitejs.dev/guide/features.html#dynamic-import>
 7. MDN WebGL API — rendering context and support:
    <https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API>
+
+## Implementation result (2026-11-14)
+
+- `2D · 3D` switch in the Replay map; 2D is still the default and owns corners,
+  DRS, hover and corner clicks. 3D adds orbit, zoom, click-to-select and the
+  same followed/selected highlighting.
+- `three` is a **separate lazy chunk** (523 KB minified, 131 KB gzip); it is not
+  requested until the first 3D switch. The main bundle stays ~395 KB / 119 KB
+  gzip.
+- Geometry is a flat ribbon with a constant 2.4-unit half-width (stated in the
+  UI); no fake elevation or lateral placement. The scene uses the same outline,
+  `posAt` positions and angle rotation as 2D.
+- WebGL failure shows a 2D fallback; the lazy chunk has an error boundary;
+  cleanup disposes geometries/materials/textures and forces context loss.
+  Damping is off under `prefers-reduced-motion`.
+- Offline: the 3D chunk is not in the shell cache, so the 3D button is disabled
+  when offline. A session saved offline still replays in 2D.
+- Verified in Chromium at 1440 and 390: toggle, orbit, click-to-select, day/night,
+  Focus layout, repeated toggles with no page errors, and offline reload with
+  22 tower rows.

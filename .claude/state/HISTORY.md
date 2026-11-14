@@ -546,3 +546,14 @@ detection (races hide the panel), and a pit/overtake analytics panel (median,
 best, >1.5x outliers, quickest stops, top overtakes). V3.5 closed by decisions:
 3D no-go (D7), Jolpica archive no-go (D8), standings deferred (D9). 79 pytest +
 65 vitest.
+
+Optional 3D replay shipped (`v3.5.0`). Research recorded in
+`docs/V3_5_3D_RESEARCH.md`: OpenF1 location is 3.7 Hz with an arbitrary origin
+and no lateral placement, so the 3D view is a flat ribbon with an explicitly
+visual width and no invented elevation. `Track3D.tsx` is a lazy three.js chunk
+(523 KB / 131 KB gzip) loaded only on the first 3D switch; 2D stays default and
+owns corners/DRS/hover. Orbit, zoom, click-to-select, day/night, aspect-aware
+camera fit, WebGL fallback and disposal are verified at 1440 and 390. The 3D
+button is disabled offline because the lazy chunk is not in the shell cache.
+AI key was replaced in `.env` and `/ai/explain` works live again. 79 pytest +
+68 vitest; tagged `v3.5.0`.

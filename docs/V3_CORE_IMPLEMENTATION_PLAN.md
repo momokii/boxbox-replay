@@ -47,8 +47,8 @@ sessions where data is valid.
 
 ### 0.3 Explicitly out of committed core (not guaranteed)
 
-- **V3.5a 3D/WebGL replay:** stretch, perf-gated, hard 2D fallback required.
-- **V3.5b Jolpica 1950+ archive, V3.5c championship progression:** stretch,
+- **V3.5a 3D/WebGL replay:** shipped as an optional lazy view (`v3.5.0`); 2D default, WebGL fallback, offline-disabled.
+- **V3.5b Jolpica 1950+ archive (no-go, D8), V3.5c championship progression (deferred, D9):** stretch,
   licence/freshness/beta gated (Jolpica CC BY-NC-SA, non-commercial, attribution,
   no dump redistribution, isolated adapter; no telemetry pre-2023).
 - **Excluded:** live timing/replay (paid), FastF1 runtime (F1TV auth), radio

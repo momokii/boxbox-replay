@@ -1,7 +1,29 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { posAt, trailAt } from "../session";
 import type { Playback } from "../playbackStore";
 import type { Corner, DrsZone, ReplayDriver } from "../types";
+
+const Track3D = lazy(() => import("./Track3D"));
+
+class Track3DBoundary extends Component<{ onFallback: () => void; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="map3d-fallback">
+          <p>The 3D view could not load. The 2D map has the same replay data.</p>
+          <button type="button" className="primary" onClick={this.props.onFallback}>
+            Back to 2D
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export interface DotMeta {
   driver: number;
@@ -23,6 +45,8 @@ interface Props {
   onCorner: (label: string) => void;
   onDriver: (driver: number) => void;
   hoverInfo: (driver: number) => { pos: number | null; gap: number | null; tyre: string | null; speed: number | null };
+  theme: "night" | "day";
+  online: boolean;
 }
 
 const TRAIL_S = 6;
@@ -59,6 +83,12 @@ export default function SessionMap(p: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ x: number; y: number; driver: number } | null>(null);
+  const [mode, setMode] = useState<"2d" | "3d">("2d");
+  const can3d = p.online && p.outline.length >= 3;
+
+  useEffect(() => {
+    if (!p.online && mode === "3d") setMode("2d");
+  }, [p.online, mode]);
   useSyncExternalStore(p.playback.subscribe, () => p.playback.state.rev);
   const geom = useRef({ scale: 1, ox: 0, oy: 0, span: 1 });
   const screen = useRef(new Map<number, { x: number; y: number }>());
@@ -239,8 +269,49 @@ export default function SessionMap(p: Props) {
 
   return (
     <div ref={wrapRef} style={{ position: "relative", lineHeight: 0 }}>
-      <canvas ref={canvasRef} onClick={onClick} onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
-      {hover && <HoverCard hover={hover} dots={p.dots} info={p.hoverInfo(hover.driver)} />}
+      <div className="map-mode" role="group" aria-label="Map view">
+        <button type="button" aria-pressed={mode === "2d"} onClick={() => setMode("2d")}>
+          2D
+        </button>
+        <button
+          type="button"
+          aria-pressed={mode === "3d"}
+          disabled={!can3d}
+          title={
+            !p.online
+              ? "The 3D chunk is not cached offline; use 2D offline"
+              : p.outline.length < 3
+                ? "3D needs the circuit outline"
+                : "Switch to the 3D view"
+          }
+          onClick={() => setMode("3d")}
+        >
+          3D
+        </button>
+      </div>
+      {mode === "2d" ? (
+        <>
+          <canvas ref={canvasRef} onClick={onClick} onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
+          {hover && <HoverCard hover={hover} dots={p.dots} info={p.hoverInfo(hover.driver)} />}
+        </>
+      ) : (
+        <Track3DBoundary onFallback={() => setMode("2d")}>
+          <Suspense fallback={<div className="map3d-loading">Loading the 3D view…</div>}>
+            <Track3D
+              playback={p.playback}
+              outline={p.outline}
+              replay={p.replay}
+              dots={p.dots}
+              highlight={p.highlight}
+              angle={p.angle}
+              selectedDriver={p.selectedDriver}
+              theme={p.theme}
+              onDriver={p.onDriver}
+              onFallback={() => setMode("2d")}
+            />
+          </Suspense>
+        </Track3DBoundary>
+      )}
     </div>
   );
 }

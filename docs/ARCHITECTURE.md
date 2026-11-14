@@ -86,6 +86,11 @@ retired cars (result feed, or no fresh laps) are classified last.
 
 - One `Playback` store owns `t`, `dur`, `playing`, `speed`, `calm`.
 - The map, timeline, speed strip and charts subscribe and redraw per frame.
+- The optional 3D view (`Track3D.tsx`) is a lazy-loaded three.js chunk built
+  from the same outline and replay positions. It renders a flat ribbon, cars and
+  labels only; corners, DRS zones and the hover readout stay on the 2D canvas.
+  WebGL failure falls back to 2D, and the chunk is not cached offline, so the
+  3D button is disabled offline rather than failing a dynamic import.
 - The page around them subscribes through a **trailing-edge throttle** (~8 Hz).
   A drop-if-too-soon throttle was the cause of the "button stuck on Pause" bug:
   the last event of a burst was discarded, so pause never repainted.
@@ -143,8 +148,9 @@ offers a retry.
 - Containers run as non-root; production adds `no-new-privileges`, resource
   limits and a named cache volume. The API is not published in production (nginx
   proxies it).
-- The coach shells out to a local CLI; if it is unavailable the API returns
-  `answer: null` and the UI shows the measured numbers only.
+- The AI layer calls the configured OpenAI-compatible endpoint server-side;
+  unconfigured is `503`, provider quota is `429`, and the UI shows the measured
+  numbers plus an honest message.
 - CI: ruff + pytest (API), npm test + tsc + oxlint + vite build (web), gitleaks,
   pip-audit and npm audit, plus an advisory Trivy scan of the API image.
 
@@ -155,7 +161,7 @@ offers a retry.
 - `data_loader.py` tests use a mocked HTTP client: cache hit/miss, empty payloads,
   retry on 429, 404-as-empty, and "never cache an empty replay".
 - The SPA tests pure helpers (formatting, sector flags, gap maths, sorting,
-  throttling, playback interpolation) with vitest.
+  throttling, playback interpolation, 3D ribbon geometry) with vitest.
 - UI behaviour is verified with a headless browser during development
   (screenshots + canvas pixel checks + frame-timing measurements); those scripts
   are development tools, not part of CI.

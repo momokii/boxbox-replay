@@ -132,6 +132,7 @@
 **Alternatives Rejected:** Three.js scene for v3
 **Security Implications:** Avoids a large new dependency surface
 **Impact:** 3D stays a future go/no-go, not a v3 promise
+**Superseded:** D10 (user requested the optional view; shipped in `v3.5.0`)
 ---
 
 ---
@@ -152,6 +153,18 @@
 **Alternatives Rejected:** Season tab in v3
 **Security Implications:** None new
 **Impact:** Documented as a future feature; no code
+---
+
+## v3.5 3D Decision (2026-11-14)
+
+---
+**Decision:** D10 — Ship V3.5a as an optional, lazy 3D view inside Replay
+**Date:** 2026-11-14
+**Context:** The user asked for a visually pleasing 3D view after D7; the 2D map is still the analytical surface
+**Rationale:** A perspective view of the same cars/clock adds visual value without changing the data or the analysis. Keeping it inside Replay avoids a second product surface; lazy loading keeps it out of the main bundle.
+**Alternatives Rejected:** Top-level 3D menu (splits replay context); CSS-only 3D (no camera/scene); fabricated elevation/width (violates the honesty rule)
+**Security Implications:** three.js is a lazy frontend-only dependency; no new API, key or data source; the chunk is not cached offline
+**Impact:** V3.5a shipped in `v3.5.0`; D7 is superseded. V3.5b (Jolpica, D8) and V3.5c (standings, D9) are unchanged
 ---
 
 ## Decision Template (copy for every new decision)

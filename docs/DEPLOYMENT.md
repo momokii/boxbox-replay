@@ -126,6 +126,10 @@ plan also has a monthly usage allowance: when it is exhausted the provider
 returns 429, the API maps it to a clear "usage limit reached" response, and the
 UI says so. It resets automatically; nothing else stops working.
 
+The optional 3D view is a separate lazy JavaScript chunk; nginx serves it with
+the immutable asset cache. It is deliberately not part of the offline app shell,
+so the 3D button is disabled while offline.
+
 The app is an installable PWA: the service worker caches the shell and, on
 "Save offline" in the player bar, the current session's payloads (25 MB cap).
 Offline replay works with the network off; AI is disabled offline. Removing the

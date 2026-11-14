@@ -27,6 +27,9 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `23-offline.png` | Offline reload of a cached session |
 | `24-mini-sectors.png` | Qualifying mini-sector strips |
 | `25-pit-analytics.png` | Pit-crew and overtake analytics |
+| `26-3d-replay.png` | Optional 3D replay (night, desktop) |
+| `27-3d-mobile.png` | 3D replay at 390 px (fitted track) |
+| `28-3d-day.png` | 3D replay in the day theme |
 | `13-pit-ai.png` | Pit wall: step-by-step arithmetic, break-even, engineer explanation |
 | `11-dashboard.png` | Landing dashboard with suggestions |
 | `12-dashboard-recent.png` | Continue list with the filter and remove controls |
