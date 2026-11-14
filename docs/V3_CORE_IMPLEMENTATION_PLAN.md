@@ -173,7 +173,7 @@ POST /ai/explain
 
 ## 3. V3.1 — Strategy engine core (committed)
 
-### 3.1 Goal
+### 3.1 Goal (shipped)
 Replace the labelled toy pit wall with a transparent, testable strategy
 simulator. The user can compare stay-vs-pit and ranked alternatives for a
 selected driver at a chosen lap/context, seeing how the answer is derived.

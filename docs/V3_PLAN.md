@@ -14,7 +14,8 @@ recorded in `.claude/state/DECISIONS_LOG.md`. **Implementation-ready end-to-end
 design for the committed core** lives in
 `docs/V3_CORE_IMPLEMENTATION_PLAN.md` (V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e +
 gated V3.4a/c, with interface alternatives/synthesis, contracts, acceptance).
-v2 shipped through `v2.13.1`; v3 implementation starts at V3.1.
+v2 shipped through `v2.13.1`; **V3.1 shipped** (strategy engine + `/session/strategy`
++ Strategy tab). V3.2 is next.
 
 ## Recommended headline (why these three)
 
@@ -71,7 +72,7 @@ has no ambiguous assumptions.
 
 ---
 
-## V3.1 — Strategy engine core ("earns the word model")
+## V3.1 — Strategy engine core (shipped)
 
 **Problem.** The current pit wall is explicitly a toy: linear wear, static
 rivals, user-chosen pit loss. v3 must make it a defensible, auditable model.

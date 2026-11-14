@@ -501,3 +501,11 @@ explicit and cannot be mixed, fuel proxy defaults off, pit loss uses the
 pit_duration lane-time proxy, offline is capped at 25 MB/session and disables AI,
 and mini-sector placeholder detection is defined. Added caller usage examples.
 Plan is implementation-ready; no feature code started.
+
+V3.1 shipped: strategy.py (pure) filters pit-out/slow/SC laps, builds a pace
+and wear profile, and ranks stay/pit options with break-even, undercut, traffic
+penalty, coverage and assumptions. POST /session/strategy returns it; a new
+Strategy tab renders ranked options and limits, keeping the v2 toy in Pit Wall.
+Real check: NOR at lap 43 -> stay 1426.1s vs pit HARD 1433.6s, pit loss 24.2s
+from median lane time, break-even 16.7s. Dockerfile copies strategy.py (the
+image import guard caught it in CI locally). 73 pytest + 53 vitest.

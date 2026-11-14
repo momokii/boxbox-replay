@@ -1,6 +1,6 @@
 # Testing
 
-The suite is deliberately small: 67 Python and 53 frontend tests. Every test
+The suite is deliberately small: 73 Python and 53 frontend tests. Every test
 earns its place by protecting a behaviour someone could break.
 
 ## What we test
@@ -11,6 +11,7 @@ earns its place by protecting a behaviour someone could break.
 | API contracts | `tests/test_api.py` | One happy path and one failure per endpoint that the UI depends on; the response shapes are the interface. |
 | Fetch and cache | `tests/test_data_loader.py` | Caching, 404/empty handling, retries, concurrency, session windows. These are the bugs that reach users as "the app is broken". |
 | Request budget | `tests/test_ratelimit.py` | Both OpenF1 limits, with a fake clock — no sleeping tests. |
+| Strategy model | `tests/test_strategy.py` | Clean-lap filtering, pace/wear profile, ranked scenarios, SC windows, degenerate data. |
 | AI boundary | `tests/test_ai.py` | Required provider headers, no key leakage, caching, the off-topic sentinel, prompt grounding. |
 | Legacy coach | `tests/test_coach.py` | Prompt grounding, confidence thresholds, radio format. |
 | Playback maths | `session`, `playback`, `duel`, `perf` tests | Interpolation, gap guards, tyre slopes, the duel's start/finish invariants. |
@@ -46,6 +47,6 @@ earns its place by protecting a behaviour someone could break.
 ## Running
 
 ```bash
-.venv/bin/python -m pytest          # 67 Python tests
+.venv/bin/python -m pytest          # 73 Python tests
 cd web && npm test                  # 53 frontend tests
 ```

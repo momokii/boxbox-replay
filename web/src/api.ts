@@ -17,6 +17,7 @@ import type {
   Stint,
 } from "./types";
 import type { DuelPayload } from "./duel";
+import type { StrategyResult } from "./types";
 
 const BASE = "/api";
 
@@ -92,6 +93,14 @@ export const api = {
       `/session/inputs?session_key=${sessionKey}&driver_number=${driver}` +
         `&t0=${t0.toFixed(2)}&t1=${t1.toFixed(2)}`,
     ),
+  strategy: (body: {
+    session_key: number;
+    driver_number: number;
+    from_lap?: number;
+    laps_remaining?: number;
+    pit_loss_s?: number;
+    gap_behind_s?: number;
+  }) => post<StrategyResult>("/session/strategy", body),
   aiStatus: () => get<{ configured: boolean; model: string; ready: boolean }>("/ai/status"),
   aiChat: (sessionKey: number, messages: { role: string; content: string }[]) =>
     post<{ answer: string; model: string; grounded_on: string[] }>("/ai/chat", {

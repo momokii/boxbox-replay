@@ -14,7 +14,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY data_loader.py analysis.py coach.py ratelimit.py ai.py ./
+COPY data_loader.py analysis.py coach.py ratelimit.py ai.py strategy.py ./
 COPY api ./api
 
 USER app

@@ -553,3 +553,44 @@ def test_ai_facts_non_race_has_no_race_language(monkeypatch):
     assert "Retirements" not in facts
     assert "overtakes" not in used and "pit stops" not in used
     assert "Do not call the classified leader the fastest" in facts
+
+
+def test_strategy_endpoint_happy_and_degenerate(monkeypatch):
+    from tests.test_strategy import _frames
+
+    laps, stints, pit = _frames()
+    start = pd.Timestamp("2024-01-01T00:00:00+00:00")
+    monkeypatch.setattr(m.data_loader, "list_laps", lambda *a, **k: laps)
+    monkeypatch.setattr(m.data_loader, "get_stints", lambda *a, **k: stints)
+    monkeypatch.setattr(m.data_loader, "get_pit", lambda *a, **k: pit)
+    monkeypatch.setattr(m.data_loader, "get_race_control", lambda *a, **k: _frame([]))
+    monkeypatch.setattr(
+        m,
+        "_session_clock",
+        lambda sk: (
+            start,
+            start + pd.Timedelta(hours=1),
+            _frame([{"lap_number": 1, "t": 0.0}]),
+            3600.0,
+        ),
+    )
+    monkeypatch.setattr(
+        m, "session_info", lambda sk: {"session_name": "Race", "total_laps": 20, "drivers": 1}
+    )
+
+    with TestClient(m.app) as client:
+        params = {"session_key": 1, "driver_number": 1, "from_lap": 12, "laps_remaining": 9}
+        body = client.post("/session/strategy", json=params).json()
+        assert body["measurable"] is True
+        assert body["options"] and body["options"][0]["id"] == "stay"
+        assert body["assumptions"]
+
+        unknown = client.post(
+            "/session/strategy", json={"session_key": 1, "driver_number": 99, "from_lap": 12}
+        )
+        assert unknown.status_code == 404
+
+        missing = client.post(
+            "/session/strategy", json={"session_key": 1, "driver_number": 1}
+        )
+        assert missing.status_code == 422

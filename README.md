@@ -20,6 +20,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
 - **Lap duel.** Two laps race the same circuit, aligned by distance around the lap, with a live delta that starts at 0.000 and closes exactly on the official lap-time difference.
+- **Strategy model (v3).** A transparent stay-vs-pit model over clean laps, stints and measured pit-lane times: ranked options, break-even pit loss, an undercut estimate, coverage/exclusions and every assumption. The v2 toy remains in Pit Wall for comparison.
 - **Pit strategy toy model.** "Pit now or stay out?" using measured pace and wear, with the arithmetic shown step by step, a **break-even pit loss**, the assumptions, and an **Explain this call** button that names exactly what the engineer receives and will not recalculate.
 - **Ask the race engineer (chat).** A bordered chat panel with a pinned composer and two-sided bubbles (you on the right, the engineer on the left): follow-ups keep the thread, prompt chips stay one click away, the transcript scrolls (with a “Newest” jump when you read back), long questions wrap, and Clear chat wipes the tab-local history. It adapts to the session — race prompts and a race recap for races, pole/gap prompts and a qualifying recap for qualifying, fastest-lap/team prompts for practice. Answers use full driver names and every session fact (full classification, retirements, sector and ideal-lap references, pace, pit stops, tyre plans, overtakes, weather, race control), stay in the app's voice, and decline off-topic questions. The API key stays on the server.
 - **Shareable moments.** "Copy link" stores the exact timestamp, so a link reopens the same frame.
@@ -195,7 +196,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ## Quality gates
 
 ```bash
-pytest                       # 67 Python tests, all HTTP mocked
+pytest                       # 73 Python tests, all HTTP mocked
 ruff check .                 # lint
 cd web && npm test           # 53 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle

@@ -9,6 +9,7 @@ import CoachPanel from "./components/CoachPanel";
 import GapChart from "./components/GapChart";
 import PerformancePanel from "./components/PerformancePanel";
 import PitPanel from "./components/PitPanel";
+import StrategyPanel from "./components/StrategyPanel";
 import SessionMap from "./components/SessionMap";
 import SpeedChart, { type SpeedSeries } from "./components/SpeedChart";
 import Timeline from "./components/Timeline";
@@ -147,7 +148,9 @@ export default function App() {
   const [highlight, setHighlight] = useState<number[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
   const [selectedCorner, setSelectedCorner] = useState<string | null>(null);
-  const [view, setView] = useState<"replay" | "battle" | "duel" | "performance" | "pit" | "ask">("replay");
+  const [view, setView] = useState<
+    "replay" | "battle" | "duel" | "performance" | "pit" | "strategy" | "ask"
+  >("replay");
   const [showLaps, setShowLaps] = useState(false);
   const [lapsModal, setLapsModal] = useState(false);
   const [driverDetail, setDriverDetail] = useState<"stints" | "laps" | "overtakes" | "pits" | null>(null);
@@ -760,7 +763,7 @@ export default function App() {
 
           <section className="stage">
             <div className="tabbar" role="tablist" aria-label="Views">
-              {(["replay", "battle", "duel", "performance", "pit", "ask"] as const).map((v) => (
+              {(["replay", "battle", "duel", "performance", "pit", "strategy", "ask"] as const).map((v) => (
                 <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
                   {v === "pit" ? "Pit wall" : v}
                 </button>
@@ -1034,6 +1037,18 @@ export default function App() {
                 sessionKey={sessionKey}
                 sessionLabel={`${gpName} · ${sessName}`}
                 sessionName={sessName}
+              />
+            )}
+            {view === "strategy" && sessionKey && (
+              <StrategyPanel
+                sessionKey={sessionKey}
+                drivers={drivers.data ?? []}
+                codes={new Map((drivers.data ?? []).map((d) => [d.driver_number, d.name_acronym]))}
+                labels={new Map((drivers.data ?? []).map((d) => [d.driver_number, driverMetaLabel(d.driver_number)]))}
+                colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
+                defaultDriver={highlight[0] ?? selectedDriver ?? towerRows[0]?.driver ?? 0}
+                currentLap={progress.lap}
+                totalLaps={progress.total}
               />
             )}
             {view === "performance" && (

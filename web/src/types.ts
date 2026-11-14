@@ -179,3 +179,33 @@ export interface InputsPayload {
   gear: number[];
   drs: (number | null)[];
 }
+
+export interface StrategyOption {
+  id: string;
+  label: string;
+  stops: number;
+  compound_plan: string[];
+  total_s: number;
+  delta_to_best_s: number;
+  rank: number;
+}
+
+export interface StrategyResult {
+  measurable: boolean;
+  reason?: string;
+  driver?: number;
+  from_lap?: number;
+  laps_remaining?: number;
+  pit_loss_s?: number;
+  pit_loss_source?: string;
+  traffic_on_exit?: boolean;
+  traffic_penalty_s?: number;
+  options: StrategyOption[];
+  break_even_pit_loss_s?: number | null;
+  undercut?: { laps_needed: number; note: string } | null;
+  assumptions: string[];
+  coverage: Record<string, unknown>;
+  inputs_echo: Record<string, unknown>;
+  model?: string;
+  toy?: boolean;
+}

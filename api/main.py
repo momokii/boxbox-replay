@@ -16,6 +16,7 @@ import ai
 import analysis
 import coach
 import data_loader
+import strategy
 
 app = FastAPI(title="BoxBox Replay API")
 
@@ -1186,6 +1187,64 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
 
 class RecapRequest(BaseModel):
     session_key: int
+
+
+class StrategyRequest(BaseModel):
+    session_key: int
+    driver_number: int
+    from_lap: int | None = None
+    laps_remaining: int | None = None
+    pit_loss_s: float | None = None
+    gap_behind_s: float | None = None
+    fuel_adj_s_per_lap: float = 0.0
+    target_compound: str | None = None
+
+
+@app.post("/session/strategy")
+def session_strategy(req: StrategyRequest) -> dict:
+    """Transparent stay-vs-pit model over cached laps, stints and pits."""
+    laps = data_loader.list_laps(req.session_key)
+    if laps.empty:
+        raise HTTPException(404, "no laps for this session")
+    if req.driver_number not in set(laps["driver_number"].astype(int)):
+        raise HTTPException(404, "driver not in this session")
+    stints = data_loader.get_stints(req.session_key)
+    if stints.empty:
+        raise HTTPException(404, "no stints for this session")
+    if req.from_lap is not None and req.from_lap < 1:
+        raise HTTPException(422, "from_lap must be at least 1")
+    start, _end, markers, _duration = _session_clock(req.session_key)
+    info = session_info(req.session_key)
+    total = int(info.get("total_laps") or 0)
+    if total < 1:
+        raise HTTPException(404, "no lap clock for this session")
+    if req.from_lap is None:
+        if req.laps_remaining is None:
+            raise HTTPException(422, "from_lap or laps_remaining is required")
+        from_lap = total - int(req.laps_remaining) + 1
+    else:
+        from_lap = int(req.from_lap)
+    from_lap = max(1, min(total, from_lap))
+
+    t0 = float(markers["t"].min()) if not markers.empty else 0.0
+    control = data_loader.get_race_control(req.session_key)
+    excluded = strategy.sc_excluded_laps(laps, control, start, t0)
+    return strategy.strategy_model(
+        laps,
+        stints,
+        data_loader.get_pit(req.session_key),
+        strategy.StrategyOptions(
+            driver=req.driver_number,
+            from_lap=from_lap,
+            laps_remaining=req.laps_remaining,
+            pit_loss_s=req.pit_loss_s,
+            gap_behind_s=req.gap_behind_s,
+            fuel_adj_s_per_lap=req.fuel_adj_s_per_lap,
+            target_compound=req.target_compound,
+        ),
+        total_laps=total,
+        excluded_laps=excluded,
+    )
 
 
 class ChatTurn(BaseModel):

@@ -1,15 +1,16 @@
 ## Project Phase
-v2 shipped (`v1.0.0`…`v2.13.1`, baseline `b7c8834`). v3 **plan locked**: research, overview, and end-to-end core design complete; **V3.0 decisions D1–D6 recorded** in `DECISIONS_LOG.md`. Implementation not started; next is V3.1.
+v2 shipped (`v1.0.0`…`v2.13.1`). v3 **in progress**: V3.0 decisions recorded; **V3.1 strategy model shipped** (pure `strategy.py`, `/session/strategy`, Strategy tab). Next: V3.2 Telemetry Lab.
 DEPLOYED prod, healthy at http://<host>:8501.
 
 ## Completed
 - [x] TASK-001 foundation + TASK-002 guardrails (FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, CI/pre-commit)
 - [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
-- [x] v3 backlog/state updated: committed core V3.1,V3.2,V3.3,V3.4b,d,e; conditional V3.4a,c; stretch V3.5a–c
+- [x] V3.1 strategy engine (clean laps, pace/wear profile, ranked scenarios, break-even, coverage) + tests + Strategy tab
+- [ ] V3.2 Telemetry Lab · V3.3 AI explain · V3.4b/e/d
 
 ## Blocked / Deferred (deliberate, documented)
-- v3 implementation not started (next V3.1); V3.0 gate is closed
+- V3.2 implementation not started; V3.0 gate closed
 - V2-4 historical Fight Finder: DEFERRED (noisy/sparse feeds)
 - V2-7 race mini-sectors: BLOCKED for races; V3.4a conditional for quali/practice when segments meaningful
 - GitHub Releases (tags only), demo prewarm, API key rotation: user-side pending
