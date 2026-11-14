@@ -60,6 +60,68 @@
 **Impact:** `session_has_telemetry()` in `data_loader.py`; M1 picker depends on it
 ---
 
+## v3 Scope Decisions (2026-11-14)
+
+---
+**Decision:** D1 — v3 headline is Strategy engine + Telemetry Lab + grounded AI (V3.1–V3.3); 3D is not an equal headline
+**Date:** 2026-11-14
+**Context:** v2 can show and answer a historical session; v3 needs depth that is feasible on free data
+**Rationale:** These three deepen shipped surfaces (pit wall, duel, inputs, Ask) using cached feeds; 3D is visual but high-risk/effort and does not improve the analysis
+**Alternatives Rejected:** 3D/WebGL as an equal headline (kept as a gated stretch, V3.5a)
+**Security Implications:** None new; same free historical feeds
+**Impact:** V3.1–V3.3 are the committed core; V3.5a is go/no-go only
+---
+
+---
+**Decision:** D2 — Live timing is out of core; v3 stays strictly historical/free
+**Date:** 2026-11-14
+**Context:** OpenF1 gates live data behind the €9.90/month sponsor tier; the portfolio must work on demand
+**Rationale:** A demo cannot depend on a live session or a paid subscription; historical data is free and complete
+**Alternatives Rejected:** Paid live tier as a required path (optional personal demo only, never a dependency)
+**Security Implications:** No paid credentials in the repo; API key stays server-side where used
+**Impact:** Live sessions remain out of scope in docs/plans
+---
+
+---
+**Decision:** D3 — AI narration is on-demand by default; proactive narration only behind an explicit opt-in
+**Date:** 2026-11-14
+**Context:** Always-on narration increases cost and the hallucination surface
+**Rationale:** Every AI answer should follow a user action and a server-built fact bundle; cost is bounded by the existing 6/min budget and caching
+**Alternatives Rejected:** Always-on proactive key-moment narration
+**Security Implications:** Smaller prompt/response surface; no client-supplied facts (see V3.3 contract)
+**Impact:** Chat/recap/explain actions only; no background AI calls
+---
+
+---
+**Decision:** D4 — Track geometry stays GPS-derived from session data; MultiViewer is not a dependency
+**Date:** 2026-11-14
+**Context:** MultiViewer's circuit endpoint has no documented public SLA and its terms are unclear
+**Rationale:** The existing session-derived outline is free, reliable and already tested; a best-effort overlay may be added only with graceful fallback
+**Alternatives Rejected:** Hard dependency on MultiViewer/f1-circuits for geometry
+**Security Implications:** No third-party licensed assets baked in
+**Impact:** V3.2/3D work uses the existing geometry path
+---
+
+---
+**Decision:** D5 — Jolpica 1950+ archive is not in the v3 core; only a separate, isolated view if the licence posture is accepted
+**Date:** 2026-11-14
+**Context:** Jolpica data is CC BY-NC-SA 4.0 with share-alike/non-commercial constraints and no telemetry pre-2023
+**Rationale:** Mixing an archive into the 2023+ replay core risks licence confusion and scope creep; it can be a separate adapter later
+**Alternatives Rejected:** 1950+ archive inside the replay core
+**Security Implications:** No bulk redistribution; attribution and non-commercial use required if added
+**Impact:** V3.5b is a stretch item behind an explicit go/no-go
+---
+
+---
+**Decision:** D6 — Demo prewarm set is scripted, not ad hoc: 2026 United States GP, 2024 Suzuka, 2024 Monaco
+**Date:** 2026-11-14
+**Context:** Cold opening a race takes ~1 minute against the 30 req/min free budget
+**Rationale:** Prewarming a small, known set makes a demo feel instant without extra code
+**Alternatives Rejected:** No prewarm / ad-hoc opening at demo time
+**Security Implications:** None; cache only
+**Impact:** Ops action before a public demo; documented in DEPLOYMENT/V3 plan
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

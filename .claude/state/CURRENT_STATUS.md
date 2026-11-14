@@ -1,36 +1,25 @@
 ## Project Phase
-v2 shipped: tags `v1.0.0` … `v2.13.1` pushed, HEAD clean at `9c3407a`. Next development is proposed only (pit-model depth, qualifying mini-sectors) — see `TASK_QUEUE.md`.
+v2 shipped (`v1.0.0`…`v2.13.1`, baseline `b7c8834`). v3 **plan locked**: research, overview, and end-to-end core design complete; **V3.0 decisions D1–D6 recorded** in `DECISIONS_LOG.md`. Implementation not started; next is V3.1.
 DEPLOYED prod, healthy at http://<host>:8501.
 
 ## Completed
-- [x] TASK-001 project foundation (stack: FastAPI/Python 3.12 + React/Vite/TS, Docker Compose)
-- [x] TASK-002 security guardrails (pre-commit + CI pytest/ruff/gitleaks/pip-audit + advisory Trivy)
-- [x] M0–M7 Streamlit app (superseded)
-- [x] R0–R4 revamp: FastAPI + React SPA, feature panels, coach, docs, deploy
-- [x] V2.1: OpenF1 3/s + 30/min bucket, single-flight builds
-- [x] V2.2/V2.3: lap-duel endpoint + view, distance-aligned delta
-- [x] V2.4: inputs overlay, hover readout, window endpoint
-- [x] V2.5: Battles now live snapshot (historical scan rejected)
-- [x] V2.6: pit strategy Gantt (Performance stint timeline + tyre-age/gap hover)
-- [x] V2.7: 1200×630 share card PNG
-- [x] V2.8–V2.19: grounded Ask + recap, chat thread, session-aware facts, pit explainer, corner coach via AI
-- [x] V2.20–V2.22: share card/stint hover, Battles now, tags v1.0.0–v2.13.1
-- [x] U2 skill-driven redesign; U9 smoothness, chart hover, responsive widths
-- [x] fix: glitch filter no longer truncates a circuit after one telemetry gap
+- [x] TASK-001 foundation + TASK-002 guardrails (FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, CI/pre-commit)
+- [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
+- [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
+- [x] v3 backlog/state updated: committed core V3.1,V3.2,V3.3,V3.4b,d,e; conditional V3.4a,c; stretch V3.5a–c
 
 ## Blocked / Deferred (deliberate, documented)
-- V2-4 historical Fight Finder: DEFERRED — intervals gave 181–593 noisy runs per race (`docs/V2_RESEARCH.md` §6)
-- V2-7 qualifying mini-sectors: BLOCKED — segments exist only outside races
-- GitHub Releases: tags pushed, but no Release objects created yet (user action)
-- Demo prewarm: races not yet chosen/warmed (user action)
+- v3 implementation not started (next V3.1); V3.0 gate is closed
+- V2-4 historical Fight Finder: DEFERRED (noisy/sparse feeds)
+- V2-7 race mini-sectors: BLOCKED for races; V3.4a conditional for quali/practice when segments meaningful
+- GitHub Releases (tags only), demo prewarm, API key rotation: user-side pending
 
 ## Open Questions
-- Staging target does not exist yet; prod files cover staging via `APP_ENV=staging`
-- API key rotation: pasted key still needs rotating (user action)
+- None blocking v3 implementation; D1–D6 are recorded. Revisit only if a data source or licence posture changes.
+- Staging target none (prod covers staging via `APP_ENV=staging`)
 
 ## Security Notes
-- Only public, no-auth APIs touched (OpenF1, Jolpica). No secrets in repo.
-- API image: non-root user, no secrets baked, `no-new-privileges`, named cache volume in prod.
+- Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica only if D5 posture later accepted. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-14: state audit reconciled; 67 pytest + 53 vitest, ruff clean, build OK, CI green on `v2.13.1`.
+2026-11-14: v3 core end-to-end plan/design documented (committed features, data/rate-limit gates, interface synthesis, contracts/acceptance). Implementation not started; V3.0 pending. 67 pytest + 53 vitest, ruff clean, build OK, CI green on `v2.13.1`.

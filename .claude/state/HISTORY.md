@@ -484,3 +484,20 @@ Updated blocks, and V2_RESEARCH still claimed no tag existed. GitHub Releases
 remain uncreated (tags only); API-key rotation and demo prewarm are still
 user-side. No code backlog: V2-4 and V2-7 stay deferred/blocked for the
 documented data reasons.
+
+## 2026-11-14 — v3 research validated, plan and backlog drafted
+
+Validated `docs/V3_RESEARCH.md` recommendations against repo constraints and shipped surfaces: Strategy engine v3, Telemetry Lab 2.0 and grounded AI race engineer 2.0 are relevant/feasible as the v3 headline on existing OpenF1 historical data and v2 modules; quali/practice mini-sectors, weather/RC, pit/overtake analytics, layouts/PWA/export are bounded supporting work; 3D/WebGL and Jolpica 1950+ archive are stretch items gated on perf and CC BY-NC-SA/non-commercial licence posture respectively. Confirmed exclusions remain correct (live timing paid, FastF1 runtime needs F1TV auth, radio transcription guarantees, fantasy scope, historical fight scan). Created `docs/V3_PLAN.md` (V3.0 decision gate → V3.1–V3.5 with dependencies, contracts, acceptance, risks) and added a v3 backlog (V3-0…V3-5c) to `TASK_QUEUE.md`; updated `CURRENT_STATUS.md`. No feature implementation started; V3.0 decisions must be recorded before V3.1+.
+
+## 2026-11-14 — v3 core end-to-end implementation plan documented
+
+Produced `docs/V3_CORE_IMPLEMENTATION_PLAN.md`: committed-core scope (V3.1 Strategy engine, V3.2 Telemetry Lab 2.0, V3.3 grounded AI 2.0, V3.4b weather/RC timeline, V3.4d PWA/offline cached sessions, V3.4e export) with data/rate-limit/free-usability gates (OpenF1 historical 3/s+30/min, cached/single-flight, honest degradation). Included proposed V3.0 decisions (D1–D6), cross-cutting contracts, and design-an-interface alternatives+synthesis for key modules (strategy pipeline, aligned telemetry, fact-bundle explain, client export/offline). Documented per-milestone E2E: data flow, pure interfaces, API contracts, UI/UX/states, files, acceptance/tests, and conditional V3.4a/c gates. Updated V3_PLAN/TASK_QUEUE/CURRENT_STATUS to reference the implementation-ready core plan. Implementation not started.
+
+v3 plan review: closed the V3.0 gate by recording D1–D6 (strategy+telemetry+AI
+headline, historical/free, on-demand AI, GPS geometry, Jolpica out of core,
+prewarm set) and fixed plan gaps found in review: /ai/explain now refuses
+client-supplied facts (server builds bundles), telemetry distance/time axes are
+explicit and cannot be mixed, fuel proxy defaults off, pit loss uses the
+pit_duration lane-time proxy, offline is capped at 25 MB/session and disables AI,
+and mini-sector placeholder detection is defined. Added caller usage examples.
+Plan is implementation-ready; no feature code started.

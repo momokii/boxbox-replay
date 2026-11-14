@@ -97,12 +97,33 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-21 | V2.5 Battles now (live snapshot) | DONE | 53 vitest |
 | V2-22 | Tag releases | DONE | v1.0.0 … v2.13.1 pushed; GitHub Release objects still pending (user) |
 
-## Next development (proposed, not committed)
+## v3 backlog — planned (see `docs/V3_RESEARCH.md`, `docs/V3_PLAN.md`, `docs/V3_CORE_IMPLEMENTATION_PLAN.md`)
 
-- Pit model depth: still labelled a toy, with its assumptions printed on screen.
-- Qualifying mini-sectors: blocked on segment availability (`docs/V2_RESEARCH.md` §4, §7).
-- Live sessions: out of scope (paid OpenF1 tier; `docs/V2_RESEARCH.md` §7).
-- Demo prewarm: pick the races to warm before showing the deploy.
+Status: **plan locked; V3.0 decisions D1–D6 recorded; implementation not started.** Next: V3.1. Committed core (sure, data+rate-limit feasible now): V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e. Conditional (data-gated): V3.4a, V3.4c. Stretch (go/no-go): V3.5a–c. See `docs/V3_CORE_IMPLEMENTATION_PLAN.md` for end-to-end design/contracts/acceptance.
+
+| ID | Task | Status | Depends | Scope (summary) | Acceptance (summary) | Notes / gates |
+|----|------|--------|---------|-----------------|----------------------|---------------|
+| V3-0 | Scope lock & decisions | DONE (D1–D6 in DECISIONS_LOG, 2026-11-14) | — | Resolve headline priority, Jolpica era licence posture, live-timing stance, track-geometry source, AI narration mode, demo prewarm set; record in `DECISIONS_LOG.md` | Decisions logged with rationale/alternatives and security+licence implications; backlog reflects go/no-go | No feature code |
+| V3-1 | Strategy engine core | TODO | V3-0 | Replace pit toy with transparent model: lap filtering, compound-aware degradation, fuel-burn proxy (explicit assumption), ranked stay-vs-pit/SC what-ifs, break-even/undercut, shown assumptions/uncertainty; API+UI; AI narrates computed result only | Pure-math + API tests; every shown number traces to inputs/output; missing data degrades honestly; no secrets/user-input-to-shell | Primary headline; OpenF1 historical data |
+| V3-2 | Telemetry Lab 2.0 | TODO | V3-0 | Multi-driver aligned traces (speed/throttle/brake/gear/DRS), hover readout, corner deltas; extend duel/inputs; own clock, no global rAF work when hidden | Alignment/delta/downsample tests; null channels as "—"; perf scoped | Feeds V3-3 facts |
+| V3-3 | AI race engineer 2.0 | TODO | V3-0, V3-1, V3-2 | Grounded explanations of key moments/strategy/compare from computed fact bundles (strategy+trace+session); on-demand default, proactive only if opted-in | Claims map to fact-bundle fields (fixtures); off-topic/unanswerable safe; bounded size/cost; server-side key | No invention/recompute |
+| V3-4a | Quali/practice mini-sectors & sector analysis | TODO | V3-0 | Revisit V2-7 for sessions where `segments_sector_*` meaningful; show strips/analysis only with real data | Honest degradation/placeholders with reason; race sessions unaffected | Feasibility per session type/data |
+| V3-4b | Weather impact & race-control timeline | TODO | V3-0 | Descriptive correlation/timeline (weather/SC/VSC/flags vs pace/stints) | No predictive claims; uses cached feeds | Bounded |
+| V3-4c | Pit crew & overtake analytics | TODO | V3-0 | Stop duration distribution/lane-vs-stationary (or "—"); overtake events/zones with incompleteness noted | Honest on gaps; no historical fight-scan revival | `pit`, `overtakes` |
+| V3-4d | Director layouts & PWA/offline | TODO | V3-0 | Preset layouts; installable PWA; cached sessions offline with clear not-cached state | Frontend-only where possible; cache/versioning discipline | Bounded UX |
+| V3-4e | Data export | TODO | V3-0 | CSV/JSON export of shown session/lap/stint/trace data | No licence breach, no secrets, non-commercial | Bounded |
+| V3-5a | 3D/WebGL replay (stretch) | TODO | V3-0, V3-1–V3-3 | GPS-derived/procedural 3D with camera modes and hard 2D fallback | Perf budget met (desktop+mobile), reduced-motion/off toggle | Go/no-go gate |
+| V3-5b | Jolpica 1950+ archive view (stretch) | TODO | V3-0 | Results/standings/laps/pit stops/head-to-head; separate from 2023+ replay; isolated adapter + attribution | Licence posture accepted (CC BY-NC-SA, non-commercial, no dump redistribution/share-alike care); no telemetry pre-2023 | Go/no-go gate |
+| V3-5c | Championship progression (stretch) | TODO | V3-0 | Standings progression via OpenF1 beta and/or Jolpica adapter | Adapter isolated; freshness/beta/licence acceptable | Go/no-go gate |
+
+## Deferred / excluded (unchanged)
+
+- Live timing / live replay: out of scope unless a paid/licensed path is explicitly chosen (OpenF1 sponsor €9.90/mo or F1TV/licensed).
+- FastF1 as runtime data source: excluded (F1TV auth required for most features).
+- Team radio transcription/audio guarantees: excluded.
+- Historical Fight Finder scan: rejected (V2-4, noisy/sparse feeds).
+- Fantasy/prediction scope creep: excluded.
+- GitHub Releases (tag objects only), API key rotation, demo prewarm: user-side/ops pending.
 
 ---
 
