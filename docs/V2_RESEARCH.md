@@ -27,8 +27,8 @@ gaps, speed, lap table, battle view, performance/degradation, pit wall, race
 control, weather, driver drill-down, shareable moments, day/night themes,
 reduced motion, 54 backend + 45 frontend tests, CI green on both stacks.
 
-No git tag exists (`git tag -l` is empty). The portfolio claim "v1" is true in
-docs, not in the repository's history — worth fixing with an annotated tag.
+Update 2026-11-14: `v1.0.0` was tagged 2026-11-03 and v2 shipped through
+`v2.13.1`; both are in the repository history now.
 
 ## 2. Data source audit
 

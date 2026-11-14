@@ -9,7 +9,7 @@
 | Task ID             | TASK-001                                            |
 | Name                | Establish project foundation                        |
 | Priority            | High                                                |
-| Status              | TODO                                                |
+| Status              | DONE (stack live in CLAUDE.md; commands verified)   |
 | Complexity          | M                                                   |
 | Depends On          | User confirmation of purpose and stack              |
 | Scope               | Confirm purpose and stack with the user; extend `.gitignore` for the stack; set up formatter, linter, type check, and test tooling; set up the Compose dev/prod pattern if containerized; update `CODING_STANDARDS.md`, `SECURITY_STANDARDS.md`, `ENVIRONMENT_GUIDE.md`, `HOW_TO_RESUME.md` commands, the `CLAUDE.md` Commands table, and propose a stack-specific `settings.json` allow-list. Perform as part of, or immediately before, the user's first real task. |
@@ -78,8 +78,8 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-3 | Lap Duel UI | DONE | Fifth tab; desktop/mobile/light verified |
 | V2-3b | Inputs: multi-driver overlay + hover readout | DONE | Window mode `t0/t1`; one axis, per-driver chips |
 | V2-4 | Fight Finder: battles from `intervals` | DEFERRED | Measured: 181–593 noisy runs per race; needs positions + pit/lapped logic |
-| V2-5 | Pit strategy Gantt on the lap axis | TODO | `stints` + `pit` already cached |
-| V2-6 | Share card PNG export (1200x630) | TODO | Client-side canvas only |
+| V2-5 | Pit strategy Gantt on the lap axis | DONE | Shipped as the Performance stint timeline; hover adds tyre age + gap |
+| V2-6 | Share card PNG export (1200x630) | DONE | Client-side canvas; layout maths unit-tested |
 | V2-7 | Qualifying mode with real mini-sector strips | BLOCKED | Segments exist only outside races |
 | V2-8 | GROUNDED AI: ask + recap via OpenCode Go | DONE | `ai.py`, `/ai/*`, Ask tab; key server-only |
 | V2-9 | Dashboard + deletable recents (no forced auto-open) | DONE | `recents.ts`, `Dashboard.tsx`, 7 tests |
@@ -95,7 +95,14 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 | V2-19 | Corner coach via AI + measured fallback | DONE | CLI removed |
 | V2-20 | Backlog: share card + stint hover details | DONE | 50 vitest |
 | V2-21 | V2.5 Battles now (live snapshot) | DONE | 53 vitest |
-| V2-22 | Tag releases | DONE | v1.0.0 … v2.12.0; v2.13.0 next |
+| V2-22 | Tag releases | DONE | v1.0.0 … v2.13.1 pushed; GitHub Release objects still pending (user) |
+
+## Next development (proposed, not committed)
+
+- Pit model depth: still labelled a toy, with its assumptions printed on screen.
+- Qualifying mini-sectors: blocked on segment availability (`docs/V2_RESEARCH.md` §4, §7).
+- Live sessions: out of scope (paid OpenF1 tier; `docs/V2_RESEARCH.md` §7).
+- Demo prewarm: pick the races to warm before showing the deploy.
 
 ---
 

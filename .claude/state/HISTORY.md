@@ -474,3 +474,13 @@ view. The historical scan stays rejected — intervals produced 181-593 noisy ru
 and the position feed only covers ~2% of a 1Hz grid, so a "finds the fight" list
 would be dishonest. The snapshot uses only current gaps. 3 new tests; 67 pytest
 + 53 vitest.
+
+State audit 2026-11-14: verified the shipped tree at v2.13.1 — 67 pytest,
+53 vitest, ruff clean, tsc/vite build, CI green on 9c3407a, working tree clean,
+all tags pushed. Reconciled the tracker, which had drifted: TASK-001 and
+V2-5/V2-6 were still marked TODO after shipping, V2-22 said "v2.13.0 next",
+CURRENT_STATUS carried a stale unchecked V2.6/V2.7 line plus duplicate Last
+Updated blocks, and V2_RESEARCH still claimed no tag existed. GitHub Releases
+remain uncreated (tags only); API-key rotation and demo prewarm are still
+user-side. No code backlog: V2-4 and V2-7 stay deferred/blocked for the
+documented data reasons.

@@ -9,11 +9,13 @@ step.
 
 ## Order and why
 
-**Status (2026-11-08):** V2.1–V2.7 shipped and verified in production. V2.5
-ships as a live **Battles now** list; its historical scan remains rejected for
-the measured reasons in §V2.5. V2.2 adds the AI layer: grounded Q&A and a recap
-through OpenCode Go (`deepseek-v4.1-flash`), server-side key, budget and cache
-(see §V2.8).
+**Status (2026-11-14):** v2 shipped through `v2.13.1` and verified in
+production — V2.1–V2.16 plus the AI layer (V2.8), corner coach, share card,
+stint hover and Battles now. V2.5 ships as a live **Battles now** list; its
+historical scan remains rejected for the measured reasons in §V2.5. The AI
+runs through OpenCode Go (`deepseek-v4.1-flash`), server-side key, budget and
+cache (see §V2.8). Next development is proposed only — see
+`.claude/state/TASK_QUEUE.md`.
 
 | Step | Milestone | Depends on | Why first |
 |---|---|---|---|
@@ -408,3 +410,21 @@ finish", and offered race prompts. Fixed end to end:
 Verified live: a qualifying recap talks pole/red flags with no race language; a
 practice answer identifies Verstappen's fastest lap while correctly noting
 Leclerc topped the order. 67 pytest (new non-race facts test).
+
+## V2.17–V2.22 — Closeout (shipped)
+
+- **V2.17 corner coach:** the legacy coach used the local `opencode` CLI, which
+  is not installed in the API image, so `/coach/ask` returned `answer=null` in
+  production. It now uses the same `ai.py` client with a measured fallback; the
+  CLI path was removed.
+- **V2.18 docs:** README/ARCHITECTURE/DEPLOYMENT/TESTING aligned with the
+  shipped app; Jolpica removed (never used in the code).
+- **V2.19/V2.20 backlog closure:** the Performance stint timeline met the Gantt
+  contract and gained hover details (tyre age at the stint start plus the gap to
+  the leader); the 1200×630 share card was added client-side. 67 pytest + 50
+  vitest.
+- **V2.21 Battles now:** live strip of neighbouring drivers within 1.0 s at the
+  replay clock; the historical scan stays rejected for the documented feed
+  noise. 53 vitest.
+- **V2.22 tags:** `v1.0.0` … `v2.13.1` pushed. GitHub Release objects are still
+  to be created (tags only).

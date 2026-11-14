@@ -6,8 +6,9 @@
 
 ## Project Snapshot
 
-BoxBox Replay: F1 telemetry viz, revamp R0 in progress (React SPA + FastAPI).
-Backend done and live; R0 shell (pickers + lap table) builds and serves.
+BoxBox Replay: F1 telemetry viz, v2 shipped (React SPA + FastAPI). Replay, lap
+duel, inputs, pit wall, AI Ask and Battles now are live; 67 pytest + 53 vitest,
+CI green on `v2.13.1`.
 
 ## Always-Loaded Context
 
@@ -35,18 +36,18 @@ Full protocol: `.claude/HOW_TO_RESUME.md`. Short version:
 
 ## Commands
 
-Stack not yet chosen. The agent fills in real commands after TASK-001.
+Stack: FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, OpenCode Go for AI.
 
 | Purpose      | Command           | Status          |
 |--------------|-------------------|-----------------|
-| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | R0 verified |
-| Test (API)   | `pytest` | R0: 48 pass |
-| Test (web)   | `cd web && npm test` (vitest) | R0: 7 pass |
-| Lint (API)   | `ruff check .` | R0 clean |
-| Build (web)  | `cd web && npm run build` | R0 verified |
-| Type check   | `tsc -b` (runs inside `npm run build`) | R0 verified |
-| Health check | `curl localhost:8501/api/healthz` (via web proxy) | R0 verified |
-| Build        | `docker compose build` / `./scripts/setup.sh --build-only` | M0 verified |
+| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | v2.13.1 verified |
+| Test (API)   | `.venv/bin/python -m pytest` | 67 pass |
+| Test (web)   | `cd web && npm test` (vitest) | 53 pass |
+| Lint (API)   | `.venv/bin/python -m ruff check .` | clean |
+| Build (web)  | `cd web && npm run build` | verified |
+| Type check   | `tsc -b` (runs inside `npm run build`) | verified |
+| Health check | `curl localhost:8501/api/healthz` (via web proxy) | verified |
+| Build        | `docker compose build` / `./scripts/setup.sh --build-only` | verified |
 
 ## On-Demand References
 
