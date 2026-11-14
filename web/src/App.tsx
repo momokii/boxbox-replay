@@ -1188,6 +1188,8 @@ export default function App() {
                 colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
                 table={gapTable}
                 markers={lapMarkers}
+                sessionName={sessName}
+                pitStops={pit.data?.stops ?? []}
               />
             )}
             {view === "pit" && sessionKey && (

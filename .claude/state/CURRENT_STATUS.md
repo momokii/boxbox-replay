@@ -1,5 +1,5 @@
 ## Project Phase
-v2 shipped (`v1.0.0`…`v2.13.1`). v3 **in progress**: V3.0 decisions recorded; **V3.1 strategy model**, **V3.2 Telemetry Lab** and **V3.3 grounded explain** plus **V3.4e export**, **V3.4b timeline** and **V3.4d layouts/PWA/offline** shipped. **v3 core complete.**
+v2 shipped (`v1.0.0`…`v2.13.1`). v3 **in progress**: V3.0 decisions recorded; **V3.1 strategy model**, **V3.2 Telemetry Lab** and **V3.3 grounded explain** plus **V3.4e export**, **V3.4b timeline** and **V3.4d layouts/PWA/offline** shipped. **v3 complete** — V3.4a/c shipped, V3.5 closed by D7–D9.
 DEPLOYED prod, healthy at http://<host>:8501.
 
 ## Completed
@@ -12,7 +12,8 @@ DEPLOYED prod, healthy at http://<host>:8501.
 - [x] V3.4e data export (laps/stints CSV)
 - [x] V3.4b weather/RC timeline
 - [x] V3.4d layouts, PWA shell, explicit offline cache (25 MB cap)
-- [ ] V3.4a/c data-gated · V3.5 stretch
+- [x] V3.4a mini-sectors + V3.4c pit/overtake analytics
+- [x] V3.5 closed by decisions (3D no-go, Jolpica no-go, standings deferred)
 
 ## Blocked / Deferred (deliberate, documented)
 - V3.2 implementation not started; V3.0 gate closed

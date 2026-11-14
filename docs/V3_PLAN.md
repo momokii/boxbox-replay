@@ -20,7 +20,8 @@ shipped** (same-clock Telemetry Lab; distance alignment remains Lap duel) and
 blocked by the Go monthly quota, unit-tested and error-mapped). **V3.4e shipped**
 (client-side CSV export), **V3.4b shipped** (weather/race-control timeline) and
 **V3.4d shipped** (layouts, PWA shell, explicit offline cache). **The v3 core is
-complete.** V3.4a/c remain data-gated and V3.5 is stretch.
+complete.** V3.4a and V3.4c shipped with strict data gates. V3.5 (3D, Jolpica,
+standings) is closed by recorded go/no-go decisions (D7–D9): no-go/deferred.
 
 ## Recommended headline (why these three)
 
@@ -204,7 +205,7 @@ segments. V3.4c must not revive the rejected historical fight scan.
 
 ---
 
-## V3.5 — Stretch, each behind go/no-go
+## V3.5 — Stretch (closed: D7–D9 no-go/deferred)
 
 | Sub | Task | Gate | Key risks |
 |---|---|---|---|

@@ -30,6 +30,9 @@ export interface Lap {
   duration_sector_2: number | null;
   duration_sector_3: number | null;
   is_pit_out_lap: boolean | null;
+  segments_sector_1?: number[] | null;
+  segments_sector_2?: number[] | null;
+  segments_sector_3?: number[] | null;
 }
 
 export interface SectorFlags {

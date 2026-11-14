@@ -540,3 +540,9 @@ worker caches the shell and serves API GETs network-first with cache fallback;
 'Save offline' caches the current session (13 endpoints + shell) with a 25 MB
 cap and a removable manifest. Offline reload verified with the network off: 22
 tower rows, map canvases, banner shown, AI disabled. 58 frontend tests.
+
+V3.4a/c shipped: mini-sector strips for qualifying/practice with ≥95% placeholder
+detection (races hide the panel), and a pit/overtake analytics panel (median,
+best, >1.5x outliers, quickest stops, top overtakes). V3.5 closed by decisions:
+3D no-go (D7), Jolpica archive no-go (D8), standings deferred (D9). 79 pytest +
+65 vitest.

@@ -7,6 +7,9 @@ import { gapAt, type GapTable, type LapMarker } from "../session";
 import Info from "./Info";
 import { downloadFile, toCsv } from "../export";
 import TimelinePanel from "./TimelinePanel";
+import MiniSectors from "./MiniSectors";
+import PitAnalytics from "./PitAnalytics";
+import type { PitStop } from "../api";
 import WeatherChart from "./WeatherChart";
 import LapChart from "./LapChart";
 import Modal from "./Modal";
@@ -31,6 +34,8 @@ interface Props {
   colors: Map<number, string>;
   table: GapTable;
   markers: LapMarker[];
+  sessionName: string;
+  pitStops: PitStop[];
 }
 
 interface Feed {
@@ -122,6 +127,12 @@ export default function PerformancePanel(p: Props) {
   return (
     <div>
       <TimelinePanel sessionKey={p.sessionKey} duration={p.duration} />
+      <MiniSectors laps={p.laps} sessionName={p.sessionName} driverCode={p.driverCode} />
+      <PitAnalytics
+        stops={p.pitStops}
+        overtakeCounts={p.overtakeCounts}
+        driverCode={p.driverCode}
+      />
 
       <div className="export-actions">
         <span className="dim small">Export this session (client-side, no new requests):</span>

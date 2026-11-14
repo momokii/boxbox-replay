@@ -2702,3 +2702,95 @@ tr.driver-marked td {
     display: none;
   }
 }
+
+/* ── Mini-sectors & pit analytics (v3.4a/c) ───────────────────────────── */
+.mini-sectors,
+.pit-analytics {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+}
+.mini-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: 4px;
+}
+.mini-head h3,
+.pit-analytics h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.mini-head select {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+}
+.mini-rows {
+  display: grid;
+  gap: 3px;
+  margin-top: 6px;
+}
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.mini-lap {
+  width: 34px;
+  font-size: 0.72rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.mini-group {
+  display: flex;
+  gap: 2px;
+  margin-right: 5px;
+}
+.seg {
+  width: 9px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.seg-purple {
+  background: var(--purple);
+}
+.seg-green {
+  background: var(--green);
+}
+.seg-yellow {
+  background: var(--amber);
+}
+.seg-pit {
+  background: #ff5a52;
+}
+.seg-none {
+  background: var(--panel-2);
+}
+.pit-analytics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: 6px;
+}
+.pit-analytics .laps {
+  width: auto;
+}
+.pit-analytics .laps td {
+  padding: 2px 10px 2px 0;
+  border: none;
+}
+@media (max-width: 640px) {
+  .pit-analytics-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+}

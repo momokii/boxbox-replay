@@ -122,6 +122,38 @@
 **Impact:** Ops action before a public demo; documented in DEPLOYMENT/V3 plan
 ---
 
+## v3 Stretch Decisions (2026-11-14)
+
+---
+**Decision:** D7 — 3D/WebGL replay is a no-go for v3
+**Date:** 2026-11-14
+**Context:** V3.5a gated on a performance budget and a 2D fallback
+**Rationale:** The 2D canvas already holds 60 fps and carries the data; 3D adds a renderer, camera controls and a11y work without making the analysis better. No user request justifies it now.
+**Alternatives Rejected:** Three.js scene for v3
+**Security Implications:** Avoids a large new dependency surface
+**Impact:** 3D stays a future go/no-go, not a v3 promise
+---
+
+---
+**Decision:** D8 — Jolpica 1950+ archive is a no-go under the current licence posture
+**Date:** 2026-11-14
+**Context:** V3.5b required accepting CC BY-NC-SA share-alike/attribution and a separate archive surface
+**Rationale:** Mixing an archive into a 2023+ replay product adds licence care (share-alike) for no telemetry benefit; the portfolio does not need pre-2023 data.
+**Alternatives Rejected:** Jolpica adapter in v3
+**Security Implications:** No third-party archive data cached or redistributed
+**Impact:** Revisit only if the licence posture is explicitly accepted
+---
+
+---
+**Decision:** D9 — Championship progression is deferred, not built
+**Date:** 2026-11-14
+**Context:** V3.5c could use OpenF1 championship beta endpoints
+**Rationale:** A season/standings view is a separate product surface; the beta endpoints are per-session points snapshots, and v3 already covers the race-analysis core. Adding it would dilute the milestone.
+**Alternatives Rejected:** Season tab in v3
+**Security Implications:** None new
+**Impact:** Documented as a future feature; no code
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

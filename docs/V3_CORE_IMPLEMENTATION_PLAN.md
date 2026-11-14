@@ -444,7 +444,7 @@ The model never recalculates or invents numbers.
 
 ## 9. Conditional gated sub-milestones
 
-### 9.1 V3.4a — Quali/practice mini-sectors (conditional)
+### 9.1 V3.4a — Quali/practice mini-sectors (shipped)
 - Use `laps.segments_sector_*` only when values are meaningful. Detection:
   session must be qualifying/practice **and** the values must not be ≥95% one
   value (e.g. 2048) or missing; otherwise mark "segment data not available for
@@ -454,7 +454,7 @@ The model never recalculates or invents numbers.
 - Tests: placeholder detection, quali/practice happy path fixture, race
   degradation.
 
-### 9.2 V3.4c — Pit crew & overtake analytics (conditional)
+### 9.2 V3.4c — Pit crew & overtake analytics (shipped)
 - `pit`: stationary `stop_duration` distribution, best/median, outliers; lane vs
   stationary only if both fields meaningful else "—". Filter artifacts (e.g.
   red-flag lane times) as today.

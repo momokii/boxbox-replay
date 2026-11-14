@@ -99,7 +99,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 
 ## v3 backlog — planned (see `docs/V3_RESEARCH.md`, `docs/V3_PLAN.md`, `docs/V3_CORE_IMPLEMENTATION_PLAN.md`)
 
-Status: **v3 core complete** (V3.1–V3.4d shipped). V3.4a/c are data-gated; V3.5 is stretch. Committed core (sure, data+rate-limit feasible now): V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e. Conditional (data-gated): V3.4a, V3.4c. Stretch (go/no-go): V3.5a–c. See `docs/V3_CORE_IMPLEMENTATION_PLAN.md` for end-to-end design/contracts/acceptance.
+Status: **v3 complete** (V3.1–V3.4d + V3.4a/c shipped). V3.5 closed by D7–D9. Committed core (sure, data+rate-limit feasible now): V3.1, V3.2, V3.3, V3.4b, V3.4d, V3.4e. Conditional (data-gated): V3.4a, V3.4c. Stretch (go/no-go): V3.5a–c. See `docs/V3_CORE_IMPLEMENTATION_PLAN.md` for end-to-end design/contracts/acceptance.
 
 | ID | Task | Status | Depends | Scope (summary) | Acceptance (summary) | Notes / gates |
 |----|------|--------|---------|-----------------|----------------------|---------------|
@@ -107,14 +107,14 @@ Status: **v3 core complete** (V3.1–V3.4d shipped). V3.4a/c are data-gated; V3.
 | V3-1 | Strategy engine core | DONE (model + /session/strategy + Strategy tab) | V3-0 | Replace pit toy with transparent model: lap filtering, compound-aware degradation, fuel-burn proxy (explicit assumption), ranked stay-vs-pit/SC what-ifs, break-even/undercut, shown assumptions/uncertainty; API+UI; AI narrates computed result only | Pure-math + API tests; every shown number traces to inputs/output; missing data degrades honestly; no secrets/user-input-to-shell | Primary headline; OpenF1 historical data |
 | V3-2 | Telemetry Lab 2.0 | DONE (same-clock traces; distance = Duel) | V3-0 | Multi-driver aligned traces (speed/throttle/brake/gear/DRS), hover readout, corner deltas; extend duel/inputs; own clock, no global rAF work when hidden | Alignment/delta/downsample tests; null channels as "—"; perf scoped | Feeds V3-3 facts |
 | V3-3 | AI race engineer 2.0 | DONE (strategy/compare explain; quota mapped) | V3-0, V3-1, V3-2 | Grounded explanations of key moments/strategy/compare from computed fact bundles (strategy+trace+session); on-demand default, proactive only if opted-in | Claims map to fact-bundle fields (fixtures); off-topic/unanswerable safe; bounded size/cost; server-side key | No invention/recompute |
-| V3-4a | Quali/practice mini-sectors & sector analysis | TODO | V3-0 | Revisit V2-7 for sessions where `segments_sector_*` meaningful; show strips/analysis only with real data | Honest degradation/placeholders with reason; race sessions unaffected | Feasibility per session type/data |
+| V3-4a | Quali/practice mini-sectors & sector analysis | DONE (placeholder-gated) | V3-0 | Revisit V2-7 for sessions where `segments_sector_*` meaningful; show strips/analysis only with real data | Honest degradation/placeholders with reason; race sessions unaffected | Feasibility per session type/data |
 | V3-4b | Weather impact & race-control timeline | DONE (timeline + counts) | V3-0 | Descriptive correlation/timeline (weather/SC/VSC/flags vs pace/stints) | No predictive claims; uses cached feeds | Bounded |
-| V3-4c | Pit crew & overtake analytics | TODO | V3-0 | Stop duration distribution/lane-vs-stationary (or "—"); overtake events/zones with incompleteness noted | Honest on gaps; no historical fight-scan revival | `pit`, `overtakes` |
+| V3-4c | Pit crew & overtake analytics | DONE (distribution/outliers/top overtakes) | V3-0 | Stop duration distribution/lane-vs-stationary (or "—"); overtake events/zones with incompleteness noted | Honest on gaps; no historical fight-scan revival | `pit`, `overtakes` |
 | V3-4d | Director layouts & PWA/offline | DONE (layouts, SW shell, 25 MB explicit cache) | V3-0 | Preset layouts; installable PWA; cached sessions offline with clear not-cached state | Frontend-only where possible; cache/versioning discipline | Bounded UX |
 | V3-4e | Data export | DONE (laps/stints CSV, client-side) | V3-0 | CSV/JSON export of shown session/lap/stint/trace data | No licence breach, no secrets, non-commercial | Bounded |
-| V3-5a | 3D/WebGL replay (stretch) | TODO | V3-0, V3-1–V3-3 | GPS-derived/procedural 3D with camera modes and hard 2D fallback | Perf budget met (desktop+mobile), reduced-motion/off toggle | Go/no-go gate |
-| V3-5b | Jolpica 1950+ archive view (stretch) | TODO | V3-0 | Results/standings/laps/pit stops/head-to-head; separate from 2023+ replay; isolated adapter + attribution | Licence posture accepted (CC BY-NC-SA, non-commercial, no dump redistribution/share-alike care); no telemetry pre-2023 | Go/no-go gate |
-| V3-5c | Championship progression (stretch) | TODO | V3-0 | Standings progression via OpenF1 beta and/or Jolpica adapter | Adapter isolated; freshness/beta/licence acceptable | Go/no-go gate |
+| V3-5a | 3D/WebGL replay (stretch) | REJECTED (D7) | V3-0, V3-1–V3-3 | GPS-derived/procedural 3D with camera modes and hard 2D fallback | Perf budget met (desktop+mobile), reduced-motion/off toggle | Go/no-go gate |
+| V3-5b | Jolpica 1950+ archive view (stretch) | REJECTED (D8) | V3-0 | Results/standings/laps/pit stops/head-to-head; separate from 2023+ replay; isolated adapter + attribution | Licence posture accepted (CC BY-NC-SA, non-commercial, no dump redistribution/share-alike care); no telemetry pre-2023 | Go/no-go gate |
+| V3-5c | Championship progression (stretch) | DEFERRED (D9) | V3-0 | Standings progression via OpenF1 beta and/or Jolpica adapter | Adapter isolated; freshness/beta/licence acceptable | Go/no-go gate |
 
 ## Deferred / excluded (unchanged)
 
