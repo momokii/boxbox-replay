@@ -523,3 +523,8 @@ buttons. Verified that the Go monthly allowance is exhausted (provider 429,
 GoUsageLimitError): added AIQuotaExceeded -> HTTP 429 with a clear UI message
 instead of a generic 502; other endpoints unaffected. Live answer verification
 blocked by the quota; mocked tests cover the path. 76 pytest + 53 vitest.
+
+V3.4e shipped: client-side CSV export of laps and stints from the loaded
+session (no endpoint, no secrets); Performance tab gained export buttons.
+Verified download: boxbox-11396-laps.csv, 1,166 rows, correct headers.
+56 frontend tests (3 new CSV tests).

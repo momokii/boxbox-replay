@@ -429,7 +429,7 @@ The model never recalculates or invents numbers.
   panels; uncached shows clear state; no secrets cached; Lighthouse/PWA basics
   sane.
 
-## 8. V3.4e — Data export (committed)
+## 8. V3.4e — Data export (shipped) (committed)
 
 - **Scope:** export what is shown/loaded for the current session/selection:
   laps, stints, pit stops, results, and (when loaded) telemetry/trace windows,

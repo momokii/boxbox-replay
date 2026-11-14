@@ -5,6 +5,7 @@ import { formatClock } from "../session";
 import { stintSlope } from "../perf";
 import { gapAt, type GapTable, type LapMarker } from "../session";
 import Info from "./Info";
+import { downloadFile, toCsv } from "../export";
 import WeatherChart from "./WeatherChart";
 import LapChart from "./LapChart";
 import Modal from "./Modal";
@@ -119,6 +120,49 @@ export default function PerformancePanel(p: Props) {
 
   return (
     <div>
+      <div className="export-actions">
+        <span className="dim small">Export this session (client-side, no new requests):</span>
+        <button
+          type="button"
+          className="chip"
+          onClick={() =>
+            downloadFile(
+              `boxbox-${p.sessionKey}-laps.csv`,
+              toCsv(p.laps as unknown as Record<string, unknown>[], [
+                { key: "driver_number", label: "driver_number" },
+                { key: "lap_number", label: "lap_number" },
+                { key: "lap_duration", label: "lap_time_s" },
+                { key: "duration_sector_1", label: "sector_1_s" },
+                { key: "duration_sector_2", label: "sector_2_s" },
+                { key: "duration_sector_3", label: "sector_3_s" },
+                { key: "is_pit_out_lap", label: "pit_out_lap" },
+              ]),
+            )
+          }
+        >
+          Laps CSV
+        </button>
+        <button
+          type="button"
+          className="chip"
+          disabled={!feed.stints.length}
+          onClick={() =>
+            downloadFile(
+              `boxbox-${p.sessionKey}-stints.csv`,
+              toCsv(feed.stints as unknown as Record<string, unknown>[], [
+                { key: "driver_number", label: "driver_number" },
+                { key: "stint_number", label: "stint_number" },
+                { key: "lap_start", label: "lap_start" },
+                { key: "lap_end", label: "lap_end" },
+                { key: "compound", label: "compound" },
+                { key: "tyre_age_at_start", label: "tyre_age_at_start" },
+              ]),
+            )
+          }
+        >
+          Stints CSV
+        </button>
+      </div>
       <div className="row" style={{ marginBottom: 10 }}>
         <button className={scope === "focus" ? "chip on" : "chip"} onClick={() => setScope("focus")}>
           My drivers ({focus.length})

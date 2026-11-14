@@ -17,7 +17,8 @@ gated V3.4a/c, with interface alternatives/synthesis, contracts, acceptance).
 v2 shipped through `v2.13.1`; **V3.1 shipped** (strategy engine) and **V3.2
 shipped** (same-clock Telemetry Lab; distance alignment remains Lap duel) and
 **V3.3 shipped** (grounded strategy/compare explanations; live AI verification
-blocked by the Go monthly quota, unit-tested and error-mapped). V3.4b/e/d next.
+blocked by the Go monthly quota, unit-tested and error-mapped). **V3.4e shipped**
+(client-side CSV export); V3.4b/d next.
 
 ## Recommended headline (why these three)
 
