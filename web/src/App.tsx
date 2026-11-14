@@ -23,6 +23,12 @@ import Info from "./components/Info";
 import { formatClock, posAt } from "./session";
 import { downloadShareCard } from "./shareCard";
 import {
+  offlineInfo as readOfflineInfo,
+  removeSessionOffline,
+  saveSessionOffline,
+  type OfflineInfo,
+} from "./offline";
+import {
   addRecent,
   clearRecents,
   loadRecents,
@@ -173,6 +179,39 @@ export default function App() {
   // explicit choice, never an automatic redirect.
   const [recents, setRecents] = useState<RecentSetup[]>(() => loadRecents());
   const [surprising, setSurprising] = useState(false);
+  const [layout, setLayout] = useState<"full" | "focus" | "data">(() => {
+    if (typeof window === "undefined") return "full";
+    const stored = window.localStorage.getItem("boxbox.layout");
+    return stored === "focus" || stored === "data" ? stored : "full";
+  });
+  const [online, setOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  const [offlineCopy, setOfflineCopy] = useState<OfflineInfo | null>(null);
+  const [offlineBusy, setOfflineBusy] = useState(false);
+  const [offlineError, setOfflineError] = useState<string | null>(null);
+
+  useEffect(() => {
+    window.localStorage.setItem("boxbox.layout", layout);
+  }, [layout]);
+
+  useEffect(() => {
+    const up = () => setOnline(true);
+    const down = () => setOnline(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => {
+      window.removeEventListener("online", up);
+      window.removeEventListener("offline", down);
+    };
+  }, []);
+
+  useEffect(() => {
+    setOfflineCopy(sessionKey ? readOfflineInfo(sessionKey) : null);
+    setOfflineError(null);
+  }, [sessionKey]);
+
+  const layoutClass = `layout layout-${layout}`;
 
   const info = useAsync(`info:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionInfo(sessionKey) : Promise.resolve(null as unknown as SessionInfoFull),
@@ -624,6 +663,26 @@ export default function App() {
           {sessName ? ` · ${sessName}` : ""}
           {progress.total ? ` · LAP ${Math.max(1, progress.lap)}/${progress.total}` : ""}
         </span>
+        <div className="layout-switch" role="group" aria-label="Layout">
+          {(["full", "focus", "data"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={layout === value ? "on" : ""}
+              aria-pressed={layout === value}
+              onClick={() => setLayout(value)}
+              title={
+                value === "focus"
+                  ? "Focus: hide both side rails"
+                  : value === "data"
+                    ? "Data: hide the engineer rail"
+                    : "Full layout"
+              }
+            >
+              {value === "full" ? "Full" : value === "focus" ? "Focus" : "Data"}
+            </button>
+          ))}
+        </div>
         <span className="clock">{formatClock(playT)}</span>
         <button
           className="theme-toggle"
@@ -719,8 +778,14 @@ export default function App() {
         </label>
       </div>
 
+      {!online && (
+        <div className="offline-banner" role="status">
+          Offline — replaying cached data only. AI and uncached sessions are unavailable.
+        </div>
+      )}
+
       {sessionBlocked && (
-        <main className="layout">
+        <main className={layoutClass}>
           <div className="empty" style={{ gridColumn: "1 / -1" }}>
             <p>This session has no telemetry ({sessionBlocked}). Pick another session or Grand Prix.</p>
             <button type="button" className="dash-surprise" onClick={surprise} disabled={surprising}>
@@ -731,7 +796,7 @@ export default function App() {
       )}
 
       {!sessionKey && !sessionBlocked && (
-        <main className="layout dash-layout">
+        <main className={`${layoutClass} dash-layout`}>
           <Dashboard
             recents={recents}
             onOpenRecent={openRecent}
@@ -744,7 +809,7 @@ export default function App() {
       )}
 
       {sessionKey && !sessionBlocked && (
-        <main className="layout">
+        <main className={layoutClass}>
           <section className="rail" aria-label="Timing tower">
             <h2>Timing tower</h2>
             <Tower
@@ -911,6 +976,44 @@ export default function App() {
                       >
                         {linkCopied ? "Copied" : "Copy link"}
                       </button>
+                      <button
+                        className="ghost small"
+                        onClick={async () => {
+                          if (!sessionKey) return;
+                          setOfflineBusy(true);
+                          setOfflineError(null);
+                          try {
+                            if (offlineCopy) {
+                              await removeSessionOffline(sessionKey);
+                              setOfflineCopy(null);
+                            } else {
+                              const result = await saveSessionOffline(
+                                sessionKey,
+                                `${gpName} · ${sessName}`,
+                              );
+                              if (result.ok) setOfflineCopy(result.info);
+                              else setOfflineError(result.reason);
+                            }
+                          } catch {
+                            setOfflineError("Could not save this session offline.");
+                          } finally {
+                            setOfflineBusy(false);
+                          }
+                        }}
+                        disabled={offlineBusy || !sessionKey}
+                        title={
+                          offlineCopy
+                            ? "Remove the offline copy of this session"
+                            : "Cache this session for offline replay (max 25 MB)"
+                        }
+                      >
+                        {offlineBusy
+                          ? "Saving…"
+                          : offlineCopy
+                            ? `Offline ✓ ${(offlineCopy.bytes / 1024 / 1024).toFixed(1)} MB`
+                            : "Save offline"}
+                      </button>
+                      {offlineError && <span className="small warn">{offlineError}</span>}
                       <span className="mono small dim" style={{ marginLeft: "auto" }}>
                         {formatClock(playT)} / {formatClock(dur)}
                       </span>

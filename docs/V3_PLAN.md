@@ -18,8 +18,9 @@ v2 shipped through `v2.13.1`; **V3.1 shipped** (strategy engine) and **V3.2
 shipped** (same-clock Telemetry Lab; distance alignment remains Lap duel) and
 **V3.3 shipped** (grounded strategy/compare explanations; live AI verification
 blocked by the Go monthly quota, unit-tested and error-mapped). **V3.4e shipped**
-(client-side CSV export) and **V3.4b shipped** (weather/race-control timeline);
-V3.4d is the only core item left.
+(client-side CSV export), **V3.4b shipped** (weather/race-control timeline) and
+**V3.4d shipped** (layouts, PWA shell, explicit offline cache). **The v3 core is
+complete.** V3.4a/c remain data-gated and V3.5 is stretch.
 
 ## Recommended headline (why these three)
 

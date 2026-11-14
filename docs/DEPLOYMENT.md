@@ -126,6 +126,11 @@ plan also has a monthly usage allowance: when it is exhausted the provider
 returns 429, the API maps it to a clear "usage limit reached" response, and the
 UI says so. It resets automatically; nothing else stops working.
 
+The app is an installable PWA: the service worker caches the shell and, on
+"Save offline" in the player bar, the current session's payloads (25 MB cap).
+Offline replay works with the network off; AI is disabled offline. Removing the
+offline copy from the same button clears the cached session.
+
 The key is server-only: the browser calls our API, never the provider. The
 server sends the session facts, not the key. Use a dedicated key, keep `.env`
 at `chmod 600`, never paste it into an issue or a chat, and rotate it if it has

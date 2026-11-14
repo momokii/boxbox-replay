@@ -534,3 +534,9 @@ the replay clock, counts VSC/SC/red/yellow, and the Performance tab draws the
 track-temperature trace, neutralisation bands and flag markers on one axis.
 Verified on the US GP: 95 weather points, 148 events, 2 VSC bands, 26 markers.
 79 pytest + 56 vitest.
+
+V3.4d shipped: Full/Focus/Data layouts persisted in localStorage; service
+worker caches the shell and serves API GETs network-first with cache fallback;
+'Save offline' caches the current session (13 endpoints + shell) with a 25 MB
+cap and a removable manifest. Offline reload verified with the network off: 22
+tower rows, map canvases, banner shown, AI disabled. 58 frontend tests.

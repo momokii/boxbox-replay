@@ -24,6 +24,7 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `20-strategy.png` | The v3 Strategy tab with ranked options and assumptions |
 | `21-telemetry-lab.png` | The v3 Telemetry Lab with multi-driver speed traces |
 | `22-timeline.png` | Weather and race-control timeline |
+| `23-offline.png` | Offline reload of a cached session |
 | `13-pit-ai.png` | Pit wall: step-by-step arithmetic, break-even, engineer explanation |
 | `11-dashboard.png` | Landing dashboard with suggestions |
 | `12-dashboard-recent.png` | Continue list with the filter and remove controls |

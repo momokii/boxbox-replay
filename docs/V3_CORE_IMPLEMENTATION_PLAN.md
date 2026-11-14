@@ -411,7 +411,7 @@ The model never recalculates or invents numbers.
 - **Acceptance:** renders when feeds exist; empty/partial feeds → "—"/reason;
   no predictive language.
 
-## 7. V3.4d — Director layouts & PWA/offline (committed)
+## 7. V3.4d — Director layouts & PWA/offline (shipped)
 
 - **Layouts:** preset panel arrangements (e.g. Replay+Telemetry, Strategy focus,
   Data) stored in local state (and URL/hash where sensible), toggleable without

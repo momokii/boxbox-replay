@@ -25,6 +25,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Pit strategy toy model.** "Pit now or stay out?" using measured pace and wear, with the arithmetic shown step by step, a **break-even pit loss**, the assumptions, and an **Explain this call** button that names exactly what the engineer receives and will not recalculate.
 - **Ask the race engineer (chat).** A bordered chat panel with a pinned composer and two-sided bubbles (you on the right, the engineer on the left): follow-ups keep the thread, prompt chips stay one click away, the transcript scrolls (with a “Newest” jump when you read back), long questions wrap, and Clear chat wipes the tab-local history. It adapts to the session — race prompts and a race recap for races, pole/gap prompts and a qualifying recap for qualifying, fastest-lap/team prompts for practice. Answers use full driver names and every session fact (full classification, retirements, sector and ideal-lap references, pace, pit stops, tyre plans, overtakes, weather, race control), stay in the app's voice, and decline off-topic questions. The API key stays on the server.
 - **Shareable moments.** "Copy link" stores the exact timestamp, so a link reopens the same frame.
+- **Layouts and offline (v3).** Full / Focus / Data layouts; **Save offline** caches the current session (max 25 MB) and the installed PWA replays it with the network off. AI is disabled offline and says so.
 - **Weather & race-control timeline (v3).** VSC/SC bands, flag markers and the track-temperature trace on one session clock, with counts and hover detail; descriptive only.
 - **Data export.** Laps and stints as CSV, generated client-side from the loaded session; no new requests, no secrets.
 - **Share card.** One click downloads a 1200×630 PNG of the current frame — circuit, every car, lap and clock — for a post or a message.
@@ -201,7 +202,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 79 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 56 frontend tests (vitest)
+cd web && npm test           # 58 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
