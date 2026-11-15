@@ -1,13 +1,14 @@
 # Screenshots
 
-Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
-390×844 phone capture. They are referenced from the root README.
+Refreshed against **v3.6.0** on 2026-11-15. Captured from the running app at
+1400×880, with phone captures at 390×844 and the narrow chat at 720×810.
+They are referenced from the root README and this page.
 
 | File | Shows |
 |---|---|
-| `01-replay.png` | Replay, dark theme, driver card open |
+| `01-replay.png` | Replay, dark theme, current 9-tab bar and driver card |
 | `02-replay-light.png` | The same view in the light theme |
-| `03-battle.png` | Anchor + two challengers |
+| `03-battle.png` | Battles now strip plus the anchor/challenger comparison |
 | `04-performance.png` | Stints, wear, lap times, weather |
 | `05-pit-wall.png` | Pit strategy with breakdown |
 | `06-lap-times.png` | Full-view lap comparison |
@@ -18,7 +19,7 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `14-chat-mobile.png` | The same chat on a phone |
 | `15-chat-narrow.png` | Chat at 720×810, proving turn order |
 | `16-ask-qualifying.png` | Ask on a qualifying session: pole prompts and recap |
-| `17-corner-coach.png` | Corner coach answer in the right rail |
+| `17-corner-coach.png` | Corner coach: measured loss plus the grounded explanation |
 | `18-share-card.png` | A downloaded 1200×630 share card |
 | `19-battles-now.png` | The live Battles now strip in the Battle tab |
 | `20-strategy.png` | The v3 Strategy tab with ranked options and assumptions |
@@ -36,6 +37,6 @@ Captured from the running app (Suzuka 2024, Race, lap 25) at 1400×880, plus one
 | `32-archive-1950.png` | 1950 Italian Grand Prix, shared drives and retirements |
 | `33-3d-upgraded.png` | 3D replay with procedural F1 cars and circuit detail |
 | `34-standings-mobile.png` | Standings at 390 px |
-| `13-pit-ai.png` | Pit wall: step-by-step arithmetic, break-even, engineer explanation |
+| `13-pit-ai.png` | Pit wall: arithmetic, break-even and the live AI explanation |
 | `11-dashboard.png` | Landing dashboard with suggestions |
-| `12-dashboard-recent.png` | Continue list with the filter and remove controls |
+| `12-dashboard-recent.png` | Continue list with remove/clear controls |

@@ -8,6 +8,22 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Suzuka 2024, lap 25. Timing tower on the left, circuit and playback in the middle, driver card and engineer on the right.</sub>
 
+> **Latest release: `v3.6.0`** — a **Standings** tab, the **1950–2022 results archive**, and a **3D visual pass** with proper F1 cars and circuit detail. All screenshots below are from this build.
+
+## What's new in v3.6.0
+
+- **Championship standings.** The weekend resolves to its championship round; drivers/teams and a top-five points-by-round chart sit beside the replay.
+- **Results archive.** A separate 1950–2022 surface for race results and final standings, with explicit "no telemetry" and missing-round fallbacks.
+- **3D visual pass.** Procedural F1 cars (wings, wheels, helmet), asphalt texture, checkered start, corner/DRS markers and a camera that fits the circuit to the screen.
+
+| Championship standings | Results archive |
+|---|---|
+| ![Standings](docs/screenshots/29-standings.png) | ![Archive](docs/screenshots/31-archive.png) |
+
+| 3D replay (upgraded) | 3D on a phone |
+|---|---|
+| ![3D replay](docs/screenshots/33-3d-upgraded.png) | ![3D mobile](docs/screenshots/27-3d-mobile.png) |
+
 ## What it does
 
 - **Dashboard with continue-list.** No forced session: a landing page shows the sessions you opened recently (stored on this device, filterable, removable one by one or cleared), a random “Surprise me” picker, and how the app works.
