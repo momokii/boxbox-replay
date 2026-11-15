@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { api } from "../api";
 import { beginDraw, themeColors, useCanvasSize } from "../chart";
 import { formatLapTime } from "../format";
 import { formatClock, gapAt, type GapTable } from "../session";
@@ -6,7 +7,7 @@ import { currentBattles } from "../battles";
 import Info from "./Info";
 import Modal from "./Modal";
 import BattleFullView from "./BattleFullView";
-import type { Driver, Lap } from "../types";
+import type { Driver, InputsPayload, Lap } from "../types";
 import type { OvertakeRow } from "../api";
 
 interface Props {
@@ -32,6 +33,7 @@ const MAX = 3;
 export default function BattlePanel(p: Props) {
   const [picked, setPicked] = useState<(number | null)[]>([null, null, null]);
   const [paceModal, setPaceModal] = useState(false);
+  const [liveInputs, setLiveInputs] = useState<Record<number, InputsPayload | null>>({});
   const now = p.playback.state.t;
 
   const ordered = [...p.drivers].sort(
@@ -46,6 +48,40 @@ export default function BattlePanel(p: Props) {
   const challengers = [slotB, slotC].filter(
     (d): d is number => d != null && d !== anchor,
   );
+
+  const inputDrivers = [anchor, ...challengers];
+  const inputBucket = Math.floor(now / 5);
+  const inputDriverKey = inputDrivers.join(",");
+  useEffect(() => {
+    setLiveInputs({});
+  }, [inputDriverKey]);
+  useEffect(() => {
+    if (!p.sessionKey || !inputDrivers.length) return;
+    let live = true;
+    Promise.all(
+      inputDrivers.map((driver) =>
+        api
+          .inputsWindow(p.sessionKey, driver, Math.max(0, now - 3), now + 0.5)
+          .then((payload) => [driver, payload] as const)
+          .catch(() => [driver, null] as const),
+      ),
+    ).then((rows) => live && setLiveInputs(Object.fromEntries(rows)));
+    return () => {
+      live = false;
+    };
+    // Refetch every five seconds, not on every animation frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.sessionKey, anchor, challengers.join(","), inputBucket]);
+
+  const lastValue = (driver: number, key: keyof InputsPayload) => {
+    const payload = liveInputs[driver];
+    if (!payload) return null;
+    const values = payload[key] as (number | null)[];
+    for (let i = values.length - 1; i >= 0; i -= 1) {
+      if (values[i] != null) return values[i] as number;
+    }
+    return null;
+  };
 
   const gapOf = (d: number) => gapAt(p.table, d, now);
   const gapAnchor = gapOf(anchor);
@@ -171,6 +207,28 @@ export default function BattlePanel(p: Props) {
           );
         })}
       </p>
+
+      <div className="battle-inputs" aria-label="Inputs at the current frame">
+        <span className="battle-inputs-title">Inputs now</span>
+        {Object.keys(liveInputs).length < inputDrivers.length && (
+          <span className="dim">Loading car data…</span>
+        )}
+        {Object.keys(liveInputs).length >= inputDrivers.length && inputDrivers.map((driver) => {
+          const throttle = lastValue(driver, "throttle");
+          const brake = lastValue(driver, "brake");
+          const gear = lastValue(driver, "gear");
+          const drs = lastValue(driver, "drs");
+          return (
+            <span key={driver} className="battle-input-value">
+              <b style={{ color: p.colors.get(driver) }}>{p.codes.get(driver) ?? `#${driver}`}</b>
+              {" "}thr {throttle == null ? "—" : `${Math.round(Math.min(100, Math.max(0, throttle)))}%`}
+              {" "}· brk {brake == null ? "—" : brake >= 50 ? "on" : "off"}
+              {" "}· g{gear == null ? "—" : Math.round(gear)}
+              {" "}· DRS {drs == null ? "—" : drs >= 8 ? "open" : "shut"}
+            </span>
+          );
+        })}
+      </div>
 
       <div className="panel">
         <h3>

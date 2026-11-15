@@ -181,6 +181,18 @@
 **Impact:** V3.5b/V3.5c shipped in `v3.6.0`; D8/D9 superseded. Replay telemetry remains OpenF1-only from 2023
 ---
 
+## v3.7 Freshness / Comparison Decision (2026-11-15)
+
+---
+**Decision:** D12 — Show checked time + Refresh, compare selected drivers, and keep archive loading explicit
+**Date:** 2026-11-15
+**Context:** User feedback on stale-looking archive/standings, missing chart tooltips, blank telemetry, and unexplained controls
+**Rationale:** Jolpica is volunteer-maintained and cached for one hour; a visible checked time and bypass make freshness honest. Round tooltips and a selected-driver/head-to-head view turn a busy chart into an auditable comparison. Archive changes clear the old table and show what is loading.
+**Alternatives Rejected:** Silent polling (load/rate cost with no visible freshness), hover-only charts, keeping old archive tables during a season switch
+**Security Implications:** Refresh respects the existing 4/s + 500/h limiter; no new input surface
+**Impact:** v3.7.0; all related docs/screenshots updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

@@ -76,6 +76,9 @@ and a full-screen **Archive** view. Attribution is part of both surfaces.
    beta and session-scoped:
    <https://openf1.org/docs/>
 
+> v3.7 extends the archive to every available season through 2026 and adds
+> checked-time/Refresh plus explicit loading states. See `V3_7_RESEARCH.md`.
+
 ## Implementation result (2026-11-15)
 
 - `jolpica.py`: read-through JSON cache (one hour), custom User-Agent, 4 req/s +

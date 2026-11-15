@@ -10,11 +10,19 @@ import type { Lap } from "./types";
 export type TracePoint = [number, number, number, number];
 export type DeltaPoint = [number, number];
 
+export interface DuelInputs {
+  throttle: (number | null)[];
+  brake: (number | null)[];
+  gear: (number | null)[];
+  drs: (number | null)[];
+}
+
 export interface DuelPayload {
   points: number;
   a: { driver_number: number; lap: number; lap_duration: number | null };
   b: { driver_number: number; lap: number; lap_duration: number | null };
   traces: { a: TracePoint[]; b: TracePoint[] };
+  inputs?: { a: DuelInputs | null; b: DuelInputs | null };
   delta: DeltaPoint[];
 }
 

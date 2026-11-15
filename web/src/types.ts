@@ -278,6 +278,7 @@ export interface StandingsPayload {
   source: string;
   license: string;
   license_url?: string;
+  fetched_at?: string;
 }
 
 export interface ProgressionSeries {
@@ -292,9 +293,11 @@ export interface ProgressionPayload {
   year: number;
   rounds: number[];
   series: ProgressionSeries[];
+  races?: { round: number; race_name: string; date: string | null }[];
   source: string;
   license: string;
   license_url?: string;
+  fetched_at?: string;
 }
 
 export interface ArchiveRace {
@@ -328,6 +331,7 @@ export interface ArchiveResultsPayload {
   results: ArchiveResult[];
   source: string;
   license: string;
+  fetched_at?: string;
 }
 
 export interface ArchiveSeasonsPayload {
@@ -335,4 +339,5 @@ export interface ArchiveSeasonsPayload {
   source: string;
   license: string;
   license_url?: string;
+  fetched_at?: string;
 }

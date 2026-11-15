@@ -127,7 +127,13 @@ export default function PerformancePanel(p: Props) {
   return (
     <div>
       <TimelinePanel sessionKey={p.sessionKey} duration={p.duration} />
-      <MiniSectors laps={p.laps} sessionName={p.sessionName} driverCode={p.driverCode} />
+      <MiniSectors
+        laps={p.laps}
+        sessionName={p.sessionName}
+        driverCode={p.driverCode}
+        driverOrder={p.towerOrder}
+        preferred={p.highlight[0] ?? null}
+      />
       <PitAnalytics
         stops={p.pitStops}
         overtakeCounts={p.overtakeCounts}

@@ -47,6 +47,12 @@ SYSTEM = (
     "quotes. If you subtract two listed lap times, say it is a best-lap gap rather "
     "than official timing. If the notes cannot answer, say in one sentence what is "
     "missing and offer a related question you can answer.\n"
+    "FACTS FIRST: the notes are authoritative. If a section exists, never say it is "
+    "missing; never claim there were no pit stops when a Pit stops section lists "
+    "them. When a section is absent, say the feed did not list it rather than "
+    "asserting there were none.\n"
+    "MODEL VS MEASURED: for strategy or comparison answers, say plainly what is "
+    "measured and what is projected, and name the main assumption.\n"
     "LENGTH: at most four short sentences, unless the user asks for a recap."
 )
 

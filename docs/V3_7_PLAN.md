@@ -1,6 +1,6 @@
 # V3.7 — Implementation plan
 
-Release: `v3.7.0`. One commit per phase; docs/screenshots updated with the code.
+Release: `v3.7.0` — implemented; one commit per phase, docs/screenshots updated with the code.
 
 ## Phase 1 — Data freshness and archive
 
@@ -76,4 +76,4 @@ Release: `v3.7.0`. One commit per phase; docs/screenshots updated with the code.
   matches OpenF1 values.
 - Duel map has both traces and an inputs comparison.
 - Share/copy/save look and behave like buttons; red flag bands are explained.
-- 87+ pytest and 68+ vitest pass; browser audit has no page errors.
+- 89 pytest and 68 vitest pass; browser audit has no page errors.

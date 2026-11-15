@@ -775,7 +775,12 @@ def test_standings_endpoint(monkeypatch):
     monkeypatch.setattr(
         m.jolpica,
         "standings",
-        lambda year, round=None: {"year": year, "round": round, "drivers": [], "constructors": []},
+        lambda year, round=None, refresh=False: {
+            "year": year,
+            "round": round,
+            "drivers": [],
+            "constructors": [],
+        },
     )
     with TestClient(m.app) as client:
         got = client.get("/standings", params={"year": 2024, "round": 1})
@@ -796,3 +801,18 @@ def test_standings_archive_unavailable(monkeypatch):
 def test_standings_rejects_bad_year():
     with TestClient(m.app) as client:
         assert client.get("/standings", params={"year": 1900}).status_code == 422
+
+
+def test_standings_refresh_is_forwarded(monkeypatch):
+    seen = {}
+
+    def fake(year, round=None, refresh=False):
+        seen.update({"year": year, "round": round, "refresh": refresh})
+        return {"year": year, "round": round, "drivers": [], "constructors": []}
+
+    monkeypatch.setattr(m.jolpica, "standings", fake)
+    with TestClient(m.app) as client:
+        got = client.get("/standings", params={"year": 2026, "round": 5, "refresh": 1})
+        assert got.status_code == 200
+        assert seen == {"year": 2026, "round": 5, "refresh": True}
+        assert "fetched_at" in got.json()

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { beginDraw, themeColors, useCanvasSize } from "../chart";
+import { formatClock } from "../session";
 import type { Driver, TelemetryResult } from "../types";
 
 interface Props {
@@ -47,6 +48,7 @@ export default function TelemetryLabPanel(p: Props) {
     }
     let live = true;
     setError(null);
+    setData(null);
     api
       .telemetry({
         session_key: p.sessionKey,
@@ -212,25 +214,44 @@ export default function TelemetryLabPanel(p: Props) {
       </div>
 
       {error && <p className="duel-note duel-error">{error}</p>}
-      {!data && !error && <p className="dim">Loading traces…</p>}
+
+      <div className="lab-stage" ref={wrapRef} aria-busy={!data}>
+        <canvas
+          ref={canvasRef}
+          className="lab-canvas"
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const padL = 38;
+            const padR = 10;
+            const plotW = Math.max(1, rect.width - padL - padR);
+            const t = ((e.clientX - rect.left - padL) / plotW) * span;
+            setHover(t >= 0 && t <= span ? { t, x: e.clientX - rect.left } : null);
+          }}
+          onMouseLeave={() => setHover(null)}
+        />
+        {!data && !error && <div className="lab-loading">Loading traces…</div>}
+        {hover && data && (
+          <div className="chart-tip lab-tip" style={{ left: Math.min(Math.max(hover.x + 12, 8), 260) }}>
+            <strong>{formatClock(p.windowStart + hover.t)}</strong>
+            {data.series.map((series) => {
+              const i = hoverIndex;
+              const v = (arr: (number | null)[]) => (i >= 0 ? arr[i] : null);
+              return (
+                <div key={series.driver_number}>
+                  <i style={{ background: p.colors.get(series.driver_number) ?? "var(--ink)" }} />
+                  {p.codes.get(series.driver_number) ?? `#${series.driver_number}`}{" "}
+                  {v(series.speed) == null ? "—" : `${Math.round(v(series.speed)!)} km/h`} · thr{" "}
+                  {v(series.throttle) == null ? "—" : `${Math.round(v(series.throttle)!)}%`} · brk{" "}
+                  {v(series.brake) == null ? "—" : v(series.brake)! >= 50 ? "on" : "off"}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {data && (
         <>
-          <div className="lab-stage" ref={wrapRef}>
-            <canvas
-              ref={canvasRef}
-              className="lab-canvas"
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const padL = 38;
-                const padR = 10;
-                const plotW = Math.max(1, rect.width - padL - padR);
-                const t = ((e.clientX - rect.left - padL) / plotW) * span;
-                setHover(t >= 0 && t <= span ? { t, x: e.clientX - rect.left } : null);
-              }}
-              onMouseLeave={() => setHover(null)}
-            />
-          </div>
 
           <div className="strategy-explain">
             <button

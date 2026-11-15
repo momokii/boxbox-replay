@@ -101,6 +101,22 @@ a second telemetry surface in Battle.
 - The dashboard has no session, so Full/Focus/Data and the 00:00 clock are
   meaningless there; hide them until a session is open.
 
+## Implementation result (v3.7.0)
+
+- Telemetry stage stays mounted; the canvas measures its container before data
+  arrives, so the chart draws and hover works.
+- Standings: selectable series (Top 5/All/individual), round tooltips with race
+  and date, and a round-by-round head-to-head table.
+- Jolpica responses carry a checked time; Refresh bypasses the one-hour cache;
+  the archive covers every season through 2026 and shows loading/empty states.
+- Strategy explains "model from lap", projected totals and assumptions; changes
+  show a loading state.
+- Mini-sectors fill the card, use tower order, show S1/S2/S3, lap times and the
+  documented colour legend.
+- Duel draws both full traces and an inputs chart; Battle shows current inputs.
+- Dashboard layout/clock controls hide without a session; player actions are
+  real buttons; timeline bands have a legend and hover explanation.
+
 ## Sources
 
 1. OpenF1 API docs — segment values, race availability, location, historical

@@ -54,7 +54,9 @@ def test_progression_aligns_missing_rounds(monkeypatch):
         2: [_mrdriver(1, "VER", "Max", 44), _mrdriver(2, "LEC", "Charles", 36)],
     }
 
-    def fake_get(path, params=None):
+    def fake_get(path, params=None, **kwargs):
+        if "races.json" in path:
+            return {"MRData": {"RaceTable": {"Races": []}}}
         round_no = int(path.split("/")[1])
         return {
             "MRData": {
@@ -84,7 +86,9 @@ def test_progression_carries_points_forward(monkeypatch):
         2: [_mrdriver(1, "VER", "Max", 44)],
     }
 
-    def fake_get(path, params=None):
+    def fake_get(path, params=None, **kwargs):
+        if "races.json" in path:
+            return {"MRData": {"RaceTable": {"Races": []}}}
         round_no = int(path.split("/")[1])
         return {
             "MRData": {
@@ -98,3 +102,34 @@ def test_progression_carries_points_forward(monkeypatch):
     got = jolpica.progression(2024, 2)
     lec = next(s for s in got["series"] if s["code"] == "LEC")
     assert lec["points"] == [18.0, 18.0]
+
+
+def test_progression_returns_race_context(monkeypatch):
+    rows = {1: [_mrdriver(1, "VER", "Max", 25)]}
+
+    def fake_get(path, params=None, **kwargs):
+        if "races.json" in path:
+            return {
+                "MRData": {
+                    "RaceTable": {
+                        "Races": [
+                            {
+                                "round": "1",
+                                "raceName": "Australian Grand Prix",
+                                "date": "2024-03-10",
+                            }
+                        ]
+                    }
+                }
+            }
+        return {
+            "MRData": {
+                "StandingsTable": {"StandingsLists": [{"DriverStandings": rows[1]}]}
+            }
+        }
+
+    monkeypatch.setattr(jolpica, "_get", fake_get)
+    got = jolpica.progression(2024, 1)
+    assert got["races"] == [
+        {"round": 1, "race_name": "Australian Grand Prix", "date": "2024-03-10"}
+    ]

@@ -12,6 +12,7 @@ import {
 import { formatLapTime, teamColor } from "../format";
 import type { Driver, Geometry, Lap } from "../types";
 import Info from "./Info";
+import DuelInputs from "./DuelInputs";
 
 interface Props {
   sessionKey: number;
@@ -210,6 +211,28 @@ export default function DuelPanel({
       { key: "b", driver: payload.b.driver_number, f: frame.fb, code: driverCode(payload.b.driver_number) },
     ];
 
+    // Both complete laps, so the comparison is visible instead of just two dots.
+    for (const side of sides) {
+      const raw = drivers.find((d) => d.driver_number === side.driver)?.team_colour;
+      const colour = colors.get(side.driver) ?? teamColor(raw ?? null);
+      const path = new Path2D();
+      payload.traces[side.key].forEach(([, rx, ry], i) => {
+        const [x, y] = rotatePoint(rx, ry, -(geometry.angle ?? 0));
+        if (i === 0) path.moveTo(X(x), Y(y));
+        else path.lineTo(X(x), Y(y));
+      });
+      ctx.save();
+      ctx.strokeStyle = colour;
+      ctx.setLineDash(side.key === "b" ? [7, 4] : []);
+      ctx.globalAlpha = 0.18;
+      ctx.lineWidth = 6;
+      ctx.stroke(path);
+      ctx.globalAlpha = 0.95;
+      ctx.lineWidth = 2.4;
+      ctx.stroke(path);
+      ctx.restore();
+    }
+
     for (const side of sides) {
       const [rawX, rawY] = pointAt(payload.traces[side.key], side.f);
       // The session outline is served rotated to square up the start straight;
@@ -389,6 +412,13 @@ export default function DuelPanel({
           <div className="duel-stage" ref={wrap}>
             <canvas ref={canvas} className="duel-canvas" />
           </div>
+          <div className="line-legend duel-legend">
+            <span><i style={{ background: colors.get(payload.a.driver_number) ?? "var(--ink)" }} /> A · {driverCode(payload.a.driver_number)}</span>
+            <span><i style={{ background: colors.get(payload.b.driver_number) ?? "var(--ink)" }} /> B · {driverCode(payload.b.driver_number)}</span>
+            <span className="dim">full lap traces + current positions</span>
+          </div>
+
+          <DuelInputs payload={payload} colors={colors} codes={new Map(drivers.map((d) => [d.driver_number, d.name_acronym]))} />
 
           <div className="duel-verdict" aria-live="polite">
             {frame?.leader === "tie" ? (

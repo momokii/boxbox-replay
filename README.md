@@ -8,13 +8,15 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Suzuka 2024, lap 25. Timing tower on the left, circuit and playback in the middle, driver card and engineer on the right.</sub>
 
-> **Latest release: `v3.6.0`** — a **Standings** tab, the **1950–2022 results archive**, and a **3D visual pass** with proper F1 cars and circuit detail. All screenshots below are from this build.
+> **Latest release: `v3.7.0`** — freshness checks and Refresh on standings/archive, selectable driver charts with round tooltips and head-to-head, full-season results through 2026, honest archive loading states, a working Telemetry chart, clearer strategy language, and Duel/Battle inputs. All screenshots below are from this build.
 
-## What's new in v3.6.0
+## What's new in v3.7.0
 
-- **Championship standings.** The weekend resolves to its championship round; drivers/teams and a top-five points-by-round chart sit beside the replay.
-- **Results archive.** A separate 1950–2022 surface for race results and final standings, with explicit "no telemetry" and missing-round fallbacks.
-- **3D visual pass.** Procedural F1 cars (wings, wheels, helmet), asphalt texture, checkered start, corner/DRS markers and a camera that fits the circuit to the screen.
+- **Freshness.** Standings/Archive show when they were checked, revalidate hourly, and have a Refresh action that bypasses the cache. The cache is labelled “cache ≤1h”.
+- **Standings comparison.** Choose Top 5, All or individual drivers; hover a round for race/date/points; compare any two drivers round by round below the chart.
+- **Archive.** All available seasons through 2026, with real loading states when the season or race changes and explicit missing/future-race messages.
+- **Comparison surfaces.** Duel draws both full lap traces and a throttle/brake/gear/DRS comparison; Battle shows current inputs for the anchor and challengers.
+- **Clearer UI.** The Telemetry canvas is fixed, mini-sectors fill the card with S1/S2/S3 and a real legend, Strategy explains “model from lap” and its assumptions, and Share/Copy/Offline look like buttons. Red-flag bands are explained on hover and in the legend.
 
 | Championship standings | Results archive |
 |---|---|
@@ -23,6 +25,10 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 | 3D replay (upgraded) | 3D on a phone |
 |---|---|
 | ![3D replay](docs/screenshots/33-3d-upgraded.png) | ![3D mobile](docs/screenshots/27-3d-mobile.png) |
+
+| Duel inputs (v3.7) | Battle inputs (v3.7) |
+|---|---|
+| ![Duel inputs](docs/screenshots/35-duel-inputs.png) | ![Battle inputs](docs/screenshots/36-battle-inputs.png) |
 
 ## What it does
 
@@ -36,8 +42,9 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
 - **Qualifying mini-sectors (v3).** Real segment strips (green/purple/yellow) for qualifying and practice, with placeholder detection; races show nothing rather than fake segments.
 - **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds.
-- **Championship standings (v3.6).** A Standings tab resolves the current weekend to its championship round and shows the driver/team table plus a points-by-round chart for the top five. Source: Jolpica F1 (CC BY-NC-SA 4.0), attributed in the panel.
-- **Results archive (v3.6).** A separate, full-screen archive for 1950–2022: season → race → result, with final standings beside it. Results and standings only — there is no telemetry or replay for this era, and the UI says so. Missing rounds and source outages have explicit fallback messages.
+- **Championship standings (v3.6+).** A Standings tab resolves the current weekend to its championship round and shows the driver/team table plus a selectable points-by-round chart, per-round tooltips and a head-to-head table. Source: Jolpica F1 (CC BY-NC-SA 4.0), attributed in the panel; the archive is revalidated hourly and can be refreshed on demand.
+- **Results archive (v3.6+).** A separate, full-screen archive for every Jolpica season through 2026: season → race → result, with standings beside it. Results and standings only — replay telemetry starts in 2023. Season/race changes show explicit loading states; missing and future rounds have honest fallbacks.
+- **Duel and Battle comparisons (v3.7).** Duel overlays both full lap traces and compares throttle/brake/gear/DRS at the same lap progress; Battle adds point-in-time inputs for the anchor and challengers.
 - **Optional 3D replay (v3.5).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock, with orbit and click-to-select. 2D stays the default and the analytical surface (corners, DRS, hover). The track ribbon is flat and its width is a visual constant, not measured data.
 - **Telemetry lab (v3).** Up to three drivers on the same clock: speed traces, throttle/brake/gear/DRS at the cursor, and explicit nulls when a channel is missing. Distance-aligned lap comparison stays in Lap duel.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
@@ -211,9 +218,9 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 | `POST /session/strategy` | Ranked stay/pit options with assumptions and coverage |
 | `POST /session/telemetry` | Up to five drivers on one clock; null channels preserved |
 | `GET /session/timeline` | Weather and race-control events on the replay clock |
-| `GET /standings?year=&round=` | Driver/team standings after a round (Jolpica) |
-| `GET /standings/progression?year=&round=` | Points after each round, top series |
-| `GET /archive/seasons` · `/archive/{year}/races` · `/archive/{year}/{round}/results` | 1950–2022 results archive (Jolpica) |
+| `GET /standings?year=&round=&refresh=1` | Driver/team standings after a round (Jolpica); refresh bypasses the cache |
+| `GET /standings/progression?year=&round=&refresh=1` | Points after each round, with race context |
+| `GET /archive/seasons` · `/archive/{year}/races` · `/archive/{year}/{round}/results` | Results/standings archive through the latest season (Jolpica) |
 | `GET /ai/status` | Whether AI is configured and which model is used |
 | `POST /ai/chat` | Multi-turn grounded chat (bounded history) |
 | `POST /ai/recap` | Session recap in the session's own terms |

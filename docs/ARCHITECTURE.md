@@ -86,6 +86,11 @@ retired cars (result feed, or no fresh laps) are classified last.
 
 - One `Playback` store owns `t`, `dur`, `playing`, `speed`, `calm`.
 - The map, timeline, speed strip and charts subscribe and redraw per frame.
+- The telemetry canvas is always mounted with its stage; the draw effect waits
+  for data and the `useCanvasSize` hook measures the live element.
+- Duel draws both complete lap traces plus an inputs chart resampled onto the
+  shared distance grid; Battle fetches the current five-second input window for
+  its anchor and challengers.
 - The optional 3D view (`Track3D.tsx`) is a lazy-loaded three.js chunk built
   from the same outline and replay positions. It renders a flat, textured ribbon
   with edge lines, a checkered start, corner/DRS markers and procedural F1 cars;
@@ -123,8 +128,8 @@ retired cars (result feed, or no fresh laps) are classified last.
 | `POST /session/telemetry` | Multi-driver traces over a session-time window; channels, not distance alignment (that is `/session/duel`) |
 | `POST /session/strategy` | Ranked stay-vs-pit options, break-even, undercut, coverage, assumptions (`strategy.py`) |
 | `GET /standings?year=&round=` | Driver + team standings after a round (Jolpica) |
-| `GET /standings/progression?year=&round=` | Points after each round (top 12 series) |
-| `GET /archive/seasons` · `/archive/{year}/races` · `/archive/{year}/{round}/results` | 1950–2022 results/standings archive |
+| `GET /standings/progression?year=&round=` | Points after each round (all series) with race context |
+| `GET /archive/seasons` · `/archive/{year}/races` · `/archive/{year}/{round}/results` | Results/standings archive through the latest season |
 | `GET /ai/status` | `{configured, ready, model}` — never the key |
 | `POST /ai/chat` | Multi-turn: last 10 turns, user ≤400 chars, facts in the system message |
 | `POST /ai/pit` | Explains a `pit_toy_model` result; the server recomputes the numbers |
@@ -146,10 +151,13 @@ offers a retry.
 
 ## Archive and standings boundary
 
-`jolpica.py` is a separate, read-only adapter for pre-2023 results and season
-standings. It uses the same cache volume with a one-hour TTL, a custom
+`jolpica.py` is a separate, read-only adapter for results and season standings. It uses the same cache volume with a one-hour TTL, a custom
 `BoxBoxReplay/3.6.0` User-Agent, 4 req/s and 500 req/h limits, and returns empty
-lists for absent rounds instead of inventing data. The API exposes `/standings`,
+lists for absent rounds instead of inventing data. Responses carry a checked
+time; the cache TTL is one hour and `refresh=1` bypasses it. The Standings chart
+selects series, exposes round/race tooltips and a head-to-head table; the
+archive covers every available season through the latest and shows explicit
+loading/empty states. The API exposes `/standings`,
 `/standings/progression`, `/archive/seasons`, `/archive/{year}/races` and
 `/archive/{year}/{round}/results`. The Standings tab maps the selected weekend to
 a round by name/date; the Archive is a separate full-screen surface and is
@@ -196,6 +204,9 @@ the model away from anything it could get wrong.
 - The system prompt makes the model the app's engineer: full names, no "the
   data"/"the feed" phrasing, no race language in a non-race session, and a
   sentinel (`OUT_OF_SCOPE`) for anything unrelated to the session or F1.
+- `api/main.py` prepends a compact `KEY FACTS` line (winner, fastest lap, pit
+  count) for races; the prompt treats present sections as authoritative and
+  forbids claiming absence when a section exists.
 - `POST /ai/chat` sends the session notes in the system message and at most the
   last 10 turns; `/ai/recap` is cached per session; `/ai/pit` recomputes the pit
   model server-side and only asks for an explanation.

@@ -678,6 +678,7 @@ export default function App() {
         <button type="button" className="archive-open" onClick={() => setArchiveOpen(true)}>
           Archive
         </button>
+        {sessionKey && (
         <div className="layout-switch" role="group" aria-label="Layout">
           {(["full", "focus", "data"] as const).map((value) => (
             <button
@@ -698,7 +699,8 @@ export default function App() {
             </button>
           ))}
         </div>
-        <span className="clock">{formatClock(playT)}</span>
+        )}
+        {sessionKey && <span className="clock">{formatClock(playT)}</span>}
         <button
           className="theme-toggle"
           onClick={toggle}
@@ -934,7 +936,6 @@ export default function App() {
                         <span className="show-sm">Reduce</span>
                       </label>
                       <button
-                        className="ghost small"
                         onClick={async () => {
                           if (!geo.data?.outline.length) return;
                           const cars = (drivers.data ?? []).flatMap((d) => {
@@ -968,13 +969,16 @@ export default function App() {
                             theme,
                           );
                         }}
+                        type="button"
+                        className="player-action"
                         disabled={playT < 0.5 || !geo.data?.outline.length}
                         title="Download a 1200×630 PNG of this moment"
                       >
                         Share card
                       </button>
                       <button
-                        className="ghost small"
+                        type="button"
+                        className="player-action"
                         onClick={() => {
                           const url = momentUrl();
                           setPausedAt(playT);
@@ -994,7 +998,8 @@ export default function App() {
                         {linkCopied ? "Copied" : "Copy link"}
                       </button>
                       <button
-                        className="ghost small"
+                        type="button"
+                        className="player-action"
                         onClick={async () => {
                           if (!sessionKey) return;
                           setOfflineBusy(true);

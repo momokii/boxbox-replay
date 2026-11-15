@@ -6,7 +6,15 @@ interface Props {
   onClose: () => void;
 }
 
-/** Pre-2023 results/standings. Deliberately separate from replay: no telemetry. */
+function checkedLabel(iso?: string): string {
+  if (!iso) return "just now";
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime())
+    ? "just now"
+    : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Results/standings archive for every available season. No telemetry before 2023. */
 export default function ArchiveView({ onClose }: Props) {
   const [seasons, setSeasons] = useState<number[]>([]);
   const [year, setYear] = useState<number | null>(null);
@@ -15,8 +23,13 @@ export default function ArchiveView({ onClose }: Props) {
   const [results, setResults] = useState<ArchiveResult[]>([]);
   const [race, setRace] = useState<ArchiveRace | null>(null);
   const [standings, setStandings] = useState<StandingsPayload | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingSeasons, setLoadingSeasons] = useState(true);
+  const [loadingRaces, setLoadingRaces] = useState(false);
+  const [loadingResults, setLoadingResults] = useState(false);
+  const [loadingStandings, setLoadingStandings] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [checkedAt, setCheckedAt] = useState<string | undefined>();
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -27,49 +40,91 @@ export default function ArchiveView({ onClose }: Props) {
   }, [onClose]);
 
   useEffect(() => {
+    let live = true;
+    setLoadingSeasons(true);
     api
-      .archiveSeasons()
+      .archiveSeasons(tick > 0)
       .then((data) => {
-        const archived = data.seasons.filter((season: number) => season <= 2022);
-        setSeasons(archived);
-        setYear(archived[archived.length - 1] ?? null);
+        if (!live) return;
+        setSeasons(data.seasons);
+        setYear((current) => current ?? data.seasons[data.seasons.length - 1] ?? null);
+        setCheckedAt(data.fetched_at);
+        setMessage(null);
       })
-      .catch(() => setError("The results archive did not answer. Retry in a moment."))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => live && setMessage("The results archive did not answer. Retry in a moment."))
+      .finally(() => live && setLoadingSeasons(false));
+    return () => {
+      live = false;
+    };
+  }, [tick]);
 
   useEffect(() => {
     if (!year) return;
+    let live = true;
+    setLoadingRaces(true);
+    setLoadingStandings(true);
     setRaces([]);
     setRound(null);
     setResults([]);
+    setRace(null);
     setStandings(null);
     api
-      .archiveRaces(year)
+      .archiveRaces(year, tick > 0)
       .then((data) => {
+        if (!live) return;
         setRaces(data.races);
-        setRound(data.races[data.races.length - 1]?.round ?? null);
+        const today = Date.now();
+        const completed = data.races.filter(
+          (item) => item.date != null && Date.parse(item.date) <= today,
+        );
+        setRound((completed[completed.length - 1] ?? data.races[data.races.length - 1])?.round ?? null);
+        setCheckedAt(data.fetched_at);
+        setMessage(null);
       })
-      .catch(() => setError("No race list was returned for this season."));
+      .catch(() => live && setMessage(`The ${year} calendar did not load.`))
+      .finally(() => live && setLoadingRaces(false));
     api
-      .standings(year)
-      .then(setStandings)
-      .catch(() => setStandings(null));
-  }, [year]);
+      .standings(year, undefined, tick > 0)
+      .then((data) => {
+        if (!live) return;
+        setStandings(data);
+        setCheckedAt(data.fetched_at);
+      })
+      .catch(() => live && setStandings(null))
+      .finally(() => live && setLoadingStandings(false));
+    return () => {
+      live = false;
+    };
+  }, [year, tick]);
 
   useEffect(() => {
     if (!year || !round) return;
+    let live = true;
+    setLoadingResults(true);
+    setResults([]);
+    setRace(null);
     api
-      .archiveResults(year, round)
+      .archiveResults(year, round, tick > 0)
       .then((data) => {
+        if (!live) return;
         setRace(data.race);
         setResults(data.results);
+        setCheckedAt(data.fetched_at);
+        setMessage(null);
       })
       .catch(() => {
+        if (!live) return;
         setRace(null);
         setResults([]);
-      });
-  }, [year, round]);
+      })
+      .finally(() => live && setLoadingResults(false));
+    return () => {
+      live = false;
+    };
+  }, [year, round, tick]);
+
+  const refreshing = loadingSeasons || loadingRaces || loadingResults || loadingStandings;
+  const latest = seasons[seasons.length - 1];
 
   return (
     <div className="archive-view" role="dialog" aria-modal="true" aria-label="Results archive">
@@ -77,24 +132,42 @@ export default function ArchiveView({ onClose }: Props) {
         <div>
           <h2>Results archive</h2>
           <p className="dim small">
-            1950–2022 results and standings from Jolpica F1. No telemetry or replay for
-            these seasons — the main picker starts in 2023.
+            Results and standings from Jolpica F1{latest ? ` through ${latest}` : ""}.
+            2023+ also has replay in the main picker; this view is results only. No
+            telemetry exists before 2023.
           </p>
         </div>
-        <button type="button" className="archive-close" onClick={onClose} aria-label="Close archive">
-          Close ✕
-        </button>
+        <div className="archive-actions">
+          <span className="dim small">Checked {checkedLabel(checkedAt)}</span>
+          <button
+            type="button"
+            className="ghost small"
+            onClick={() => {
+              setLoadingSeasons(true);
+              setLoadingRaces(true);
+              setLoadingResults(true);
+              setLoadingStandings(true);
+              setTick((n) => n + 1);
+            }}
+            disabled={refreshing}
+          >
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+          <button type="button" className="archive-close" onClick={onClose} aria-label="Close archive">
+            Close ✕
+          </button>
+        </div>
       </header>
 
-      {loading && <p className="dim">Loading archive…</p>}
-      {error && <p className="dim">{error}</p>}
+      {message && <p className="dim">{message}</p>}
+      {loadingSeasons && <p className="dim">Loading archive seasons…</p>}
 
-      {!loading && seasons.length > 0 && (
+      {!loadingSeasons && seasons.length > 0 && (
         <>
           <div className="archive-pickers">
             <label>
               Season
-              <select value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))}>
+              <select value={year ?? ""} onChange={(e) => setYear(Number(e.target.value))} disabled={loadingSeasons}>
                 {[...seasons].reverse().map((value) => (
                   <option key={value} value={value}>
                     {value}
@@ -107,8 +180,9 @@ export default function ArchiveView({ onClose }: Props) {
               <select
                 value={round ?? ""}
                 onChange={(e) => setRound(Number(e.target.value))}
-                disabled={!races.length}
+                disabled={loadingRaces || !races.length}
               >
+                {round == null && <option value="">—</option>}
                 {(races ?? []).map((item) => (
                   <option key={item.round} value={item.round}>
                     R{item.round} · {item.race_name}
@@ -116,12 +190,23 @@ export default function ArchiveView({ onClose }: Props) {
                 ))}
               </select>
             </label>
+            {loadingRaces && <span className="archive-loading">Loading {year} calendar…</span>}
           </div>
 
           <div className="archive-grid">
-            <section>
-              <h3>{race ? `R${race.round} · ${race.race_name}` : "Race results"}</h3>
-              {results.length ? (
+            <section aria-busy={loadingResults}>
+              <h3>
+                {loadingResults
+                  ? round
+                    ? `Loading R${round} results…`
+                    : `Loading ${year} results…`
+                  : race
+                    ? `R${race.round} · ${race.race_name}`
+                    : "Race results"}
+              </h3>
+              {loadingResults ? (
+                <p className="dim small">Fetching the result sheet…</p>
+              ) : results.length ? (
                 <div className="archive-scroll">
                   <table className="laps mono archive-table">
                     <thead>
@@ -160,9 +245,11 @@ export default function ArchiveView({ onClose }: Props) {
               )}
             </section>
 
-            <section>
-              <h3>Final standings · {year}</h3>
-              {standings?.drivers.length ? (
+            <section aria-busy={loadingStandings}>
+              <h3>Standings · {year}</h3>
+              {loadingStandings ? (
+                <p className="dim small">Fetching the final table…</p>
+              ) : standings?.drivers.length ? (
                 <div className="archive-scroll">
                   <table className="laps mono archive-table">
                     <thead>
@@ -193,14 +280,10 @@ export default function ArchiveView({ onClose }: Props) {
 
           <p className="dim small archive-source">
             Source:{" "}
-            <a
-              href="https://api.jolpi.ca/ergast/f1/"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href="https://api.jolpi.ca/ergast/f1/" target="_blank" rel="noreferrer">
               Jolpica F1
             </a>{" "}
-            · CC BY-NC-SA 4.0. Results and standings only; no telemetry before 2023.
+            · CC BY-NC-SA 4.0. Results and standings only; replay telemetry starts in 2023. The archive revalidates hourly; Refresh bypasses the cache.
           </p>
         </>
       )}

@@ -127,7 +127,8 @@ returns 429, the API maps it to a clear "usage limit reached" response, and the
 UI says so. It resets automatically; nothing else stops working.
 
 Jolpica (standings and the pre-2023 archive) needs no key. It uses
-`JOLPICA_BASE_URL`, `JOLPICA_CACHE_TTL` (default 3600s), `JOLPICA_RATE_PER_SEC`
+`JOLPICA_BASE_URL`, `JOLPICA_CACHE_TTL` (default 3600s; the UI labels this as
+“cache ≤1h” and exposes Refresh to bypass it), `JOLPICA_RATE_PER_SEC`
 (default 4) and `JOLPICA_RATE_PER_HOUR` (default 500). Responses share the cache
 volume; attribution is in the UI. If the source is down, those surfaces show a
 retry message and the replay keeps working.

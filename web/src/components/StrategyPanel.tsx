@@ -25,6 +25,7 @@ export default function StrategyPanel(p: Props) {
   const [fromLap, setFromLap] = useState(startLap);
   const [pitLoss, setPitLoss] = useState<string>("");
   const [result, setResult] = useState<StrategyResult | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [explain, setExplain] = useState<string | null>(null);
   const [explainBusy, setExplainBusy] = useState(false);
@@ -48,6 +49,7 @@ export default function StrategyPanel(p: Props) {
   useEffect(() => {
     if (!p.sessionKey || !driver) return;
     let live = true;
+    setLoading(true);
     setError(null);
     api
       .strategy({
@@ -69,7 +71,8 @@ export default function StrategyPanel(p: Props) {
               ? "Those inputs are outside the model's bounds."
               : "The strategy model could not run for this session.",
         );
-      });
+      })
+      .finally(() => live && setLoading(false));
     return () => {
       live = false;
     };
@@ -80,18 +83,20 @@ export default function StrategyPanel(p: Props) {
   const color = useMemo(() => p.colors.get(driver) ?? "var(--ink)", [p.colors, driver]);
 
   return (
-    <section className="strategy" aria-label="Strategy model">
+    <section className="strategy" aria-label="Strategy model" aria-busy={loading}>
       <header className="strategy-head">
         <div>
           <h2>
-            Strategy model{" "}
+            Strategy projection{" "}
             <Info
-              label="what this is"
-              tip="A transparent stay-vs-pit model over this session's clean laps, stints and pit-lane times. It shows its assumptions and uncertainty; it does not simulate safety cars, weather changes or rivals."
+              label="model details"
+              children="?"
+              tip="A transparent stay-vs-pit projection over this session's clean laps, stints and pit-lane times. It does not simulate safety cars, weather, rivals or a live pit wall."
             />
           </h2>
           <p className="dim small">
-            Every total is computed server-side from measured laps; the AI can explain it, never recalculate it.
+            Pick a lap, then compare the projected remaining race time of staying out
+            versus pitting now. Lower is better; every total comes from measured laps.
           </p>
         </div>
         <span className="strategy-badge">v3 · model</span>
@@ -109,13 +114,14 @@ export default function StrategyPanel(p: Props) {
           </select>
         </label>
         <label className="dim small">
-          From lap{" "}
+          Model from lap{" "}
           <input
             type="number"
             min={1}
             max={p.totalLaps || 1}
             value={fromLap}
             onChange={(e) => setFromLap(Math.max(1, Math.min(p.totalLaps || 1, Number(e.target.value))))}
+            aria-describedby="strategy-from-lap-help"
           />
         </label>
         <label className="dim small">
@@ -136,8 +142,15 @@ export default function StrategyPanel(p: Props) {
         </label>
       </div>
 
+      <p id="strategy-from-lap-help" className="dim small">
+        <strong>Model from lap</strong> freezes the race at that lap: only laps and
+        stints up to it are used, and the remaining laps are projected. It is not
+        the lap where a stop is scheduled.
+      </p>
+
       {error && <p className="duel-note duel-error">{error}</p>}
-      {!result && !error && <p className="dim">Running the model…</p>}
+      {loading && <p className="dim small">Updating the projection for lap {fromLap}…</p>}
+      {!result && !error && !loading && <p className="dim">Running the model…</p>}
 
       {result && !result.measurable && (
         <div className="empty">
@@ -159,12 +172,18 @@ export default function StrategyPanel(p: Props) {
             </span>
           </div>
 
+          <p className="dim small strategy-table-help">
+            Each option is projected remaining race time from lap {fromLap} to the
+            finish. <strong>Stay out</strong> keeps the current tyres;{" "}
+            <strong>pit now</strong> pays the pit loss and uses fresh tyres. Δ is
+            the gap to the fastest option.
+          </p>
           <table className="strategy-table">
             <thead>
               <tr>
                 <th scope="col">#</th>
-                <th scope="col">Plan</th>
-                <th scope="col">Total</th>
+                <th scope="col">Option</th>
+                <th scope="col">Projected total</th>
                 <th scope="col">Δ best</th>
               </tr>
             </thead>
@@ -269,6 +288,16 @@ export default function StrategyPanel(p: Props) {
             )}
           </div>
 
+          <div className="strategy-method">
+            <h3>How this is measured</h3>
+            <ul>
+              <li>Only clean green-flag laps are used; pit-in/out and safety-car windows are excluded.</li>
+              <li>Pace and tyre wear come from this driver's stints in this session.</li>
+              <li>Pit loss is the measured pit-lane time (or the value you enter), not a team radio claim.</li>
+              <li>The model assumes no safety car, rain, traffic beyond the measured exit penalty, or rival strategy.</li>
+              <li>“Projected total” is the remaining race time, not a lap time or a guarantee.</li>
+            </ul>
+          </div>
           <details className="strategy-assumptions">
             <summary>Assumptions and limits</summary>
             <ul>

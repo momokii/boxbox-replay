@@ -115,16 +115,18 @@ def _fetch(path: str, params: dict | None = None) -> dict:
     raise JolpicaUnavailable(f"Jolpica did not answer: {url} ({last_error})")
 
 
-def _get(path: str, params: dict | None = None) -> dict:
-    """Read-through cache around the archive request."""
+def _get(path: str, params: dict | None = None, *, refresh: bool = False) -> dict:
+    """Read-through cache around the archive request; refresh bypasses the TTL."""
     file = _cache_file(path, params)
-    cached = _read_cache(file)
-    if cached is not None:
-        return cached
-    with _lock_for(str(file)):
+    if not refresh:
         cached = _read_cache(file)
         if cached is not None:
             return cached
+    with _lock_for(str(file)):
+        if not refresh:
+            cached = _read_cache(file)
+            if cached is not None:
+                return cached
         data = _fetch(path, params)
         if data:
             try:
@@ -140,14 +142,14 @@ def _mr(data: dict) -> dict:
     return data.get("MRData", {}) if isinstance(data, dict) else {}
 
 
-def seasons() -> list[int]:
-    data = _get("seasons.json", {"limit": 100})
+def seasons(*, refresh: bool = False) -> list[int]:
+    data = _get("seasons.json", {"limit": 100}, refresh=refresh)
     rows = _mr(data).get("SeasonTable", {}).get("Seasons", [])
     return sorted({int(row["season"]) for row in rows if str(row.get("season", "")).isdigit()})
 
 
-def races(year: int) -> list[dict]:
-    data = _get(f"{year}/races.json", {"limit": 100})
+def races(year: int, *, refresh: bool = False) -> list[dict]:
+    data = _get(f"{year}/races.json", {"limit": 100}, refresh=refresh)
     rows = _mr(data).get("RaceTable", {}).get("Races", [])
     out = []
     for row in rows:
@@ -166,9 +168,11 @@ def races(year: int) -> list[dict]:
     return sorted(out, key=lambda r: r["round"])
 
 
-def _standings_rows(year: int, round: int | None, kind: str) -> list[dict]:
+def _standings_rows(
+    year: int, round: int | None, kind: str, *, refresh: bool = False
+) -> list[dict]:
     suffix = f"/{round}" if round else ""
-    data = _get(f"{year}{suffix}/{kind}.json", {"limit": 100})
+    data = _get(f"{year}{suffix}/{kind}.json", {"limit": 100}, refresh=refresh)
     lists = _mr(data).get("StandingsTable", {}).get("StandingsLists", [])
     if not lists:
         return []
@@ -205,9 +209,9 @@ def _standings_rows(year: int, round: int | None, kind: str) -> list[dict]:
     ]
 
 
-def standings(year: int, round: int | None = None) -> dict:
-    drivers = _standings_rows(year, round, "driverstandings")
-    constructors = _standings_rows(year, round, "constructorstandings")
+def standings(year: int, round: int | None = None, *, refresh: bool = False) -> dict:
+    drivers = _standings_rows(year, round, "driverstandings", refresh=refresh)
+    constructors = _standings_rows(year, round, "constructorstandings", refresh=refresh)
     return {
         "year": year,
         "round": round,
@@ -219,8 +223,8 @@ def standings(year: int, round: int | None = None) -> dict:
     }
 
 
-def results(year: int, round: int) -> dict:
-    data = _get(f"{year}/{round}/results.json", {"limit": 100})
+def results(year: int, round: int, *, refresh: bool = False) -> dict:
+    data = _get(f"{year}/{round}/results.json", {"limit": 100}, refresh=refresh)
     race_rows = _mr(data).get("RaceTable", {}).get("Races", [])
     if not race_rows:
         return {
@@ -273,7 +277,7 @@ def results(year: int, round: int) -> dict:
     }
 
 
-def progression(year: int, through_round: int) -> dict:
+def progression(year: int, through_round: int, *, refresh: bool = False) -> dict:
     """Points after each round, for the season chart. One cached request/round."""
     if through_round < 1:
         return {
@@ -291,7 +295,7 @@ def progression(year: int, through_round: int) -> dict:
     with ThreadPoolExecutor(max_workers=4) as pool:
         fetched = list(
             pool.map(
-                lambda rnd: (rnd, _standings_rows(year, rnd, "driverstandings")),
+                lambda rnd: (rnd, _standings_rows(year, rnd, "driverstandings", refresh=refresh)),
                 range(1, through_round + 1),
             )
         )
@@ -324,10 +328,20 @@ def progression(year: int, through_round: int) -> dict:
         entry["points"] = points
         series.append(entry)
     series.sort(key=lambda e: e["points"][-1] if e["points"] else 0, reverse=True)
+    calendar = {race["round"]: race for race in races(year, refresh=refresh)}
+    race_meta = [
+        {
+            "round": rnd,
+            "race_name": calendar.get(rnd, {}).get("race_name", f"Round {rnd}"),
+            "date": calendar.get(rnd, {}).get("date"),
+        }
+        for rnd in rounds
+    ]
     return {
         "year": year,
         "rounds": rounds,
-        "series": series[:12],
+        "races": race_meta,
+        "series": series,
         "source": SOURCE,
         "license": LICENSE,
         "license_url": LICENSE_URL,

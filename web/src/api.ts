@@ -205,17 +205,28 @@ export const api = {
     lap_delta_s: number | null;
     session_key: number;
   }) => post<CoachReply>("/coach/ask", body),
-  standings: (year: number, round?: number) =>
-    get<StandingsPayload>(`/standings?year=${year}${round ? `&round=${round}` : ""}`),
-  standingsProgression: (year: number, round: number) =>
-    get<ProgressionPayload>(`/standings/progression?year=${year}&round=${round}`),
-  archiveSeasons: () => get<ArchiveSeasonsPayload>("/archive/seasons"),
-  archiveRaces: (year: number) =>
-    get<{ year: number; races: import("./types").ArchiveRace[]; source: string; license: string }>(
-      `/archive/${year}/races`,
+  standings: (year: number, round?: number, refresh = false) =>
+    get<StandingsPayload>(
+      `/standings?year=${year}${round ? `&round=${round}` : ""}${refresh ? "&refresh=1" : ""}`,
     ),
-  archiveResults: (year: number, round: number) =>
-    get<ArchiveResultsPayload>(`/archive/${year}/${round}/results`),
+  standingsProgression: (year: number, round: number, refresh = false) =>
+    get<ProgressionPayload>(
+      `/standings/progression?year=${year}&round=${round}${refresh ? "&refresh=1" : ""}`,
+    ),
+  archiveSeasons: (refresh = false) =>
+    get<ArchiveSeasonsPayload>(`/archive/seasons${refresh ? "?refresh=1" : ""}`),
+  archiveRaces: (year: number, refresh = false) =>
+    get<{
+      year: number;
+      races: import("./types").ArchiveRace[];
+      source: string;
+      license: string;
+      fetched_at?: string;
+    }>(`/archive/${year}/races${refresh ? "?refresh=1" : ""}`),
+  archiveResults: (year: number, round: number, refresh = false) =>
+    get<ArchiveResultsPayload>(
+      `/archive/${year}/${round}/results${refresh ? "?refresh=1" : ""}`,
+    ),
 };
 
 export const tyreAtLap = (

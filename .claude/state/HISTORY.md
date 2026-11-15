@@ -567,3 +567,12 @@ top-five points chart; archive is a separate results-only surface with explicit
 markers, larger labels and a viewport-fitted camera. Caught and fixed a CSS
 class collision between mini-sector cells and the player/standings segmented
 control. 86 pytest + 68 vitest; tagged `v3.6.0`.
+
+v3.7.0: fixed the blank Telemetry canvas (stage/canvas measured before data
+arrived), added checked-time/Refresh for Jolpica standings and archive, archive
+loading states and all seasons through 2026, selectable standings series with
+round tooltips and head-to-head, plain-language strategy copy/loading, full-width
+mini-sectors with documented OpenF1 semantics, full duel traces + inputs,
+Battle current inputs, dashboard header context fix, button styling, and red-flag
+band legend/hover. AI facts now start with a KEY FACTS line and explicitly treat
+present sections as authoritative. 89 pytest + 68 vitest.

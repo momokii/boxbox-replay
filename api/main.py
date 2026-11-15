@@ -6,6 +6,8 @@ Empty datasets serialize as [] (the UI renders empty states, never crashes).
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
@@ -287,6 +289,37 @@ def session_inputs(
     }
 
 
+def _duel_inputs(session_key: int, driver: int, start, end_ts, times: list[float]) -> dict | None:
+    """Car channels resampled onto the duel progress grid (distance order)."""
+    car = data_loader.get_car_data(session_key, driver_number=driver)
+    if car.empty or "date" not in car.columns:
+        return None
+    stamps = data_loader.to_dt(car["date"])
+    win = car[(stamps >= start) & (stamps < end_ts)].sort_values("date")
+    if win.empty:
+        return None
+    local = (data_loader.to_dt(win["date"]) - start).dt.total_seconds().to_numpy(float)
+    target = np.asarray(times, dtype=float)
+    out: dict[str, list] = {}
+    channels = (("throttle", "throttle"), ("brake", "brake"), ("gear", "n_gear"), ("drs", "drs"))
+    for name, source in channels:
+        if source not in win.columns:
+            out[name] = [None] * len(target)
+            continue
+        values = pd.to_numeric(win[source], errors="coerce").to_numpy(float)
+        finite = np.isfinite(values)
+        if name == "drs":
+            filled = pd.Series(values).ffill().bfill().to_numpy(float)
+            finite = np.isfinite(filled)
+            values = filled
+        if finite.sum() < 2:
+            out[name] = [None] * len(target)
+        else:
+            interp = np.interp(target, local[finite], values[finite])
+            out[name] = [round(float(v), 3) for v in interp]
+    return out
+
+
 @app.get("/session/duel")
 def session_duel(
     session_key: int, a_driver: int, a_lap: int, b_driver: int, b_lap: int
@@ -318,6 +351,13 @@ def session_duel(
             "lap": lap,
             "lap_duration": duration,
             "trace": trace,
+            "inputs": _duel_inputs(
+                session_key,
+                driver,
+                start,
+                end_ts,
+                trace["t"].tolist() if "t" in trace.columns else [],
+            ),
         }
 
     a, b = sides["a"]["trace"], sides["b"]["trace"]
@@ -325,9 +365,10 @@ def session_duel(
     points = len(a)
     return {
         "points": points,
-        "a": {k: v for k, v in sides["a"].items() if k != "trace"},
-        "b": {k: v for k, v in sides["b"].items() if k != "trace"},
+        "a": {k: v for k, v in sides["a"].items() if k not in ("trace", "inputs")},
+        "b": {k: v for k, v in sides["b"].items() if k not in ("trace", "inputs")},
         "traces": {"a": _trace_rows(a), "b": _trace_rows(b)},
+        "inputs": {"a": sides["a"].get("inputs"), "b": sides["b"].get("inputs")},
         "delta": [[round(float(r.f), 4), round(float(r.dt), 3)] for r in delta.itertuples()],
     }
 
@@ -1188,6 +1229,19 @@ def _ai_facts(session_key: int) -> tuple[str, list[str]]:
                 lines.append(f"Race control note: {message[:140]}")
                 used.append("race control")
 
+    key = []
+    if winner is not None:
+        key.append(f"winner {name(winner)}")
+    if not laps.empty and "lap_duration" in laps.columns:
+        timed = laps.dropna(subset=["lap_duration"])
+        if not timed.empty:
+            quick = timed.loc[timed["lap_duration"].idxmin()]
+            key.append(f"fastest lap {name(quick.driver_number)} {float(quick.lap_duration):.3f}s")
+    if kind == "race" and not pit.empty and "stop_duration" in pit.columns:
+        key.append(f"{len(pit.dropna(subset=['stop_duration']))} timed pit stops")
+    if key and kind == "race":
+        lines.insert(1, "KEY FACTS: " + "; ".join(key) + ".")
+
     ordered_used = list(dict.fromkeys(used))
     return "\n".join(lines), ordered_used
 
@@ -1657,6 +1711,10 @@ def ai_recap(body: RecapRequest) -> dict:
 # Attribution: Jolpica F1, CC BY-NC-SA 4.0. Results/standings only; no telemetry.
 
 
+def _checked_at() -> str:
+    return datetime.now(UTC).isoformat()
+
+
 def _validate_year_round(year: int, round: int | None = None) -> None:
     if not 1950 <= year <= 2100:
         raise HTTPException(422, "year must be between 1950 and 2100")
@@ -1665,56 +1723,64 @@ def _validate_year_round(year: int, round: int | None = None) -> None:
 
 
 @app.get("/standings")
-def standings_table(year: int, round: int | None = None) -> dict:
+def standings_table(year: int, round: int | None = None, refresh: bool = False) -> dict:
     """Driver and constructor standings at the end of a round (or the season)."""
     _validate_year_round(year, round)
     try:
-        return jolpica.standings(year, round)
+        data = jolpica.standings(year, round, refresh=refresh)
+        data.setdefault("fetched_at", _checked_at())
+        return data
     except jolpica.JolpicaUnavailable as exc:
         raise HTTPException(503, "The standings archive did not answer; retry.") from exc
 
 
 @app.get("/standings/progression")
-def standings_progression(year: int, round: int) -> dict:
+def standings_progression(year: int, round: int, refresh: bool = False) -> dict:
     """Points after every round, built from cached per-round standings."""
     _validate_year_round(year, round)
     try:
-        return jolpica.progression(year, round)
+        data = jolpica.progression(year, round, refresh=refresh)
+        data.setdefault("fetched_at", _checked_at())
+        return data
     except jolpica.JolpicaUnavailable as exc:
         raise HTTPException(503, "The standings archive did not answer; retry.") from exc
 
 
 @app.get("/archive/seasons")
-def archive_seasons() -> dict:
+def archive_seasons(refresh: bool = False) -> dict:
     try:
         return {
-            "seasons": jolpica.seasons(),
+            "seasons": jolpica.seasons(refresh=refresh),
             "source": jolpica.SOURCE,
             "license": jolpica.LICENSE,
             "license_url": jolpica.LICENSE_URL,
+            "fetched_at": _checked_at(),
         }
     except jolpica.JolpicaUnavailable as exc:
         raise HTTPException(503, "The archive did not answer; retry.") from exc
 
 
 @app.get("/archive/{year}/races")
-def archive_races(year: int) -> dict:
+def archive_races(year: int, refresh: bool = False) -> dict:
     _validate_year_round(year)
     try:
         return {
             "year": year,
-            "races": jolpica.races(year),
+            "races": jolpica.races(year, refresh=refresh),
             "source": jolpica.SOURCE,
             "license": jolpica.LICENSE,
+            "fetched_at": _checked_at(),
         }
     except jolpica.JolpicaUnavailable as exc:
         raise HTTPException(503, "The archive did not answer; retry.") from exc
 
 
 @app.get("/archive/{year}/{round}/results")
-def archive_results(year: int, round: int) -> dict:
+def archive_results(year: int, round: int, refresh: bool = False) -> dict:
     _validate_year_round(year, round)
     try:
-        return jolpica.results(year, round)
+        data = jolpica.results(year, round, refresh=refresh)
+        data.setdefault("fetched_at", _checked_at())
+        return data
     except jolpica.JolpicaUnavailable as exc:
         raise HTTPException(503, "The archive did not answer; retry.") from exc
