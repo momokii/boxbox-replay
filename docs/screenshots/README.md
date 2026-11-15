@@ -42,3 +42,4 @@ They are referenced from the root README and this page.
 | `13-pit-ai.png` | Pit wall: arithmetic, break-even and the live AI explanation |
 | `11-dashboard.png` | Landing dashboard with suggestions |
 | `12-dashboard-recent.png` | Continue list with remove/clear controls |
+| `37-standings-head-to-head.png` | Driver A/B points and Δ for every round |
