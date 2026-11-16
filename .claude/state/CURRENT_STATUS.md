@@ -1,5 +1,5 @@
 ## Project Phase
-v2 shipped (`v1.0.0`…`v2.13.1`). v3 complete through **`v3.7.0`**: V3.1 strategy, V3.2 Telemetry Lab, V3.3 grounded explain, V3.4a/c/d/e supporting analytics, the optional lazy **3D replay** (V3.5a), plus **championship standings** and the **results archive through 2026** (V3.5b/c, Jolpica), plus the v3.7 freshness/comparison/telemetry fixes.
+v2 shipped (`v1.0.0`…`v2.13.1`). v3 complete through **`v3.8.0`**: V3.1 strategy, V3.2 Telemetry Lab, V3.3 grounded explain, V3.4a/c/d/e supporting analytics, the optional lazy **3D replay** (V3.5a), plus **championship standings** and the **results archive through 2026** (V3.5b/c, Jolpica), plus the v3.7 freshness/comparison/telemetry fixes and the v3.8 window/snapshot/mini/share-card pass.
 DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Completed
@@ -16,7 +16,8 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] V3.5a optional 3D replay (lazy three.js chunk, 2D default, offline-disabled) — `v3.5.0`
 - [x] V3.5b archive + V3.5c standings (Jolpica; D11) — `v3.6.0`
 - [x] 3D visual pass: procedural F1 cars, asphalt/start/corner detail, fitted camera
-- [x] v3.7 freshness, standings comparison, archive loaders, telemetry/duel/battle/mini/strategy/UI fixes
+- [x] v3.7 freshness/comparison/archive/telemetry fixes
+- [x] v3.8 Telemetry scopes, Battle snapshots, mini Detail/Overall, driver headshots, share-card rotation, strategy recommendation
 
 ## Blocked / Deferred (deliberate, documented)
 - V2-4 historical Fight Finder: DEFERRED (noisy/sparse feeds)
@@ -31,4 +32,4 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-15: `v3.7.0` shipped: checked-time/Refresh for Jolpica standings and archive (all seasons through 2026), archive loading states, selectable standings series with round tooltips and head-to-head, Telemetry canvas fix + hover, clearer strategy copy/loading, full-width mini-sectors, full Duel traces + inputs, Battle current inputs, dashboard header context fix, button styling, timeline red-flag legend and AI key-fact grounding. 89 pytest + 68 vitest; ruff/tsc/build clean; CI green on `v3.7.0`; prod healthy.
+2026-11-15: `v3.8.0` shipped: selectable Telemetry windows, Battle lap snapshots, Detail/Overall mini-sectors, driver headshots, corrected share-card car rotation and a plain-language strategy recommendation. Builds on v3.7 freshness/standings/archive/telemetry fixes. 89 pytest + 74 vitest; ruff/tsc/build clean; CI green on `v3.8.0`; prod healthy.

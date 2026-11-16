@@ -193,6 +193,18 @@
 **Impact:** v3.7.0; all related docs/screenshots updated
 ---
 
+## v3.8 Windows / Share Card Decision (2026-11-15)
+
+---
+**Decision:** D13 — Make time windows explicit, freeze Battle on demand, and rotate share-card cars
+**Date:** 2026-11-15
+**Context:** User feedback on the moving Telemetry window, Battle always following replay, mini-sector readability, driver images, and cars falling below the share-card circuit
+**Rationale:** A stable window is required for comparison; replay/lap/session scopes cover both live and analytical use. Share the pure resolver, keep Battle's playback untouched, and apply the same geometry rotation to cars as the outline. Driver images are available from OpenF1's `headshot_url` but are hosted by F1, so they stay remote with a number fallback.
+**Alternatives Rejected:** Forcing a single fixed window (breaks live use); letting Battle move the main playback (destructive); rehosting headshots (rights/caching risk)
+**Security Implications:** No new input surface; headshots are remote and optional
+**Impact:** v3.8.0; docs/screenshots/state updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

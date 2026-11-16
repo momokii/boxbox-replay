@@ -4,6 +4,7 @@ import { beginDraw, themeColors, useCanvasSize } from "../chart";
 import { formatLapTime } from "../format";
 import { formatClock, gapAt, type GapTable } from "../session";
 import { currentBattles } from "../battles";
+import { battleTime, sortedLaps } from "../windows";
 import Info from "./Info";
 import Modal from "./Modal";
 import BattleFullView from "./BattleFullView";
@@ -16,6 +17,8 @@ interface Props {
   table: GapTable;
   drivers: Driver[];
   laps: Lap[];
+  lapMarkers: { lap_number: number; t: number }[];
+  currentLap: number;
   onSeek: (t: number) => void;
   overtakes: OvertakeRow[];
   codes: Map<number, string>;
@@ -34,7 +37,21 @@ export default function BattlePanel(p: Props) {
   const [picked, setPicked] = useState<(number | null)[]>([null, null, null]);
   const [paceModal, setPaceModal] = useState(false);
   const [liveInputs, setLiveInputs] = useState<Record<number, InputsPayload | null>>({});
-  const now = p.playback.state.t;
+  const [scope, setScope] = useState<"replay" | "lap">("replay");
+  const [fixedLap, setFixedLap] = useState<number | null>(null);
+  const replayNow = p.playback.state.t;
+  const lapOptions = sortedLaps(p.lapMarkers);
+  const fixedMarker = lapOptions.find((m) => m.lap_number === fixedLap) ?? lapOptions[0];
+  const now = battleTime(scope, replayNow, lapOptions, fixedLap);
+  const scopeLabel =
+    scope === "replay"
+      ? `Replay · ${formatClock(replayNow)}`
+      : `Lap ${fixedMarker?.lap_number ?? "—"} snapshot · ${formatClock(now)}`;
+
+  useEffect(() => {
+    if (scope !== "lap" || fixedLap != null) return;
+    setFixedLap(p.currentLap || lapOptions[0]?.lap_number || null);
+  }, [scope, fixedLap, p.currentLap, lapOptions]);
 
   const ordered = [...p.drivers].sort(
     (x, y) => (gapAt(p.table, x.driver_number, now) ?? 1e9) - (gapAt(p.table, y.driver_number, now) ?? 1e9),
@@ -123,6 +140,47 @@ export default function BattlePanel(p: Props) {
 
   return (
     <div>
+      <div className="battle-scope">
+        <div className="seg" role="group" aria-label="Battle time scope">
+          <button
+            type="button"
+            aria-pressed={scope === "replay"}
+            onClick={() => setScope("replay")}
+          >
+            Follow replay
+          </button>
+          <button
+            type="button"
+            aria-pressed={scope === "lap"}
+            disabled={!lapOptions.length}
+            onClick={() => {
+              setScope("lap");
+              if (fixedLap == null) setFixedLap(p.currentLap || lapOptions[0]?.lap_number || null);
+            }}
+          >
+            Lap snapshot
+          </button>
+        </div>
+        {scope === "lap" && (
+          <label className="dim small">
+            Lap
+            <select value={fixedLap ?? ""} onChange={(e) => setFixedLap(Number(e.target.value))}>
+              {lapOptions.map((m) => (
+                <option key={m.lap_number} value={m.lap_number}>
+                  L{m.lap_number}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <span className="dim small">{scopeLabel}</span>
+        {scope === "lap" && (
+          <button type="button" className="ghost small" onClick={() => setScope("replay")}>
+            Back to replay
+          </button>
+        )}
+      </div>
+
       <section className="battles-now" aria-label="Battles at the current frame">
         <div className="battles-head">
           <h3>

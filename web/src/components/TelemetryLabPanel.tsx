@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { beginDraw, themeColors, useCanvasSize } from "../chart";
 import { formatClock } from "../session";
+import { sortedLaps, telemetryWindow } from "../windows";
 import type { Driver, TelemetryResult } from "../types";
 
 interface Props {
@@ -11,6 +12,9 @@ interface Props {
   colors: Map<number, string>;
   windowStart: number;
   windowEnd: number;
+  lapMarkers: { lap_number: number; t: number }[];
+  duration: number;
+  currentLap: number;
   preferred: number[];
 }
 
@@ -24,6 +28,8 @@ export default function TelemetryLabPanel(p: Props) {
     2,
   );
   const [selected, setSelected] = useState<number[]>(initial);
+  const [scope, setScope] = useState<"replay" | "lap" | "session">("replay");
+  const [fixedLap, setFixedLap] = useState<number | null>(null);
   const [data, setData] = useState<TelemetryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<{ t: number; x: number } | null>(null);
@@ -39,7 +45,28 @@ export default function TelemetryLabPanel(p: Props) {
     );
   }, [p.sessionKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const windowKey = `${p.windowStart.toFixed(1)}:${p.windowEnd.toFixed(1)}`;
+  const lapOptions = sortedLaps(p.lapMarkers);
+  const fixedMarker = lapOptions.find((m) => m.lap_number === fixedLap) ?? lapOptions[0];
+  const { start, end } = telemetryWindow(
+    scope,
+    p.windowStart,
+    p.windowEnd,
+    lapOptions,
+    fixedLap,
+    p.duration,
+  );
+  const windowKey = `${start.toFixed(1)}:${end.toFixed(1)}`;
+  const scopeLabel =
+    scope === "session"
+      ? `Full session · ${Math.round(start)}–${Math.round(end)}s`
+      : scope === "lap"
+        ? `Lap ${fixedMarker?.lap_number ?? "—"} · ${Math.round(start)}–${Math.round(end)}s`
+        : `Replay lap ${p.currentLap} · ${Math.round(start)}–${Math.round(end)}s`;
+
+  useEffect(() => {
+    if (scope !== "lap" || fixedLap != null) return;
+    setFixedLap(p.currentLap || lapOptions[0]?.lap_number || null);
+  }, [scope, fixedLap, p.currentLap, lapOptions]);
 
   useEffect(() => {
     if (!p.sessionKey || selected.length === 0) {
@@ -53,9 +80,9 @@ export default function TelemetryLabPanel(p: Props) {
       .telemetry({
         session_key: p.sessionKey,
         drivers: selected,
-        t0: p.windowStart,
-        t1: p.windowEnd,
-        points: 600,
+        t0: start,
+        t1: end,
+        points: scope === "session" ? 1200 : 600,
       })
       .then((result) => {
         if (!live) return;
@@ -75,7 +102,7 @@ export default function TelemetryLabPanel(p: Props) {
     return () => {
       live = false;
     };
-  }, [p.sessionKey, selected, p.windowStart, p.windowEnd, windowKey]);
+  }, [p.sessionKey, selected, start, end, windowKey]);
 
   const toggle = (driver: number) => {
     setSelected((current) => {
@@ -86,7 +113,7 @@ export default function TelemetryLabPanel(p: Props) {
     });
   };
 
-  const span = Math.max(1, p.windowEnd - p.windowStart);
+  const span = Math.max(1, end - start);
 
   useEffect(() => {
     setExplain(null);
@@ -189,10 +216,48 @@ export default function TelemetryLabPanel(p: Props) {
             duel; this view is about the same moment.
           </p>
         </div>
-        <span className="lab-window">
-          {Math.round(p.windowStart)}s–{Math.round(p.windowEnd)}s
-        </span>
+        <div className="lab-scope">
+          <label>
+            Window
+            <select
+              value={scope}
+              onChange={(e) => {
+                const next = e.target.value as typeof scope;
+                setScope(next);
+                if (next === "lap" && fixedLap == null) {
+                  setFixedLap(p.currentLap || lapOptions[0]?.lap_number || null);
+                }
+              }}
+            >
+              <option value="replay">Replay lap</option>
+              <option value="lap" disabled={!lapOptions.length}>Fixed lap</option>
+              <option value="session">Full session</option>
+            </select>
+          </label>
+          {scope === "lap" && (
+            <label>
+              Lap
+              <select
+                value={fixedLap ?? ""}
+                onChange={(e) => setFixedLap(Number(e.target.value))}
+              >
+                {lapOptions.map((m) => (
+                  <option key={m.lap_number} value={m.lap_number}>
+                    L{m.lap_number}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <span className="lab-window">{scopeLabel}</span>
+        </div>
       </header>
+      {scope === "lap" && (
+        <p className="dim small">
+          Lap windows come from the replay's lap markers; another driver's exact
+          lap boundary can differ slightly.
+        </p>
+      )}
 
       <div className="lab-drivers">
         {p.drivers.map((driver) => {
@@ -232,7 +297,7 @@ export default function TelemetryLabPanel(p: Props) {
         {!data && !error && <div className="lab-loading">Loading traces…</div>}
         {hover && data && (
           <div className="chart-tip lab-tip" style={{ left: Math.min(Math.max(hover.x + 12, 8), 260) }}>
-            <strong>{formatClock(p.windowStart + hover.t)}</strong>
+            <strong>{formatClock(start + hover.t)}</strong>
             {data.series.map((series) => {
               const i = hoverIndex;
               const v = (arr: (number | null)[]) => (i >= 0 ? arr[i] : null);

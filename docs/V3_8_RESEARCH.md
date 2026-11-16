@@ -75,6 +75,21 @@ the same `-(angle)` rotation to car coordinates inside `drawShareCard` before
 the layout transform. The card layout maths remain testable; a regression test
 pins the rotation.
 
+## Implementation result (v3.8.0)
+
+- Telemetry has Replay lap / Fixed lap / Full session scopes backed by a pure
+  window resolver; fixed lap uses the replay markers.
+- Battle has Follow replay / Lap snapshot / Back to replay; all gaps, pace and
+  inputs use the frozen marker while the main playback is untouched.
+- Mini-sectors have Detail / Overall; Overall shows sector times coloured
+  against session and personal sector bests, with the sector counts in titles.
+- Strategy has a projected recommendation banner and a plain-language pit-stop
+  explanation.
+- Share-card cars are rotated with the outline; a verified download has the
+  cars on the circuit.
+- OpenF1 `headshot_url` is displayed with a number fallback; the image is loaded
+  directly from F1's media host and is not rehosted.
+
 ## Sources
 
 1. OpenF1 `/drivers` documentation and sample: `headshot_url`, no licence for

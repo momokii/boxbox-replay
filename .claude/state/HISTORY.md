@@ -576,3 +576,11 @@ mini-sectors with documented OpenF1 semantics, full duel traces + inputs,
 Battle current inputs, dashboard header context fix, button styling, and red-flag
 band legend/hover. AI facts now start with a KEY FACTS line and explicitly treat
 present sections as authoritative. 89 pytest + 68 vitest.
+
+v3.8.0: Telemetry gained Replay lap / Fixed lap / Full session scopes (pure
+window resolver + tests); Battle gained Follow replay / Lap snapshot / Back to
+replay without moving the main clock; mini-sectors gained Detail/Overall with
+sector times coloured against session/personal bests; share-card cars are now
+rotated with the already-rotated outline; DriverCard shows OpenF1 `headshot_url`
+with a number fallback; strategy has a plain-language recommendation banner.
+89 pytest + 74 vitest.

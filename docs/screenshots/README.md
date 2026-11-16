@@ -1,14 +1,14 @@
 # Screenshots
 
-Refreshed against **v3.7.0** on 2026-11-15. Captured from the running app at
+Refreshed against **v3.8.0** on 2026-11-15. Captured from the running app at
 1400×880, with phone captures at 390×844 and the narrow chat at 720×810.
 They are referenced from the root README and this page.
 
 | File | Shows |
 |---|---|
-| `01-replay.png` | Replay, dark theme, current 9-tab bar and driver card |
+| `01-replay.png` | Replay, dark theme, driver card with a headshot and the current tab bar |
 | `02-replay-light.png` | The same view in the light theme |
-| `03-battle.png` | Battles now, anchor/challenger comparison and current inputs |
+| `03-battle.png` | Battle scope controls, Battles now and current inputs |
 | `04-performance.png` | Stints, wear, lap times, weather timeline |
 | `05-pit-wall.png` | Pit strategy with breakdown |
 | `06-lap-times.png` | Full-view lap comparison |
@@ -22,11 +22,11 @@ They are referenced from the root README and this page.
 | `17-corner-coach.png` | Corner coach: measured loss plus the grounded explanation |
 | `18-share-card.png` | A downloaded 1200×630 share card |
 | `19-battles-now.png` | The live Battles now strip in the Battle tab |
-| `20-strategy.png` | Strategy projection: from-lap explanation, options and method |
-| `21-telemetry-lab.png` | Telemetry Lab: drawn traces plus the hover readout |
+| `20-strategy.png` | Strategy projection: recommendation, from-lap explanation and method |
+| `21-telemetry-lab.png` | Telemetry Lab with Replay/Fixed lap/Full session scopes |
 | `22-timeline.png` | Weather and race-control timeline with hover tooltip/legend |
 | `23-offline.png` | Offline reload with the current player actions |
-| `24-mini-sectors.png` | Full-width qualifying mini-sectors with S1/S2/S3 and lap times |
+| `24-mini-sectors.png` | Detail mini-sectors: per-sector ticks, lap times, legend |
 | `25-pit-analytics.png` | Pit-crew and overtake analytics |
 | `26-3d-replay.png` | Optional 3D replay (night, desktop) |
 | `27-3d-mobile.png` | 3D replay at 390 px (fitted track) |
@@ -43,3 +43,5 @@ They are referenced from the root README and this page.
 | `11-dashboard.png` | Landing dashboard with suggestions |
 | `12-dashboard-recent.png` | Continue list with remove/clear controls |
 | `37-standings-head-to-head.png` | Driver A/B points and Δ for every round |
+| `38-mini-overall.png` | Overall mini-sectors: sector times vs session/personal bests |
+| `39-battle-snapshot.png` | Battle frozen on a lap snapshot with Back to replay |

@@ -87,7 +87,14 @@ retired cars (result feed, or no fresh laps) are classified last.
 - One `Playback` store owns `t`, `dur`, `playing`, `speed`, `calm`.
 - The map, timeline, speed strip and charts subscribe and redraw per frame.
 - The telemetry canvas is always mounted with its stage; the draw effect waits
-  for data and the `useCanvasSize` hook measures the live element.
+  for data and the `useCanvasSize` hook measures the live element. Its window is
+  resolved by `windows.ts` (replay lap / fixed lap / full session).
+- Battle can freeze its clock on a replay lap marker; returning to replay resumes
+  the normal clock without touching the shared playback store.
+- The share card rotates raw car coordinates by `-(geometry.angle)` before the
+  layout transform, matching the already-rotated outline.
+- OpenF1's `headshot_url` is an optional remote image (hosted by F1) with a
+  number fallback; it is never rehosted.
 - Duel draws both complete lap traces plus an inputs chart resampled onto the
   shared distance grid; Battle fetches the current five-second input window for
   its anchor and challengers.

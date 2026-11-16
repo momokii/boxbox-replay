@@ -1,6 +1,6 @@
 # V3.8 — Implementation plan
 
-Release `v3.8.0`. One commit per phase; docs/screenshots updated with the code.
+Release `v3.8.0` — implemented; one commit per phase, docs/screenshots updated with the code.
 
 ## Phase 1 — Share card and driver headshots
 
@@ -55,4 +55,4 @@ Release `v3.8.0`. One commit per phase; docs/screenshots updated with the code.
 - Strategy has a clear recommendation and beginner explanation; changing the
   from-lap shows loading.
 - Driver headshots appear when available and fall back cleanly.
-- Existing tests and browser flows stay green.
+- 89 pytest and 74 vitest pass; browser flows stay green.

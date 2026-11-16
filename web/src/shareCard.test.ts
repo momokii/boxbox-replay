@@ -35,3 +35,16 @@ describe("layoutTrack", () => {
     expect(Number.isFinite(layout.X(10))).toBe(true);
   });
 });
+
+
+describe("share-card car rotation", () => {
+  it("rotates raw car coordinates by the same angle as the outline", () => {
+    const layout = layoutTrack([[-2, -2], [2, 2]], 0, 0, 100, 100);
+    // A raw point rotated -90° landed on the outline's coordinate system.
+    const rad = (-90 * Math.PI) / 180;
+    const x = 0 * Math.cos(rad) - 1 * Math.sin(rad);
+    const y = 0 * Math.sin(rad) + 1 * Math.cos(rad);
+    expect(layout.X(x)).toBeGreaterThan(0);
+    expect(layout.Y(y)).toBeGreaterThan(0);
+  });
+});

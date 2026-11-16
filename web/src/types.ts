@@ -19,6 +19,7 @@ export interface Driver {
   team_colour: string;
   full_name?: string | null;
   country_code?: string | null;
+  headshot_url?: string | null;
 }
 
 export interface Lap {

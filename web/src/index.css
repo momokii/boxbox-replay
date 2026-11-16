@@ -3440,3 +3440,143 @@ tr.driver-marked td {
 .battle-input-value {
   white-space: nowrap;
 }
+
+.lab-scope {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.lab-scope label {
+  display: grid;
+  gap: 3px;
+  color: var(--dim);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.lab-scope select {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: 0.78rem var(--font-sans, system-ui);
+  padding: 4px 8px;
+}
+.lab-scope .lab-window {
+  padding-bottom: 5px;
+}
+
+.battle-scope {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+.battle-scope .seg {
+  margin: 0;
+}
+.battle-scope label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.battle-scope select {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: 0.76rem var(--font-sans, system-ui);
+  padding: 3px 7px;
+}
+
+.mini-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mini-overall-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  border-radius: 3px;
+  color: #0b0f16;
+  font: 700 0.7rem var(--font-mono, monospace);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.mini-overall-cell.mini-seg-purple {
+  color: #fff;
+}
+.mini-overall-cell.mini-seg-none {
+  color: var(--dim);
+  border: 1px solid var(--line);
+}
+@media (max-width: 640px) {
+  .mini-controls {
+    align-items: stretch;
+  }
+  .mini-overall-cell {
+    font-size: 0.62rem;
+  }
+}
+
+.strategy-recommendation {
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--line));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--amber) 8%, var(--panel));
+  padding: var(--space-3);
+  margin: var(--space-2) 0 var(--space-3);
+}
+.strategy-recommendation-kicker {
+  display: block;
+  color: var(--amber);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.strategy-recommendation strong {
+  font-size: 1.05rem;
+}
+.strategy-recommendation p {
+  margin: 4px 0 0;
+  color: var(--dim);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.driver-card .driver-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.08;
+}
+.driver-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 42px;
+  flex: 0 0 auto;
+}
+.driver-avatar .driver-number {
+  padding: 2px 7px;
+  font-size: 1.35rem;
+}
+.driver-headshot {
+  position: absolute;
+  inset: -6px auto auto -2px;
+  width: 58px;
+  height: 58px;
+  border-radius: 9px;
+  border: 2px solid var(--line);
+  object-fit: cover;
+  object-position: top center;
+  background: var(--panel-2);
+  transition: opacity 120ms ease;
+}

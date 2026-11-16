@@ -965,6 +965,7 @@ export default function App() {
                               clock: formatClock(playT),
                               outline: geo.data.outline as [number, number][],
                               cars,
+                              angle: geo.data.angle ?? 0,
                             },
                             theme,
                           );
@@ -1133,6 +1134,8 @@ export default function App() {
                 table={gapTable}
                 drivers={drivers.data ?? []}
                 laps={allLaps}
+                lapMarkers={lapMarkers}
+                currentLap={progress.lap}
                 onSeek={(t) => playback.setT(t)}
                 overtakes={overtakes.data?.events ?? []}
                 codes={new Map((drivers.data ?? []).map((d) => [d.driver_number, d.name_acronym]))}
@@ -1192,6 +1195,9 @@ export default function App() {
                 colors={new Map(towerRows.map((r) => [r.driver, r.color]))}
                 windowStart={lapStartT}
                 windowEnd={lapEndT}
+                lapMarkers={lapMarkers}
+                duration={dur}
+                currentLap={progress.lap}
                 preferred={
                   highlight.length
                     ? highlight

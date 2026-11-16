@@ -128,7 +128,7 @@ export default function StrategyPanel(p: Props) {
           Laps remaining <strong>{remaining}</strong>
         </label>
         <label className="dim small">
-          Pit loss{" "}
+          Pit-loss time{" "}
           <input
             type="number"
             step="0.1"
@@ -178,6 +178,30 @@ export default function StrategyPanel(p: Props) {
             <strong>pit now</strong> pays the pit loss and uses fresh tyres. Δ is
             the gap to the fastest option.
           </p>
+          {(() => {
+            const best = result.options.find((option) => option.rank === 1);
+            if (!best) return null;
+            const runnerUp = result.options.find((option) => option.rank === 2);
+            return (
+              <div className="strategy-recommendation" aria-live="polite">
+                <span className="strategy-recommendation-kicker">Projected recommendation</span>
+                <strong>{best.label}</strong>
+                <p>
+                  At lap {fromLap}, the model projects{" "}
+                  <b>{formatLapTime(best.total_s)}</b> of remaining race time for
+                  this option
+                  {runnerUp ? (
+                    <>
+                      , {(runnerUp.total_s - best.total_s).toFixed(1)}s less than{" "}
+                      {runnerUp.label.toLowerCase()}
+                    </>
+                  ) : null}
+                  . This is a projection from measured laps, not a team call.
+                </p>
+              </div>
+            );
+          })()}
+
           <table className="strategy-table">
             <thead>
               <tr>
@@ -291,6 +315,10 @@ export default function StrategyPanel(p: Props) {
           <div className="strategy-method">
             <h3>How this is measured</h3>
             <ul>
+              <li>
+                In plain terms: a pit stop costs time, but fresh tyres are usually
+                faster; the model adds both effects over the laps remaining.
+              </li>
               <li>Only clean green-flag laps are used; pit-in/out and safety-car windows are excluded.</li>
               <li>Pace and tyre wear come from this driver's stints in this session.</li>
               <li>Pit loss is the measured pit-lane time (or the value you enter), not a team radio claim.</li>

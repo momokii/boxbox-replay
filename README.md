@@ -6,17 +6,18 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 ![BoxBox Replay — race replay](docs/screenshots/01-replay.png)
 
-<sub>Suzuka 2024, lap 25. Timing tower on the left, circuit and playback in the middle, driver card and engineer on the right.</sub>
+<sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.7.0`** — freshness checks and Refresh on standings/archive, selectable driver charts with round tooltips and head-to-head, full-season results through 2026, honest archive loading states, a working Telemetry chart, clearer strategy language, and Duel/Battle inputs. All screenshots below are from this build.
+> **Latest release: `v3.8.0`** — selectable Telemetry windows (replay lap / fixed lap / full session), Battle lap snapshots with a return-to-replay action, Detail/Overall mini-sectors, driver headshots, a corrected share card and a plain-language strategy recommendation. All screenshots below are from this build.
 
-## What's new in v3.7.0
+## What's new in v3.8.0
 
-- **Freshness.** Standings/Archive show when they were checked, revalidate hourly, and have a Refresh action that bypasses the cache. The cache is labelled “cache ≤1h”.
-- **Standings comparison.** Choose Top 5, All or individual drivers; hover a round for race/date/points; compare any two drivers round by round below the chart.
-- **Archive.** All available seasons through 2026, with real loading states when the season or race changes and explicit missing/future-race messages.
-- **Comparison surfaces.** Duel draws both full lap traces and a throttle/brake/gear/DRS comparison; Battle shows current inputs for the anchor and challengers.
-- **Clearer UI.** The Telemetry canvas is fixed, mini-sectors fill the card with S1/S2/S3 and a real legend, Strategy explains “model from lap” and its assumptions, and Share/Copy/Offline look like buttons. Red-flag bands are explained on hover and in the legend.
+- **Telemetry windows.** Hold the chart on an exact lap or the full session instead of the replay's moving lap window.
+- **Battle snapshots.** Freeze gaps, pace and inputs on a chosen lap, then jump back to the replay clock.
+- **Mini-sectors.** Switch **Detail** (mini-sector ticks) / **Overall** (sector time coloured against session/personal bests).
+- **Driver headshots.** OpenF1 supplies `headshot_url`; the card loads it with a number fallback. Images stay hosted by F1.
+- **Share card.** Cars are rotated with the circuit again, so they sit on the track instead of the footer.
+- **Strategy.** A projected recommendation banner and a plain “pit stop costs time, fresh tyres are faster” explanation sit above the detailed options.
 
 | Championship standings | Results archive |
 |---|---|
@@ -44,6 +45,8 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds.
 - **Championship standings (v3.6+).** A Standings tab resolves the current weekend to its championship round and shows the driver/team table plus a selectable points-by-round chart, per-round tooltips and a head-to-head table. Source: Jolpica F1 (CC BY-NC-SA 4.0), attributed in the panel; the archive is revalidated hourly and can be refreshed on demand.
 - **Results archive (v3.6+).** A separate, full-screen archive for every Jolpica season through 2026: season → race → result, with standings beside it. Results and standings only — replay telemetry starts in 2023. Season/race changes show explicit loading states; missing and future rounds have honest fallbacks.
+- **Selectable windows (v3.8).** Telemetry holds a replay lap, a fixed lap or the full session; Battle freezes at a lap snapshot and returns to replay. Mini-sectors switch between per-tick detail and per-sector overall.
+- **Driver headshots (v3.8).** OpenF1's `headshot_url` is shown with a number fallback; the image is not rehosted.
 - **Duel and Battle comparisons (v3.7).** Duel overlays both full lap traces and compares throttle/brake/gear/DRS at the same lap progress; Battle adds point-in-time inputs for the anchor and challengers.
 - **Optional 3D replay (v3.5).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock, with orbit and click-to-select. 2D stays the default and the analytical surface (corners, DRS, hover). The track ribbon is flat and its width is a visual constant, not measured data.
 - **Telemetry lab (v3).** Up to three drivers on the same clock: speed traces, throttle/brake/gear/DRS at the cursor, and explicit nulls when a channel is missing. Distance-aligned lap comparison stays in Lap duel.
@@ -239,7 +242,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 87 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 68 frontend tests (vitest)
+cd web && npm test           # 74 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```

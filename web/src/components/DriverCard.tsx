@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { compoundColor } from "../format";
 import { formatLapTime } from "../format";
 import Info from "./Info";
@@ -33,13 +34,35 @@ export default function DriverCard(p: Props) {
   const slowestRecent = recent.length ? Math.max(...recent.map((l) => l.lap_duration as number)) : null;
   const tyreAge = p.stint?.lap_start != null ? Math.max(1, p.lap - p.stint.lap_start + 1) : null;
   const color = `#${(p.driver.team_colour ?? "").replace("#", "")}`;
+  const [imageFailed, setImageFailed] = useState(false);
+  const [imageReady, setImageReady] = useState(false);
+  const headshot = p.driver.headshot_url?.trim();
+
+  useEffect(() => {
+    setImageFailed(false);
+    setImageReady(false);
+  }, [p.driver.driver_number, headshot]);
 
   return (
     <div className="driver-card">
       <div className="driver-band" style={{ background: color }} />
       <div className="driver-head">
-        <span className="driver-number" style={{ borderColor: color }}>
-          {p.driver.driver_number}
+        <span className="driver-avatar">
+          <span className="driver-number" style={{ borderColor: color }}>
+            {p.driver.driver_number}
+          </span>
+          {headshot && !imageFailed && (
+            <img
+              className="driver-headshot"
+              src={headshot}
+              alt=""
+              loading="eager"
+              referrerPolicy="no-referrer"
+              style={{ borderColor: color, opacity: imageReady ? 1 : 0 }}
+              onLoad={() => setImageReady(true)}
+              onError={() => setImageFailed(true)}
+            />
+          )}
         </span>
         <div style={{ minWidth: 0 }}>
           <p className="driver-name">{p.driver.full_name ?? p.driver.name_acronym}</p>

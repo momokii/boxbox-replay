@@ -19,6 +19,8 @@ export interface CardData {
   clock: string;
   outline: [number, number][];
   cars: CardCar[];
+  /** Rotation already applied to the outline; car positions are raw session coordinates. */
+  angle?: number;
 }
 
 export const CARD_W = 1200;
@@ -120,9 +122,16 @@ function draw(ctx: CanvasRenderingContext2D, data: CardData, theme: "night" | "d
   // Labels overlap when cars are wheel to wheel; keep the first and skip the
   // rest rather than printing an unreadable pile.
   const labels: { x1: number; y1: number; x2: number; y2: number }[] = [];
+  const rotation = -(data.angle ?? 0);
+  const turn = (x: number, y: number): [number, number] => {
+    if (!rotation) return [x, y];
+    const rad = (rotation * Math.PI) / 180;
+    return [x * Math.cos(rad) - y * Math.sin(rad), x * Math.sin(rad) + y * Math.cos(rad)];
+  };
   for (const car of data.cars) {
-    const px = layout.X(car.x);
-    const py = layout.Y(car.y);
+    const [carX, carY] = turn(car.x, car.y);
+    const px = layout.X(carX);
+    const py = layout.Y(carY);
     ctx.beginPath();
     ctx.arc(px, py, 9, 0, Math.PI * 2);
     ctx.fillStyle = car.color;

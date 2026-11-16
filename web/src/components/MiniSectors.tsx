@@ -32,6 +32,7 @@ export default function MiniSectors({ laps, sessionName, driverCode, driverOrder
     return [...ordered, ...rest];
   }, [laps, driverOrder]);
   const [driver, setDriver] = useState(0);
+  const [view, setView] = useState<"detail" | "overall">("detail");
 
   useEffect(() => {
     const next = preferred != null && drivers.includes(preferred) ? preferred : drivers[0] ?? 0;
@@ -73,6 +74,40 @@ export default function MiniSectors({ laps, sessionName, driverCode, driverOrder
     );
   };
 
+  const sectorTime = (lap: Lap, sector: 1 | 2 | 3) =>
+    sector === 1 ? lap.duration_sector_1 : sector === 2 ? lap.duration_sector_2 : lap.duration_sector_3;
+  const bestFor = (sector: 1 | 2 | 3, driverOnly: boolean) => {
+    let best: number | null = null;
+    for (const lap of laps) {
+      if (driverOnly && lap.driver_number !== driver) continue;
+      const value = sectorTime(lap, sector);
+      if (value != null && (best == null || value < best)) best = value;
+    }
+    return best;
+  };
+  const sessionBest = {
+    1: bestFor(1, false),
+    2: bestFor(2, false),
+    3: bestFor(3, false),
+  };
+  const personalBest = {
+    1: bestFor(1, true),
+    2: bestFor(2, true),
+    3: bestFor(3, true),
+  };
+  const summary = (lap: Lap, sector: 1 | 2 | 3) => {
+    const time = sectorTime(lap, sector);
+    const tone =
+      time == null
+        ? "none"
+        : sessionBest[sector] != null && Math.abs(time - sessionBest[sector]!) < 1e-6
+          ? "purple"
+          : personalBest[sector] != null && Math.abs(time - personalBest[sector]!) < 1e-6
+            ? "green"
+            : "yellow";
+    return { tone, time };
+  };
+
   return (
     <section className="mini-sectors" aria-label="Mini sectors">
       <div className="mini-head">
@@ -83,16 +118,26 @@ export default function MiniSectors({ laps, sessionName, driverCode, driverOrder
             practice carry them; a race shows nothing rather than a placeholder.
           </p>
         </div>
-        <label className="mini-driver">
-          Driver
-          <select value={driver} onChange={(e) => setDriver(Number(e.target.value))}>
-            {drivers.map((d) => (
-              <option key={d} value={d}>
-                {driverCode(d)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="mini-controls">
+          <div className="seg" role="group" aria-label="Mini-sector detail level">
+            <button type="button" aria-pressed={view === "detail"} onClick={() => setView("detail")}>
+              Detail
+            </button>
+            <button type="button" aria-pressed={view === "overall"} onClick={() => setView("overall")}>
+              Overall
+            </button>
+          </div>
+          <label className="mini-driver">
+            Driver
+            <select value={driver} onChange={(e) => setDriver(Number(e.target.value))}>
+              {drivers.map((d) => (
+                <option key={d} value={d}>
+                  {driverCode(d)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
       <div className="mini-legend" aria-label="Mini-sector legend">
         <span><i className="mini-seg mini-seg-purple" /> session best</span>
@@ -113,9 +158,22 @@ export default function MiniSectors({ laps, sessionName, driverCode, driverOrder
           <div key={lap.lap_number} className="mini-row" role="row">
             <span className="mini-lap">L{lap.lap_number}</span>
             <span className="mini-time mono">{formatLapTime(lap.lap_duration)}</span>
-            {cells(lap, 1)}
-            {cells(lap, 2)}
-            {cells(lap, 3)}
+            {view === "detail" ? (
+              <>{cells(lap, 1)}{cells(lap, 2)}{cells(lap, 3)}</>
+            ) : (
+              ([1, 2, 3] as const).map((sector) => {
+                const s = summary(lap, sector);
+                return (
+                  <span
+                    key={sector}
+                    className={`mini-overall-cell mini-seg-${s.tone}`}
+                    title={`S${sector}: ${s.time == null ? "no time" : formatLapTime(s.time)} · ${TONE_LABEL[s.tone]} (session ${formatLapTime(sessionBest[sector])}, personal ${formatLapTime(personalBest[sector])})`}
+                  >
+                    {formatLapTime(s.time)}
+                  </span>
+                );
+              })
+            )}
           </div>
         ))}
       </div>
@@ -123,7 +181,9 @@ export default function MiniSectors({ laps, sessionName, driverCode, driverOrder
         <strong>How to read it:</strong> OpenF1 sends a colour per mini-sector;
         purple is the session's best, green a personal best, yellow slower. The
         feed says the colours may not always match the TV broadcast, and a grey
-        block means the feed did not publish a usable value.
+        block means the feed did not publish a usable value. Overall shows the
+        sector time, coloured against the session and personal sector bests;
+        Detail shows every mini-sector tick.
       </p>
     </section>
   );
