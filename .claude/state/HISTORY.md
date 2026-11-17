@@ -594,3 +594,10 @@ rotation re-verified. 89 pytest + 74 vitest.
 v3.9.1: CI-only release. The gitleaks marketplace action now requires a paid
 license; the secrets job runs the pinned free gitleaks v8.24.3 binary instead.
 Local scan: 132 commits, no leaks. No application changes.
+
+v3.10.0: fixed Telemetry AI explain to send the selected scope window (the
+previous parent window produced unrelated 0 km/h aggregates); added stint
+definitions/tooltips; added a client-side download modal for seven session
+tables (CSV one-table / JSON bundle); added a print-first A4 Data/AI session
+report with circuit outline, summary cards, classification, tyres and fastest
+laps. 89 pytest + 74 vitest.

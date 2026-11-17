@@ -5,7 +5,7 @@ import { formatClock } from "../session";
 import { stintSlope } from "../perf";
 import { gapAt, type GapTable, type LapMarker } from "../session";
 import Info from "./Info";
-import { downloadFile, toCsv } from "../export";
+import DownloadPanel, { type DownloadDataset } from "./DownloadPanel";
 import TimelinePanel from "./TimelinePanel";
 import MiniSectors from "./MiniSectors";
 import PitAnalytics from "./PitAnalytics";
@@ -51,6 +51,7 @@ export default function PerformancePanel(p: Props) {
   const [degModal, setDegModal] = useState(false);
   const [rcModal, setRcModal] = useState(false);
   const [error, setError] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -142,47 +143,110 @@ export default function PerformancePanel(p: Props) {
 
       <div className="export-actions">
         <span className="dim small">Export this session (client-side, no new requests):</span>
-        <button
-          type="button"
-          className="chip"
-          onClick={() =>
-            downloadFile(
-              `boxbox-${p.sessionKey}-laps.csv`,
-              toCsv(p.laps as unknown as Record<string, unknown>[], [
-                { key: "driver_number", label: "driver_number" },
-                { key: "lap_number", label: "lap_number" },
-                { key: "lap_duration", label: "lap_time_s" },
-                { key: "duration_sector_1", label: "sector_1_s" },
-                { key: "duration_sector_2", label: "sector_2_s" },
-                { key: "duration_sector_3", label: "sector_3_s" },
-                { key: "is_pit_out_lap", label: "pit_out_lap" },
-              ]),
-            )
-          }
-        >
-          Laps CSV
+        <button type="button" className="primary" onClick={() => setDownloadOpen(true)}>
+          Download data…
         </button>
-        <button
-          type="button"
-          className="chip"
-          disabled={!feed.stints.length}
-          onClick={() =>
-            downloadFile(
-              `boxbox-${p.sessionKey}-stints.csv`,
-              toCsv(feed.stints as unknown as Record<string, unknown>[], [
-                { key: "driver_number", label: "driver_number" },
-                { key: "stint_number", label: "stint_number" },
-                { key: "lap_start", label: "lap_start" },
-                { key: "lap_end", label: "lap_end" },
-                { key: "compound", label: "compound" },
-                { key: "tyre_age_at_start", label: "tyre_age_at_start" },
-              ]),
-            )
-          }
-        >
-          Stints CSV
-        </button>
+        <span className="dim small">CSV, Excel-compatible CSV or a JSON bundle</span>
       </div>
+      <DownloadPanel
+        open={downloadOpen}
+        onClose={() => setDownloadOpen(false)}
+        sessionKey={p.sessionKey}
+        sessionName={p.sessionName}
+        datasets={(() => {
+          const columns = (_rows: Record<string, unknown>[], keys: string[]) =>
+            keys.map((key) => ({ key, label: key }));
+          return [
+            {
+              key: "laps",
+              label: "Laps",
+              description: "Every lap, sector time and pit-out flag.",
+              rows: p.laps as unknown as Record<string, unknown>[],
+              columns: columns(p.laps as unknown as Record<string, unknown>[], [
+                "driver_number",
+                "lap_number",
+                "lap_duration",
+                "duration_sector_1",
+                "duration_sector_2",
+                "duration_sector_3",
+                "is_pit_out_lap",
+              ]),
+            },
+            {
+              key: "stints",
+              label: "Stints",
+              description: "Tyre runs, compounds and stint lap ranges.",
+              rows: feed.stints as unknown as Record<string, unknown>[],
+              columns: columns(feed.stints as unknown as Record<string, unknown>[], [
+                "driver_number",
+                "stint_number",
+                "lap_start",
+                "lap_end",
+                "compound",
+                "tyre_age_at_start",
+              ]),
+            },
+            {
+              key: "weather",
+              label: "Weather",
+              description: "Air/track temperature, humidity and rainfall samples.",
+              rows: feed.weather,
+              columns: columns(feed.weather, [
+                "t",
+                "air_temperature",
+                "track_temperature",
+                "humidity",
+                "rainfall",
+              ]),
+            },
+            {
+              key: "race-control",
+              label: "Race control",
+              description: "Flags, safety cars, penalties and messages.",
+              rows: feed.rc,
+              columns: columns(feed.rc, [
+                "t",
+                "category",
+                "flag",
+                "message",
+                "scope",
+                "driver_number",
+                "lap_number",
+              ]),
+            },
+            {
+              key: "radio",
+              label: "Team radio",
+              description: "Radio metadata and recording links; no transcript is published.",
+              rows: feed.radio,
+              columns: columns(feed.radio, ["t", "driver_number", "recording_url"]),
+            },
+            {
+              key: "pit-stops",
+              label: "Pit stops",
+              description: "Stationary and pit-lane duration per recorded stop.",
+              rows: p.pitStops as unknown as Record<string, unknown>[],
+              columns: columns(p.pitStops as unknown as Record<string, unknown>[], [
+                "driver_number",
+                "lap_number",
+                "stop_duration",
+                "pit_duration",
+              ]),
+            },
+            {
+              key: "overtakes",
+              label: "Overtake counts",
+              description: "Made/lost counts by driver; the feed may be incomplete.",
+              rows: p.overtakeCounts as unknown as Record<string, unknown>[],
+              columns: columns(p.overtakeCounts as unknown as Record<string, unknown>[], [
+                "driver_number",
+                "made",
+                "lost",
+              ]),
+            },
+          ] satisfies DownloadDataset[];
+        })()}
+      />
       <div className="row" style={{ marginBottom: 10 }}>
         <button className={scope === "focus" ? "chip on" : "chip"} onClick={() => setScope("focus")}>
           My drivers ({focus.length})
@@ -199,7 +263,7 @@ export default function PerformancePanel(p: Props) {
         <h3>
           <Info
             label="Stints"
-            tip="One row per driver. Each coloured block is a stint: one continuous run on a set of tyres. Hover a block for the compound and lap range."
+            tip="One row per driver. Each coloured block is one stint: a continuous run on a set of tyres. The summary counts stints, stops (recorded pit visits), the fastest stationary stop, and overtakes made/lost from the timing feed. Hover a block for compound, lap range, tyre age and the gap at the stint start."
           />{" "}
           · whole race
         </h3>
@@ -247,11 +311,19 @@ export default function PerformancePanel(p: Props) {
                   />
                 ))}
               </div>
-              <span className="dim small" style={{ minWidth: 96 }}>
+              <span
+                className="dim small"
+                style={{ minWidth: 96 }}
+                title="Stints are continuous tyre runs. Compounds are listed in stint order; a driver can run the same compound twice."
+              >
                 {driverStints.length} stint{driverStints.length > 1 ? "s" : ""} ·{" "}
                 {[...new Set(driverStints.map((s) => s.compound ?? "?"))].join("/")}
               </span>
-              <span className="dim small" style={{ minWidth: 190 }}>
+              <span
+                className="dim small"
+                style={{ minWidth: 190 }}
+                title="Stops are pit visits recorded by the feed. Best is the fastest stationary time, not the full pit-lane loss. Overtakes made/lost are feed counts and may be incomplete."
+              >
                 {(() => {
                   const pit = pitByDriverSummary.get(driver);
                   const ov = overtakesByDriver.get(driver);
@@ -270,6 +342,13 @@ export default function PerformancePanel(p: Props) {
           <p className="dim small">No stint data for these drivers.</p>
         )}
         </div>
+        <p className="dim small" style={{ marginTop: 6 }}>
+          <strong>How to read a row:</strong> a stint is one continuous run on a
+          tyre set; stops are recorded pit visits; the best stop is the fastest
+          stationary time (not the full pit-lane loss); overtakes made/lost are
+          timing-feed counts and may be incomplete. Hover a block or summary for
+          the exact values.
+        </p>
         <div className="legend" style={{ marginTop: 6 }}>
           {["SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"].map((c) => (
             <span key={c}>

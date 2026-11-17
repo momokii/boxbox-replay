@@ -332,8 +332,8 @@ export default function TelemetryLabPanel(p: Props) {
                     kind: "compare",
                     subject: {
                       drivers: selected,
-                      t0: p.windowStart,
-                      t1: p.windowEnd,
+                      t0: start,
+                      t1: end,
                     },
                   });
                   setExplain(reply.answer);

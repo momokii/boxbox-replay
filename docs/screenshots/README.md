@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against **v3.9.0** on 2026-11-15. Captured from the running app at
+Refreshed against **v3.10.0** on 2026-11-15. Captured from the running app at
 1400×880, with phone captures at 390×844 and the narrow chat at 720×810.
 They are referenced from the root README and this page.
 
@@ -9,7 +9,7 @@ They are referenced from the root README and this page.
 | `01-replay.png` | Replay, dark theme, driver card with a headshot and the current tab bar |
 | `02-replay-light.png` | The same view in the light theme |
 | `03-battle.png` | Battle scope controls, Battles now and current inputs |
-| `04-performance.png` | Stints, wear, lap times, weather timeline |
+| `04-performance.png` | Stints with summary definitions, wear, lap times and weather timeline |
 | `05-pit-wall.png` | Pit strategy with breakdown |
 | `06-lap-times.png` | Full-view lap comparison |
 | `07-mobile.png` | Phone layout |
@@ -46,3 +46,7 @@ They are referenced from the root README and this page.
 | `38-mini-overall.png` | Overall mini-sectors: sector times vs session/personal bests |
 | `39-battle-snapshot.png` | Battle snapshot at lap 20: history truncated, Back to replay shown |
 | `40-driver-headshot.png` | Driver card with an OpenF1 headshot and number fallback |
+| `41-download.png` | Download data modal: seven tables, CSV/JSON |
+| `42-report-data.png` | Printable data-only session report |
+| `43-report-ai.png` | AI-enhanced session report |
+| `44-telemetry-ai.png` | Scoped Telemetry AI explanation matching the chart |

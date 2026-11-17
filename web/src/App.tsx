@@ -12,6 +12,7 @@ import PitPanel from "./components/PitPanel";
 import StrategyPanel from "./components/StrategyPanel";
 import StandingsPanel from "./components/StandingsPanel";
 import ArchiveView from "./components/ArchiveView";
+import SessionReport from "./components/SessionReport";
 import TelemetryLabPanel from "./components/TelemetryLabPanel";
 import SessionMap from "./components/SessionMap";
 import SpeedChart, { type SpeedSeries } from "./components/SpeedChart";
@@ -169,6 +170,7 @@ export default function App() {
     | "standings"
   >("replay");
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [showLaps, setShowLaps] = useState(false);
   const [lapsModal, setLapsModal] = useState(false);
   const [driverDetail, setDriverDetail] = useState<"stints" | "laps" | "overtakes" | "pits" | null>(null);
@@ -678,6 +680,11 @@ export default function App() {
         <button type="button" className="archive-open" onClick={() => setArchiveOpen(true)}>
           Archive
         </button>
+        {sessionKey && (
+          <button type="button" className="archive-open" onClick={() => setReportOpen(true)}>
+            Report
+          </button>
+        )}
         {sessionKey && (
         <div className="layout-switch" role="group" aria-label="Layout">
           {(["full", "focus", "data"] as const).map((value) => (
@@ -1482,6 +1489,22 @@ export default function App() {
         </section>
       )}
       {archiveOpen && <ArchiveView onClose={() => setArchiveOpen(false)} />}
+      {reportOpen && sessionKey && (
+        <SessionReport
+          sessionKey={sessionKey}
+          gpName={gpName}
+          sessName={sessName}
+          info={info.data ?? null}
+          drivers={drivers.data ?? []}
+          result={result.data ?? []}
+          laps={allLaps}
+          stints={stints.data ?? []}
+          pitSummary={pit.data?.summary ?? []}
+          overtakeCounts={overtakes.data?.counts ?? []}
+          geometry={geo.data ?? null}
+          onClose={() => setReportOpen(false)}
+        />
+      )}
     </>
   );
 }

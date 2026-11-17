@@ -1,6 +1,6 @@
 # V3.10 — Implementation plan
 
-Release `v3.10.0`.
+Release `v3.10.0` — implemented.
 
 ## Phase 1 — Correct scoped AI and stint explanations
 

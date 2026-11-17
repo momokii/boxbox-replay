@@ -52,6 +52,15 @@ AI mode calls the existing grounded recap endpoint and prints the narrative
 alongside the measured tables. Download is labelled **Print / Save PDF** so the
 browser’s PDF destination is explicit.
 
+## Implementation result (v3.10.0)
+
+- Telemetry explain now sends the scoped window; a fixed lap is no longer
+  explained with the parent replay window.
+- Stint summaries carry explicit definitions and tooltips.
+- Download modal exports seven session tables as CSV or JSON.
+- Session report renders Data and AI-enhanced modes and prints with app chrome
+  hidden; verified PDF page output.
+
 ## Sources
 
 1. OpenF1 API docs — stints, pit, overtakes and lap fields:

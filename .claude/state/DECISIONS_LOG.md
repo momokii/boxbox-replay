@@ -217,6 +217,18 @@
 **Impact:** v3.9.0; docs/screenshots/state updated
 ---
 
+## v3.10 Report / Download Decision (2026-11-15)
+
+---
+**Decision:** D15 — Print-first report and client-side CSV/JSON downloads
+**Date:** 2026-11-15
+**Context:** User requested scoped AI fixes, stint explanations, a download menu, and a professional per-session report with data and AI modes
+**Rationale:** A print-first HTML report keeps one layout, preserves graphics/tables and produces A4 PDFs through the browser without adding a parallel PDF renderer. CSV/JSON keep exports local and honest; CSV is labelled Excel-compatible and limited to one table per file, while JSON bundles several.
+**Alternatives Rejected:** jsPDF/ReportLab parallel layout (duplicate design, extra dependency); fake .xlsx files (misleading); server export endpoints (unnecessary data movement)
+**Security Implications:** No secrets or new API surface; exports are generated in the browser from already-loaded data
+**Impact:** v3.10.0; docs/screenshots/state updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---
