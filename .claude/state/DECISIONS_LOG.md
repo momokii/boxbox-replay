@@ -205,6 +205,18 @@
 **Impact:** v3.8.0; docs/screenshots/state updated
 ---
 
+## v3.9 Battle Snapshot Decision (2026-11-15)
+
+---
+**Decision:** D14 — Snapshot truncates history, and image state is per driver
+**Date:** 2026-11-15
+**Context:** Battle snapshot only appeared to change “Battles now”; driver cards showed fallback images after switching drivers
+**Rationale:** A point-in-time snapshot must stop historical charts at that point, or it reads as inert. The main playback stays independent. Headshot state keyed only by a boolean leaked across reused cards; keying by driver+URL gives each card its own lifecycle.
+**Alternatives Rejected:** Only freezing “Battles now” (confusing); moving the global replay clock (destructive); rehosting headshots (rights/caching)
+**Security Implications:** Remote images remain optional and fall back to a number
+**Impact:** v3.9.0; docs/screenshots/state updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

@@ -9,6 +9,7 @@ interface Props {
   challengers: number[];
   labels: Map<number, string>;
   colors: Map<number, string>;
+  throughLap?: number;
 }
 
 const H = 260;
@@ -20,7 +21,12 @@ export default function BattleFullView(p: Props) {
 
   const rows = useMemo(() => {
     const anchorLaps = p.laps
-      .filter((l) => l.driver_number === p.anchor && l.lap_duration != null)
+      .filter(
+        (l) =>
+          l.driver_number === p.anchor &&
+          l.lap_duration != null &&
+          (p.throughLap == null || l.lap_number <= p.throughLap),
+      )
       .sort((x, y) => x.lap_number - y.lap_number);
     return anchorLaps.map((la) => {
       const values = p.challengers.map((d) => {
@@ -35,7 +41,7 @@ export default function BattleFullView(p: Props) {
       });
       return { lap: la.lap_number, ta: la.lap_duration as number, values };
     });
-  }, [p.laps, p.anchor, p.challengers]);
+  }, [p.laps, p.anchor, p.challengers, p.throughLap]);
 
   const maxLap = Math.max(1, ...rows.map((r) => r.lap));
   const flat = rows.flatMap((r) => r.values.map((v) => v.delta)).filter((v): v is number => v != null).map(Math.abs);

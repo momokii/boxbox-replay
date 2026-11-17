@@ -584,3 +584,9 @@ sector times coloured against session/personal bests; share-card cars are now
 rotated with the already-rotated outline; DriverCard shows OpenF1 `headshot_url`
 with a number fallback; strategy has a plain-language recommendation banner.
 89 pytest + 74 vitest.
+
+v3.9.0: Battle snapshot now truncates the relative-gap chart, pace rows and
+overtakes at the selected lap, with a note that the main replay clock/tower are
+unchanged. Driver headshot ready/failed state is keyed by driver+URL so rapid
+driver switching keeps real images and falls back only on failure. Share-card
+rotation re-verified. 89 pytest + 74 vitest.

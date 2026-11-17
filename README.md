@@ -8,16 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.8.0`** — selectable Telemetry windows (replay lap / fixed lap / full session), Battle lap snapshots with a return-to-replay action, Detail/Overall mini-sectors, driver headshots, a corrected share card and a plain-language strategy recommendation. All screenshots below are from this build.
+> **Latest release: `v3.9.0`** — Battle snapshots now actually stop the history charts at the chosen lap, driver headshot state is keyed per driver so switching cards cannot leave a stale fallback, and the share card is verified with cars on the circuit. All screenshots below are from this build.
 
-## What's new in v3.8.0
+## What's new in v3.9.0
 
-- **Telemetry windows.** Hold the chart on an exact lap or the full session instead of the replay's moving lap window.
-- **Battle snapshots.** Freeze gaps, pace and inputs on a chosen lap, then jump back to the replay clock.
-- **Mini-sectors.** Switch **Detail** (mini-sector ticks) / **Overall** (sector time coloured against session/personal bests).
-- **Driver headshots.** OpenF1 supplies `headshot_url`; the card loads it with a number fallback. Images stay hosted by F1.
-- **Share card.** Cars are rotated with the circuit again, so they sit on the track instead of the footer.
-- **Strategy.** A projected recommendation banner and a plain “pit stop costs time, fresh tyres are faster” explanation sit above the detailed options.
+- **Battle snapshot, made real.** “Battles now”, gaps, pace and inputs freeze at the selected lap, while the relative-gap chart, pace rows and overtakes stop at that lap. The main replay clock and tower are explicitly unchanged; **Back to replay** restores the full history.
+- **Driver headshots fixed.** Image ready/failed state is keyed by driver number + URL, so switching from one driver to another no longer hides the new photo behind the number fallback.
+- **Share card rechecked.** The 1200×630 download places every car on the rotated circuit; labels are collision-limited and the footer stays clear.
+- **Prior v3.8 features remain:** Telemetry replay/fixed/full-session windows, Detail/Overall mini-sectors, strategy recommendation banner.
 
 | Championship standings | Results archive |
 |---|---|
@@ -45,7 +43,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds.
 - **Championship standings (v3.6+).** A Standings tab resolves the current weekend to its championship round and shows the driver/team table plus a selectable points-by-round chart, per-round tooltips and a head-to-head table. Source: Jolpica F1 (CC BY-NC-SA 4.0), attributed in the panel; the archive is revalidated hourly and can be refreshed on demand.
 - **Results archive (v3.6+).** A separate, full-screen archive for every Jolpica season through 2026: season → race → result, with standings beside it. Results and standings only — replay telemetry starts in 2023. Season/race changes show explicit loading states; missing and future rounds have honest fallbacks.
-- **Selectable windows (v3.8).** Telemetry holds a replay lap, a fixed lap or the full session; Battle freezes at a lap snapshot and returns to replay. Mini-sectors switch between per-tick detail and per-sector overall.
+- **Selectable windows (v3.8/9).** Telemetry holds a replay lap, a fixed lap or the full session; Battle freezes at a lap snapshot, truncates its history charts to that lap, and returns to replay. Mini-sectors switch between per-tick detail and per-sector overall.
 - **Driver headshots (v3.8).** OpenF1's `headshot_url` is shown with a number fallback; the image is not rehosted.
 - **Duel and Battle comparisons (v3.7).** Duel overlays both full lap traces and compares throttle/brake/gear/DRS at the same lap progress; Battle adds point-in-time inputs for the anchor and challengers.
 - **Optional 3D replay (v3.5).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock, with orbit and click-to-select. 2D stays the default and the analytical surface (corners, DRS, hover). The track ribbon is flat and its width is a visual constant, not measured data.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { compoundColor } from "../format";
 import { formatLapTime } from "../format";
 import Info from "./Info";
@@ -34,14 +34,11 @@ export default function DriverCard(p: Props) {
   const slowestRecent = recent.length ? Math.max(...recent.map((l) => l.lap_duration as number)) : null;
   const tyreAge = p.stint?.lap_start != null ? Math.max(1, p.lap - p.stint.lap_start + 1) : null;
   const color = `#${(p.driver.team_colour ?? "").replace("#", "")}`;
-  const [imageFailed, setImageFailed] = useState(false);
-  const [imageReady, setImageReady] = useState(false);
   const headshot = p.driver.headshot_url?.trim();
-
-  useEffect(() => {
-    setImageFailed(false);
-    setImageReady(false);
-  }, [p.driver.driver_number, headshot]);
+  const imageKey = `${p.driver.driver_number}:${headshot ?? ""}`;
+  const [imageState, setImageState] = useState({ key: "", ready: false, failed: false });
+  const imageReady = imageState.key === imageKey && imageState.ready;
+  const imageFailed = imageState.key === imageKey && imageState.failed;
 
   return (
     <div className="driver-card">
@@ -59,8 +56,8 @@ export default function DriverCard(p: Props) {
               loading="eager"
               referrerPolicy="no-referrer"
               style={{ borderColor: color, opacity: imageReady ? 1 : 0 }}
-              onLoad={() => setImageReady(true)}
-              onError={() => setImageFailed(true)}
+              onLoad={() => setImageState({ key: imageKey, ready: true, failed: false })}
+              onError={() => setImageState({ key: imageKey, ready: false, failed: true })}
             />
           )}
         </span>

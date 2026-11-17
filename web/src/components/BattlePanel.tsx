@@ -105,7 +105,8 @@ export default function BattlePanel(p: Props) {
 
   const lapsOf = (d: number) =>
     p.laps.filter((l) => l.driver_number === d && l.lap_duration != null).sort((x, y) => x.lap_number - y.lap_number);
-  const lapsAnchor = lapsOf(anchor);
+  const snapshotLap = scope === "lap" ? fixedMarker?.lap_number ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
+  const lapsAnchor = lapsOf(anchor).filter((lap) => lap.lap_number <= snapshotLap);
   const bestOf = (d: number) => {
     const ls = lapsOf(d);
     return ls.length ? Math.min(...ls.map((l) => l.lap_duration as number)) : null;
@@ -180,6 +181,11 @@ export default function BattlePanel(p: Props) {
           </button>
         )}
       </div>
+      <p className="dim small battle-scope-note">
+        {scope === "replay"
+          ? "Following the replay clock. Use Lap snapshot to freeze the comparison at a lap."
+          : "Snapshot freezes Battles now, gap values, pace and inputs through this lap; the session charts stop at the snapshot. The main replay clock and tower are unchanged."}
+      </p>
 
       <section className="battles-now" aria-label="Battles at the current frame">
         <div className="battles-head">
@@ -291,11 +297,19 @@ export default function BattlePanel(p: Props) {
       <div className="panel">
         <h3>
           <Info
-            label="Relative gap over the session"
+            label={scope === "lap" ? `Relative gap through lap ${fixedMarker?.lap_number ?? "—"}` : "Relative gap over the session"}
             tip="Each line is a challenger's gap to the leader minus the anchor's. Above the line means that driver is behind the anchor; below means ahead. Hover for values."
           />
         </h3>
-        <RelativeGap playback={p.playback} table={p.table} anchor={anchor} challengers={challengers} colors={p.colors} labels={p.labels} />
+        <RelativeGap
+          playback={p.playback}
+          table={p.table}
+          anchor={anchor}
+          challengers={challengers}
+          colors={p.colors}
+          labels={p.labels}
+          endT={scope === "lap" ? now : p.playback.state.dur}
+        />
         <p className="dim small">
           Dashed line is zero — the moment they are side by side. One line per challenger, measured against the
           anchor.
@@ -378,6 +392,7 @@ export default function BattlePanel(p: Props) {
           const all = [anchor, ...challengers];
           const rel = p.overtakes
             .filter((o) => all.includes(o.overtaking_driver_number) || all.includes(o.overtaken_driver_number))
+            .filter((o) => scope === "replay" || o.t <= now)
             .sort((x, y) => x.t - y.t)
             .slice(0, 8);
           if (!rel.length) return <p className="dim small">None recorded involving these drivers.</p>;
@@ -411,6 +426,7 @@ export default function BattlePanel(p: Props) {
           challengers={challengers}
           labels={p.labels}
           colors={p.colors}
+          throughLap={scope === "lap" ? fixedMarker?.lap_number : undefined}
         />
       </Modal>
 
@@ -458,10 +474,11 @@ function RelativeGap(p: {
   challengers: number[];
   colors: Map<number, string>;
   labels: Map<number, string>;
+  endT?: number;
 }) {
   const { canvasRef, wrapRef, width, dpr } = useCanvasSize(H);
   const [hoverT, setHoverT] = useState<number | null>(null);
-  const dur = Math.max(1, p.playback.state.dur);
+  const dur = Math.max(1, p.endT ?? p.playback.state.dur);
 
   const series = useMemo(() => {
     const step = Math.max(1, dur / 700);

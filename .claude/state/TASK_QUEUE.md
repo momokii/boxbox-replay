@@ -99,7 +99,7 @@ Rule for all: one milestone = one commit (`feat(mX): ...`), tests + ruff clean b
 
 ## v3 backlog — planned (see `docs/V3_RESEARCH.md`, `docs/V3_PLAN.md`, `docs/V3_CORE_IMPLEMENTATION_PLAN.md`)
 
-Status: **v3 complete** through `v3.8.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a), and the Jolpica archive/standings (V3.5b/c, D11). See `docs/V3_8_PLAN.md`, `docs/V3_7_PLAN.md`, `docs/V3_6_DATA_RESEARCH.md` and `docs/V3_5_3D_RESEARCH.md`.
+Status: **v3 complete** through `v3.9.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a), and the Jolpica archive/standings (V3.5b/c, D11). See `docs/V3_9_PLAN.md`, `docs/V3_8_PLAN.md`, `docs/V3_7_PLAN.md`, `docs/V3_6_DATA_RESEARCH.md` and `docs/V3_5_3D_RESEARCH.md`.
 
 | ID | Task | Status | Depends | Scope (summary) | Acceptance (summary) | Notes / gates |
 |----|------|--------|---------|-----------------|----------------------|---------------|

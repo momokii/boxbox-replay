@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against **v3.8.0** on 2026-11-15. Captured from the running app at
+Refreshed against **v3.9.0** on 2026-11-15. Captured from the running app at
 1400×880, with phone captures at 390×844 and the narrow chat at 720×810.
 They are referenced from the root README and this page.
 
@@ -44,4 +44,5 @@ They are referenced from the root README and this page.
 | `12-dashboard-recent.png` | Continue list with remove/clear controls |
 | `37-standings-head-to-head.png` | Driver A/B points and Δ for every round |
 | `38-mini-overall.png` | Overall mini-sectors: sector times vs session/personal bests |
-| `39-battle-snapshot.png` | Battle frozen on a lap snapshot with Back to replay |
+| `39-battle-snapshot.png` | Battle snapshot at lap 20: history truncated, Back to replay shown |
+| `40-driver-headshot.png` | Driver card with an OpenF1 headshot and number fallback |
