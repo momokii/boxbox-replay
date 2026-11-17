@@ -8,7 +8,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.9.0`** — Battle snapshots now actually stop the history charts at the chosen lap, driver headshot state is keyed per driver so switching cards cannot leave a stale fallback, and the share card is verified with cars on the circuit. All screenshots below are from this build.
+> **Latest release: `v3.9.1`** — Battle snapshots stop the history charts at the chosen lap, driver headshot state is keyed per driver, and the share card is verified with cars on the circuit. `v3.9.1` is a CI maintenance release (pinned gitleaks binary); all screenshots below are from the `v3.9` feature build.
 
 ## What's new in v3.9.0
 

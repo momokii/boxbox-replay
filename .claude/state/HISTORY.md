@@ -590,3 +590,7 @@ overtakes at the selected lap, with a note that the main replay clock/tower are
 unchanged. Driver headshot ready/failed state is keyed by driver+URL so rapid
 driver switching keeps real images and falls back only on failure. Share-card
 rotation re-verified. 89 pytest + 74 vitest.
+
+v3.9.1: CI-only release. The gitleaks marketplace action now requires a paid
+license; the secrets job runs the pinned free gitleaks v8.24.3 binary instead.
+Local scan: 132 commits, no leaks. No application changes.
