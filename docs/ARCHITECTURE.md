@@ -124,6 +124,18 @@ retired cars (result feed, or no fresh laps) are classified last.
   session permanently "no data". A cache hit is revalidated for emptiness.
 - `refresh=1` clears the replay cache for a session and rebuilds.
 
+## Performance vocabulary
+
+- **Stint**: one continuous run on a tyre set (`lap_start`–`lap_end`).
+- **Stop**: a recorded pit visit; `stop_duration` is stationary time.
+- **Best stop**: the fastest recorded stationary time, not the full pit-lane
+  loss.
+- **Overtakes made/lost**: counts from the separate overtakes feed, which may be
+  incomplete.
+
+These definitions are shown in the Performance panel and in the printable
+report.
+
 ## API
 
 | Method & path | Notes |
