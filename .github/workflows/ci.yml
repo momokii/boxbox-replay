@@ -67,7 +67,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: npm audit --audit-level=high
+      # Production dependencies only: the SPA ships static assets. Vite/Vitest
+      # are build/test tooling, and npm currently flags a withdrawn picomatch
+      # advisory that has no patched version.
+      - run: npm audit --omit=dev --audit-level=high
         working-directory: web
 
   image:
