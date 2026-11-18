@@ -1500,6 +1500,7 @@ export default function App() {
           laps={allLaps}
           stints={stints.data ?? []}
           pitSummary={pit.data?.summary ?? []}
+          pitStops={pit.data?.stops ?? []}
           overtakeCounts={overtakes.data?.counts ?? []}
           geometry={geo.data ?? null}
           onClose={() => setReportOpen(false)}

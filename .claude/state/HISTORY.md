@@ -601,3 +601,11 @@ definitions/tooltips; added a client-side download modal for seven session
 tables (CSV one-table / JSON bundle); added a print-first A4 Data/AI session
 report with circuit outline, summary cards, classification, tyres and fastest
 laps. 89 pytest + 74 vitest.
+
+v3.10.1: report polish. The circuit is a closed polygon, print CSS removes root
+siblings so PDFs have no blank lead pages, the report adds key takeaways and a
+glossary, and AI-enhanced mode uses /ai/report for a three-part analysis. Session
+downloads moved from Performance into Report (nine tables including
+classification/fastest laps); pit analytics gained definitions for timed stops,
+stationary vs pit-lane time and incomplete overtake counts. 90 pytest + 74
+vitest.

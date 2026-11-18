@@ -155,6 +155,10 @@ export const api = {
     post<{ answer: string; model: string; grounded_on: string[] }>("/ai/recap", {
       session_key: sessionKey,
     }),
+  aiReport: (sessionKey: number) =>
+    post<{ answer: string; model: string; grounded_on: string[] }>("/ai/report", {
+      session_key: sessionKey,
+    }),
   duel: (sessionKey: number, aDriver: number, aLap: number, bDriver: number, bLap: number) =>
     get<DuelPayload>(
       `/session/duel?session_key=${sessionKey}&a_driver=${aDriver}&a_lap=${aLap}` +

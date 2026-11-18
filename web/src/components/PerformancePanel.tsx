@@ -5,7 +5,6 @@ import { formatClock } from "../session";
 import { stintSlope } from "../perf";
 import { gapAt, type GapTable, type LapMarker } from "../session";
 import Info from "./Info";
-import DownloadPanel, { type DownloadDataset } from "./DownloadPanel";
 import TimelinePanel from "./TimelinePanel";
 import MiniSectors from "./MiniSectors";
 import PitAnalytics from "./PitAnalytics";
@@ -51,7 +50,6 @@ export default function PerformancePanel(p: Props) {
   const [degModal, setDegModal] = useState(false);
   const [rcModal, setRcModal] = useState(false);
   const [error, setError] = useState(false);
-  const [downloadOpen, setDownloadOpen] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -141,112 +139,10 @@ export default function PerformancePanel(p: Props) {
         driverCode={p.driverCode}
       />
 
-      <div className="export-actions">
-        <span className="dim small">Export this session (client-side, no new requests):</span>
-        <button type="button" className="primary" onClick={() => setDownloadOpen(true)}>
-          Download data…
-        </button>
-        <span className="dim small">CSV, Excel-compatible CSV or a JSON bundle</span>
-      </div>
-      <DownloadPanel
-        open={downloadOpen}
-        onClose={() => setDownloadOpen(false)}
-        sessionKey={p.sessionKey}
-        sessionName={p.sessionName}
-        datasets={(() => {
-          const columns = (_rows: Record<string, unknown>[], keys: string[]) =>
-            keys.map((key) => ({ key, label: key }));
-          return [
-            {
-              key: "laps",
-              label: "Laps",
-              description: "Every lap, sector time and pit-out flag.",
-              rows: p.laps as unknown as Record<string, unknown>[],
-              columns: columns(p.laps as unknown as Record<string, unknown>[], [
-                "driver_number",
-                "lap_number",
-                "lap_duration",
-                "duration_sector_1",
-                "duration_sector_2",
-                "duration_sector_3",
-                "is_pit_out_lap",
-              ]),
-            },
-            {
-              key: "stints",
-              label: "Stints",
-              description: "Tyre runs, compounds and stint lap ranges.",
-              rows: feed.stints as unknown as Record<string, unknown>[],
-              columns: columns(feed.stints as unknown as Record<string, unknown>[], [
-                "driver_number",
-                "stint_number",
-                "lap_start",
-                "lap_end",
-                "compound",
-                "tyre_age_at_start",
-              ]),
-            },
-            {
-              key: "weather",
-              label: "Weather",
-              description: "Air/track temperature, humidity and rainfall samples.",
-              rows: feed.weather,
-              columns: columns(feed.weather, [
-                "t",
-                "air_temperature",
-                "track_temperature",
-                "humidity",
-                "rainfall",
-              ]),
-            },
-            {
-              key: "race-control",
-              label: "Race control",
-              description: "Flags, safety cars, penalties and messages.",
-              rows: feed.rc,
-              columns: columns(feed.rc, [
-                "t",
-                "category",
-                "flag",
-                "message",
-                "scope",
-                "driver_number",
-                "lap_number",
-              ]),
-            },
-            {
-              key: "radio",
-              label: "Team radio",
-              description: "Radio metadata and recording links; no transcript is published.",
-              rows: feed.radio,
-              columns: columns(feed.radio, ["t", "driver_number", "recording_url"]),
-            },
-            {
-              key: "pit-stops",
-              label: "Pit stops",
-              description: "Stationary and pit-lane duration per recorded stop.",
-              rows: p.pitStops as unknown as Record<string, unknown>[],
-              columns: columns(p.pitStops as unknown as Record<string, unknown>[], [
-                "driver_number",
-                "lap_number",
-                "stop_duration",
-                "pit_duration",
-              ]),
-            },
-            {
-              key: "overtakes",
-              label: "Overtake counts",
-              description: "Made/lost counts by driver; the feed may be incomplete.",
-              rows: p.overtakeCounts as unknown as Record<string, unknown>[],
-              columns: columns(p.overtakeCounts as unknown as Record<string, unknown>[], [
-                "driver_number",
-                "made",
-                "lost",
-              ]),
-            },
-          ] satisfies DownloadDataset[];
-        })()}
-      />
+      <p className="dim small">
+        Session-wide downloads (laps, stints, weather, race control, radio, pit
+        stops, overtakes) live in <strong>Report</strong>.
+      </p>
       <div className="row" style={{ marginBottom: 10 }}>
         <button className={scope === "focus" ? "chip on" : "chip"} onClick={() => setScope("focus")}>
           My drivers ({focus.length})

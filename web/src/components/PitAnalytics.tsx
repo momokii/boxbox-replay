@@ -28,6 +28,13 @@ export default function PitAnalytics({ stops, overtakeCounts, driverCode }: Prop
   return (
     <section className="pit-analytics" aria-label="Pit crew and overtakes">
       <h3>Pit crews &amp; overtakes</h3>
+      <p className="dim small">
+        <strong>Timed stops</strong> are recorded pit visits with a stationary
+        duration; <strong>median</strong> and <strong>best</strong> describe those
+        stationary times, not the full pit-lane loss. Stops above 1.5× the median
+        are flagged as outliers. <strong>Overtakes made/lost</strong> are timing-feed
+        counts and may be incomplete.
+      </p>
       <div className="pit-analytics-grid">
         <div>
           <p className="dim small">
@@ -35,10 +42,22 @@ export default function PitAnalytics({ stops, overtakeCounts, driverCode }: Prop
             {stats.median == null ? "—" : `${stats.median.toFixed(2)}s`} · best{" "}
             {stats.best == null ? "—" : `${stats.best.toFixed(2)}s`}
           </p>
+          {stats.count === 0 && (
+            <p className="dim small">
+              The feed did not publish timed pit stops for this session, so median
+              and best are unavailable rather than zero.
+            </p>
+          )}
           <table className="laps mono">
+            <thead>
+              <tr><th>Driver</th><th>Lap</th><th>Stationary</th></tr>
+            </thead>
             <tbody>
               {quickest.map((stop, index) => (
-                <tr key={`${stop.driver_number}-${stop.lap_number}-${index}`}>
+                <tr
+                  key={`${stop.driver_number}-${stop.lap_number}-${index}`}
+                  title={`${driverCode(stop.driver_number)} · lap ${stop.lap_number ?? "—"} · ${stop.stop_duration?.toFixed(2)}s stationary`}
+                >
                   <td>{driverCode(stop.driver_number)}</td>
                   <td className="dim">L{stop.lap_number ?? "—"}</td>
                   <td>{stop.stop_duration?.toFixed(2)}s</td>
@@ -57,7 +76,16 @@ export default function PitAnalytics({ stops, overtakeCounts, driverCode }: Prop
         </div>
         <div>
           <p className="dim small">Most overtakes (feed count, may be incomplete)</p>
+          {stats.count === 0 && (
+            <p className="dim small">
+              The feed did not publish timed pit stops for this session, so median
+              and best are unavailable rather than zero.
+            </p>
+          )}
           <table className="laps mono">
+            <thead>
+              <tr><th>Driver</th><th>Made</th><th>Lost</th></tr>
+            </thead>
             <tbody>
               {overtakes.map((row) => (
                 <tr key={row.driver_number}>

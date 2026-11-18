@@ -59,7 +59,12 @@ browser’s PDF destination is explicit.
 - Stint summaries carry explicit definitions and tooltips.
 - Download modal exports seven session tables as CSV or JSON.
 - Session report renders Data and AI-enhanced modes and prints with app chrome
-  hidden; verified PDF page output.
+  hidden; the circuit polygon is closed, print siblings are removed (no blank
+  lead pages), and the report includes key takeaways and a glossary.
+- Session-wide downloads moved into Report; nine tables including classification
+  and fastest laps.
+- `/ai/report` produces a three-part analysis (what decided it, tyres/pits,
+  caveat) rather than only a story recap.
 
 ## Sources
 

@@ -816,3 +816,13 @@ def test_standings_refresh_is_forwarded(monkeypatch):
         assert got.status_code == 200
         assert seen == {"year": 2026, "round": 5, "refresh": True}
         assert "fetched_at" in got.json()
+
+
+def test_ai_report_endpoint(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "_ai_facts", lambda sk: ("facts", ["session"]))
+    monkeypatch.setattr(m.ai, "report_insight", lambda sk, facts: "WHAT DECIDED IT: test.")
+    with TestClient(m.app) as client:
+        got = client.post("/ai/report", json={"session_key": 1})
+        assert got.status_code == 200
+        assert got.json()["answer"].startswith("WHAT DECIDED IT")

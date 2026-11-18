@@ -1,5 +1,5 @@
 ## Project Phase
-v2 shipped (`v1.0.0`…`v2.13.1`). v3 complete through **`v3.10.0`**: V3.1 strategy, V3.2 Telemetry Lab, V3.3 grounded explain, V3.4a/c/d/e supporting analytics, the optional lazy **3D replay** (V3.5a), plus **championship standings** and the **results archive through 2026** (V3.5b/c, Jolpica), plus the v3.7 freshness/comparison/telemetry fixes and the v3.8 window/snapshot/mini/share-card pass.
+v2 shipped (`v1.0.0`…`v2.13.1`). v3 complete through **`v3.10.1`**: V3.1 strategy, V3.2 Telemetry Lab, V3.3 grounded explain, V3.4a/c/d/e supporting analytics, the optional lazy **3D replay** (V3.5a), plus **championship standings** and the **results archive through 2026** (V3.5b/c, Jolpica), plus the v3.7 freshness/comparison/telemetry fixes and the v3.8 window/snapshot/mini/share-card pass.
 DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Completed
@@ -19,7 +19,8 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] v3.7 freshness/comparison/archive/telemetry fixes
 - [x] v3.8 Telemetry scopes, Battle snapshots, mini Detail/Overall, driver headshots, share-card rotation, strategy recommendation
 - [x] v3.9 Battle snapshot history truncation + headshot state keyed per driver
-- [x] v3.10 scoped Telemetry AI, stint definitions, download panel, printable Data/AI report
+- [x] v3.10 scoped Telemetry AI, stint/pit definitions, session-wide downloads in Report, printable Data/AI report
+- [x] v3.10.1 report polish: closed circuit, key takeaways/glossary, three-part AI analysis, no blank print pages
 
 ## Blocked / Deferred (deliberate, documented)
 - V2-4 historical Fight Finder: DEFERRED (noisy/sparse feeds)
@@ -34,4 +35,4 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-15: `v3.10.0` shipped: scoped Telemetry AI explain, stint summary definitions/tooltips, download panel (CSV/JSON), printable Data/AI session report. Previous: CI secrets scan pinned to the free gitleaks binary (marketplace action now licensed); v3.9.0 feature work: Battle snapshot now truncates history charts and states the replay clock is unchanged; driver headshot state is keyed per driver; share-card rotation re-verified. selectable Telemetry windows, Battle lap snapshots, Detail/Overall mini-sectors, driver headshots, corrected share-card car rotation and a plain-language strategy recommendation. Builds on v3.7 freshness/standings/archive/telemetry fixes. 89 pytest + 74 vitest; ruff/tsc/build clean; CI green on `v3.10.0`; prod healthy.
+2026-11-15: `v3.10.1` shipped: report circuit closed, key takeaways/glossary, three-part AI analysis, downloads moved to Report with nine tables, print pages fixed. Previous: scoped Telemetry AI explain, stint summary definitions/tooltips, download panel (CSV/JSON), printable Data/AI session report. Previous: CI secrets scan pinned to the free gitleaks binary (marketplace action now licensed); v3.9.0 feature work: Battle snapshot now truncates history charts and states the replay clock is unchanged; driver headshot state is keyed per driver; share-card rotation re-verified. selectable Telemetry windows, Battle lap snapshots, Detail/Overall mini-sectors, driver headshots, corrected share-card car rotation and a plain-language strategy recommendation. Builds on v3.7 freshness/standings/archive/telemetry fixes. 89 pytest + 74 vitest; ruff/tsc/build clean; CI green on `v3.10.1`; prod healthy.

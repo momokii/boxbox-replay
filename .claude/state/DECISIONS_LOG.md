@@ -229,6 +229,18 @@
 **Impact:** v3.10.0; docs/screenshots/state updated
 ---
 
+## v3.10.1 Report Polish Decision (2026-11-15)
+
+---
+**Decision:** D16 — Make the report the session-wide data surface and print it without app layout
+**Date:** 2026-11-15
+**Context:** The printable report had an unclosed circuit path, blank lead pages, sparse definitions, and downloads were placed inside Performance even though they covered the whole session
+**Rationale:** Session-wide data belongs with the session report. A closed polygon represents the circuit; hiding non-report root siblings removes blank print pages. Measured key takeaways and a glossary make the report readable without F1 expertise; `/ai/report` adds the three-part analysis (what decided it, tyres/pits, caveat) rather than a story alone.
+**Alternatives Rejected:** Keeping downloads only in Performance (wrong scope); hiding with visibility only (reserves blank pages); a free-form AI paragraph (insufficient analysis)
+**Security Implications:** No new data source; AI remains optional and failure-isolated
+**Impact:** v3.10.1; docs/screenshots/state updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

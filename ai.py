@@ -292,6 +292,34 @@ def recap(session_key: int, facts: str) -> str:
     return text
 
 
+def report_insight(session_key: int, facts: str) -> str:
+    """A structured analytical report from the measured session facts."""
+    key = _key("report", session_key, "insight")
+    with _cache_lock:
+        hit = _cache.get(key)
+    if hit:
+        return hit
+    prompt = (
+        "SESSION NOTES:\n"
+        f"{facts}\n\n"
+        "TASK: write a compact analytical session report for someone who did not "
+        "watch it. Use exactly three short labelled paragraphs:\n"
+        "WHAT DECIDED IT: the result and the clearest measured reason (pace, "
+        "strategy, tyre life, incidents).\n"
+        "TYRES AND PITS: the measured stint/stop story, including the best stop "
+        "and any notable strategy.\n"
+        "WHAT THE DATA CANNOT SHOW: one honest caveat about a missing or "
+        "ambiguous channel, or uncertainty in the strategy.\n"
+        "Use only the notes. Never invent a result, incident, penalty or quote. "
+        "Use full names on first mention and keep the whole answer under 220 words."
+    )
+    text = _complete(session_key, prompt)
+    if text.strip().upper().startswith("OUT_OF_SCOPE"):
+        text = OUT_OF_SCOPE
+    _remember(key, text)
+    return text
+
+
 def _remember(key: str, text: str) -> None:
     with _cache_lock:
         if len(_cache) >= CACHE_MAX:

@@ -1692,6 +1692,23 @@ def ai_pit_explain(body: PitExplainRequest) -> dict:
     return {"answer": text, "model": ai.MODEL, "call": call}
 
 
+@app.post("/ai/report")
+def ai_report(body: RecapRequest) -> dict:
+    """Three-part analytical report grounded in the same session facts."""
+    if not ai.configured():
+        raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    facts, used = _ai_facts(body.session_key)
+    try:
+        text = ai.report_insight(body.session_key, facts)
+    except ai.AINotConfigured as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ai.AIQuotaExceeded as exc:
+        raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
+    except ai.AIError as exc:
+        raise HTTPException(502, "the AI provider did not answer, try again") from exc
+    return {"answer": text, "model": ai.MODEL, "grounded_on": used}
+
+
 @app.post("/ai/recap")
 def ai_recap(body: RecapRequest) -> dict:
     if not ai.configured():

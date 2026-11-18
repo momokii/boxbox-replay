@@ -92,10 +92,13 @@ retired cars (result feed, or no fresh laps) are classified last.
 - Battle can freeze its clock on a replay lap marker; returning to replay resumes
   the normal clock without touching the shared playback store.
 - `SessionReport.tsx` is a print-first A4 report; `@media print` hides app chrome
-  and keeps report sections from splitting. AI-enhanced mode calls the existing
-  grounded recap endpoint, and a failed summary never blocks the data tables.
-- Downloads are client-side: one dataset per CSV file, or a JSON bundle of
-  selected tables; no server export route or secret is involved.
+  and keeps report sections from splitting. AI-enhanced mode calls the
+  `/ai/report` three-part analysis, and a failed summary never blocks the data
+  tables. The report includes key takeaways and a glossary; its circuit is a
+  closed polygon.
+- Downloads are session-wide and live in Report: nine tables including
+  classification and fastest laps, one dataset per CSV file or a JSON bundle;
+  no server export route or secret is involved.
 - The share card rotates raw car coordinates by `-(geometry.angle)` before the
   layout transform, matching the already-rotated outline.
 - OpenF1's `headshot_url` is an optional remote image (hosted by F1) with a

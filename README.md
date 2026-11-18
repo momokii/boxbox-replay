@@ -8,14 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.10.0`** — the Telemetry AI now explains the same window you see, stint numbers have plain-language definitions, a dedicated **Download data** panel exports CSV/JSON, and a printable **Session report** offers Data and AI-enhanced versions. All screenshots below are from this build.
+> **Latest release: `v3.10.1`** — the Telemetry AI explains the same window you see, stint/pit numbers have plain-language definitions, session-wide **Download data** lives in the printable **Report**, and the Data/AI report has closed circuit geometry, key takeaways, a glossary and no blank print pages. All screenshots below are from this build.
 
 ## What's new in v3.10.0
 
 - **Telemetry AI grounding fixed.** The explain request now uses the selected Replay/Fixed/Full window, so the narrative aggregates match the chart instead of describing a different (often empty) window.
 - **Stint explanations.** Every summary (`stints`, `stops`, `best`, `overtakes/lost`) has a tooltip and a visible “how to read a row” definition. Best stop is stationary time, not pit-lane loss.
-- **Download data.** A modal exports Laps, Stints, Weather, Race control, Radio, Pit stops and Overtake counts as CSV (opens in Excel) or a multi-table JSON bundle. Client-side, no new requests.
-- **Session report.** A print-first A4 report with circuit outline, summary cards, classification, tyre/pit table and fastest laps. Choose **Data** or **AI-enhanced** (grounded recap), then **Print / Save PDF**.
+- **Session-wide download.** **Report → Download data** exports Classification, Fastest laps, Laps, Stints, Weather, Race control, Radio, Pit stops and Overtake counts as CSV (opens in Excel) or a multi-table JSON bundle. Client-side, no new requests.
+- **Session report.** A print-first A4 report with a closed circuit outline, key takeaways, summary cards, classification, tyre/pit table, fastest laps and a report glossary. Choose **Data** or **AI-enhanced** (a three-part grounded analysis), then **Print / Save PDF**; print CSS removes the app chrome and no longer leaves blank lead pages.
 
 ## What's new in v3.9.0
 
@@ -47,7 +47,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Driver drill-down.** Click any car or tower row for position, gap, tyre age, result, a five-lap strip, pit stops, overtakes — each opening a full view.
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
 - **Qualifying mini-sectors (v3).** Real segment strips (green/purple/yellow) for qualifying and practice, with placeholder detection; races show nothing rather than fake segments.
-- **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds.
+- **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds, with definitions for timed stops, stationary time vs pit-lane loss, and incomplete overtake counts.
 - **Championship standings (v3.6+).** A Standings tab resolves the current weekend to its championship round and shows the driver/team table plus a selectable points-by-round chart, per-round tooltips and a head-to-head table. Source: Jolpica F1 (CC BY-NC-SA 4.0), attributed in the panel; the archive is revalidated hourly and can be refreshed on demand.
 - **Results archive (v3.6+).** A separate, full-screen archive for every Jolpica season through 2026: season → race → result, with standings beside it. Results and standings only — replay telemetry starts in 2023. Season/race changes show explicit loading states; missing and future rounds have honest fallbacks.
 - **Session data download (v3.10).** Dedicated modal for the available session tables, CSV or JSON, generated entirely in the browser.

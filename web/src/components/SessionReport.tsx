@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, type PitStopSummary, type SessionResultRow } from "../api";
+import { api, type PitStop, type PitStopSummary, type SessionResultRow } from "../api";
 import { compoundColor, formatLapTime } from "../format";
+import DownloadPanel, { type DownloadDataset } from "./DownloadPanel";
 import type { Driver, Geometry, Lap, SessionInfoFull, Stint } from "../types";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
   laps: Lap[];
   stints: Stint[];
   pitSummary: PitStopSummary[];
+  pitStops: PitStop[];
   overtakeCounts: { driver_number: number; made: number; lost: number }[];
   geometry: Geometry | null;
   onClose: () => void;
@@ -39,6 +41,7 @@ export default function SessionReport({
   laps,
   stints,
   pitSummary,
+  pitStops,
   overtakeCounts,
   geometry,
   onClose,
@@ -49,6 +52,8 @@ export default function SessionReport({
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [weather, setWeather] = useState<Record<string, unknown>[]>([]);
   const [control, setControl] = useState<Record<string, unknown>[]>([]);
+  const [radio, setRadio] = useState<Record<string, unknown>[]>([]);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const summaryRequested = useRef<string | null>(null);
 
   useEffect(() => {
@@ -61,11 +66,12 @@ export default function SessionReport({
 
   useEffect(() => {
     let live = true;
-    Promise.all([api.weather(sessionKey), api.raceControl(sessionKey)])
-      .then(([w, rc]) => {
+    Promise.all([api.weather(sessionKey), api.raceControl(sessionKey), api.radio(sessionKey)])
+      .then(([w, rc, radioRows]) => {
         if (!live) return;
         setWeather(w);
         setControl(rc);
+        setRadio(radioRows);
       })
       .catch(() => undefined);
     return () => {
@@ -82,7 +88,7 @@ export default function SessionReport({
     setSummaryBusy(true);
     setSummaryError(null);
     api
-      .aiRecap(sessionKey)
+      .aiReport(sessionKey)
       .then((data) => live && setSummary(data.answer))
       .catch((error: unknown) => {
         if (!live) return;
@@ -145,6 +151,12 @@ export default function SessionReport({
   );
   const redFlags = control.filter((event) => /red flag/i.test(String(event.message ?? ""))).length;
   const safetyCars = control.filter((event) => /safety car|virtual safety car/i.test(String(event.message ?? ""))).length;
+  const mostOvertakes = [...overtakeCounts].sort((a, b) => b.made - a.made)[0] ?? null;
+  const winnerStints = ranked[0]
+    ? stints.filter((s) => s.driver_number === ranked[0].driver_number).sort((a, b) => (a.stint_number ?? 0) - (b.stint_number ?? 0))
+    : [];
+  const retired = result.filter((row) => row.dnf || row.dns || row.dsq);
+  const fastestRow = fastest ? byNumber.get(fastest.driver_number) : null;
 
   const track = useMemo(() => {
     if (!geometry?.outline.length) return null;
@@ -159,8 +171,14 @@ export default function SessionReport({
     const scale = Math.min((width - 20) / Math.max(1, maxX - minX), (height - 20) / Math.max(1, maxY - minY));
     const ox = 10 + (width - 20 - (maxX - minX) * scale) / 2 - minX * scale;
     const oy = 10 + (height - 20 - (maxY - minY) * scale) / 2 + maxY * scale;
+    const points = geometry.outline.map(([x, y]) => [
+      Number((ox + x * scale).toFixed(1)),
+      Number((oy - y * scale).toFixed(1)),
+    ] as const);
     return {
-      points: geometry.outline.map(([x, y]) => `${(ox + x * scale).toFixed(1)},${(oy - y * scale).toFixed(1)}`).join(" "),
+      points: points.map(([x, y]) => `${x},${y}`).join(" "),
+      first: points[0],
+      last: points[points.length - 1],
       width,
       height,
     };
@@ -169,6 +187,81 @@ export default function SessionReport({
   const range = weather
     .map((point) => Number(point.track_temperature))
     .filter((value) => Number.isFinite(value));
+
+  const datasets = (() => {
+    const cols = (keys: string[]) => keys.map((key) => ({ key, label: key }));
+    const fastestRows = fastestFive.map((lap, index) => ({
+      rank: index + 1,
+      driver: name(lap.driver_number),
+      lap: lap.lap_number,
+      time: formatLapTime(lap.lap_duration),
+    }));
+    return [
+      {
+        key: "classification",
+        label: "Classification",
+        description: "Official session order, status and points.",
+        rows: result as unknown as Record<string, unknown>[],
+        columns: cols(["position", "driver_number", "gap_text", "points", "dnf", "dns", "dsq"]),
+      },
+      {
+        key: "fastest-laps",
+        label: "Fastest laps",
+        description: "The five quickest timed laps.",
+        rows: fastestRows,
+        columns: cols(["rank", "driver", "lap", "time"]),
+      },
+      {
+        key: "laps",
+        label: "Laps",
+        description: "Every lap, sector time and pit-out flag.",
+        rows: laps as unknown as Record<string, unknown>[],
+        columns: cols(["driver_number", "lap_number", "lap_duration", "duration_sector_1", "duration_sector_2", "duration_sector_3", "is_pit_out_lap"]),
+      },
+      {
+        key: "stints",
+        label: "Stints",
+        description: "Tyre runs, compounds and stint lap ranges.",
+        rows: stints as unknown as Record<string, unknown>[],
+        columns: cols(["driver_number", "stint_number", "lap_start", "lap_end", "compound", "tyre_age_at_start"]),
+      },
+      {
+        key: "weather",
+        label: "Weather",
+        description: "Air/track temperature, humidity and rainfall samples.",
+        rows: weather,
+        columns: cols(["t", "air_temperature", "track_temperature", "humidity", "rainfall"]),
+      },
+      {
+        key: "race-control",
+        label: "Race control",
+        description: "Flags, safety cars, penalties and messages.",
+        rows: control,
+        columns: cols(["t", "category", "flag", "message", "scope", "driver_number", "lap_number"]),
+      },
+      {
+        key: "radio",
+        label: "Team radio",
+        description: "Radio metadata and recording links; no transcript is published.",
+        rows: radio,
+        columns: cols(["t", "driver_number", "recording_url"]),
+      },
+      {
+        key: "pit-stops",
+        label: "Pit stops",
+        description: "Stationary and pit-lane duration per recorded stop.",
+        rows: pitStops as unknown as Record<string, unknown>[],
+        columns: cols(["driver_number", "lap_number", "stop_duration", "pit_duration"]),
+      },
+      {
+        key: "overtakes",
+        label: "Overtake counts",
+        description: "Made/lost counts by driver; the feed may be incomplete.",
+        rows: overtakeCounts as unknown as Record<string, unknown>[],
+        columns: cols(["driver_number", "made", "lost"]),
+      },
+    ] satisfies DownloadDataset[];
+  })();
 
   return (
     <div className="report-overlay" role="dialog" aria-modal="true" aria-label="Session report">
@@ -185,6 +278,9 @@ export default function SessionReport({
             AI-enhanced
           </button>
         </div>
+        <button type="button" className="player-action" onClick={() => setDownloadOpen(true)}>
+          Download data
+        </button>
         <button type="button" className="primary" onClick={() => window.print()}>
           Print / Save PDF
         </button>
@@ -206,7 +302,8 @@ export default function SessionReport({
         {track && (
           <section className="report-track" aria-label="Circuit outline">
             <svg viewBox={`0 0 ${track.width} ${track.height}`} role="img" aria-label="Circuit outline">
-              <polyline points={track.points} fill="none" stroke="#263140" strokeWidth="3" strokeLinejoin="round" />
+              <polygon points={track.points} fill="none" stroke="#263140" strokeWidth="3" strokeLinejoin="round" />
+              <line x1={track.last[0]} y1={track.last[1]} x2={track.first[0]} y2={track.first[1]} stroke="#263140" strokeWidth="3" strokeLinecap="round" />
             </svg>
             <p className="report-caption">Circuit outline from the session’s own telemetry. No track map is inferred or downloaded.</p>
           </section>
@@ -245,6 +342,33 @@ export default function SessionReport({
           </div>
         </section>
 
+        <section className="report-highlights">
+          <h2>Key takeaways</h2>
+          <ul>
+            <li>
+              <strong>{ranked[0] ? name(ranked[0].driver_number) : "No classified winner"}</strong>
+              {ranked[0] ? ` won from P${ranked[0].position}; ${classified} of ${drivers.length} drivers were classified.` : " is not available in this feed."}
+            </li>
+            <li>
+              <strong>Fastest lap:</strong>{" "}
+              {fastest ? `${fastestRow?.full_name ?? code(fastest.driver_number)} · ${formatLapTime(fastest.lap_duration)} on lap ${fastest.lap_number}.` : "no timed lap was published."}
+            </li>
+            <li>
+              <strong>Tyres and pits:</strong>{" "}
+              {winnerStints.length
+                ? `${name(ranked[0].driver_number)} ran ${winnerStints.map((s) => s.compound ?? "?").join(" → ")}; the race recorded ${pitSummary.reduce((sum, p) => sum + p.stops, 0)} stops.`
+                : `The feed recorded ${pitSummary.reduce((sum, p) => sum + p.stops, 0)} stops, but no winner stint rows.`}
+            </li>
+            <li>
+              <strong>Overtaking:</strong>{" "}
+              {mostOvertakes ? `${code(mostOvertakes.driver_number)} led the feed with ${mostOvertakes.made} made and ${mostOvertakes.lost} lost (counts may be incomplete).` : "no overtake counts were published."}
+            </li>
+            <li>
+              <strong>Race control:</strong> {redFlags} red flag(s), {safetyCars} safety-car/VSC message(s).
+            </li>
+          </ul>
+        </section>
+
         <section className="report-section">
           <h2>Classification</h2>
           <table className="report-table">
@@ -266,6 +390,11 @@ export default function SessionReport({
               })}
             </tbody>
           </table>
+          {retired.length > 0 && (
+            <p className="report-caption">
+              Not classified: {retired.map((row) => `${code(row.driver_number)}${row.dnf ? " (DNF)" : row.dns ? " (DNS)" : " (DSQ)"}`).join(", ")}.
+            </p>
+          )}
         </section>
 
         <section className="report-section">
@@ -318,19 +447,49 @@ export default function SessionReport({
 
         {mode === "ai" && (
           <section className="report-ai">
-            <h2>Engineer’s summary</h2>
+            <h2>Engineer’s analysis</h2>
             {summaryBusy && <p>Asking the engineer…</p>}
             {summaryError && <p className="report-note">{summaryError}</p>}
             {summary && <p>{summary}</p>}
-            <p className="report-caption">AI narrative generated from the same session facts. The tables above are the measured source of truth.</p>
+            <p className="report-caption">
+              AI analysis generated from the same session facts: what decided it,
+              the tyre/pit story, and what the data cannot show. The tables above
+              remain the measured source of truth.
+            </p>
           </section>
         )}
+
+        <aside className="report-glossary">
+          <h2>How to read this report</h2>
+          <p>
+            <strong>Classification</strong> is the official session order; “gap/status”
+            is the recorded gap or a retirement reason, not a computed pace value.
+            <strong>Fastest lap</strong> is the quickest timed lap in the session.
+            <strong>Stint</strong> is a continuous run on one tyre set; a
+            <strong>stop</strong> is a recorded pit visit and <strong>best stop</strong>
+            is stationary time, not the full pit-lane loss. <strong>Overtakes</strong>
+            are feed counts and may be incomplete. <strong>SC/VSC</strong> and red flags
+            are race-control messages, not inferred incidents.
+          </p>
+          <p>
+            Percentage/pace data is only as good as the published feed. If a channel
+            is missing or internally inconsistent, the report says so rather than
+            filling the gap.
+          </p>
+        </aside>
 
         <footer className="report-footer">
           <span>BoxBox Replay · free, open-source · data: OpenF1</span>
           <span>Generated {new Date().toLocaleString()}</span>
         </footer>
       </article>
+      <DownloadPanel
+        open={downloadOpen}
+        onClose={() => setDownloadOpen(false)}
+        sessionKey={sessionKey}
+        sessionName={`${gpName} ${sessName}`}
+        datasets={datasets}
+      />
     </div>
   );
 }
