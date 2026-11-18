@@ -609,3 +609,7 @@ downloads moved from Performance into Report (nine tables including
 classification/fastest laps); pit analytics gained definitions for timed stops,
 stationary vs pit-lane time and incomplete overtake counts. 90 pytest + 74
 vitest.
+
+v3.10.2: CI-only maintenance. The npm audit step now covers shipped dependencies
+only (`--omit=dev`); the remaining advisory is a withdrawn picomatch ReDoS in
+Vite/Vitest tooling with no patched version. Production audit: 0 vulnerabilities.

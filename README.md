@@ -8,7 +8,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.10.1`** — the Telemetry AI explains the same window you see, stint/pit numbers have plain-language definitions, session-wide **Download data** lives in the printable **Report**, and the Data/AI report has closed circuit geometry, key takeaways, a glossary and no blank print pages. All screenshots below are from this build.
+> **Latest release: `v3.10.2`** — the Telemetry AI explains the same window you see, stint/pit numbers have plain-language definitions, session-wide **Download data** lives in the printable **Report**, and the Data/AI report has closed circuit geometry, key takeaways, a glossary and no blank print pages. `v3.10.2` scopes the CI audit to shipped dependencies; all screenshots are from the v3.10 feature build.
 
 ## What's new in v3.10.0
 
