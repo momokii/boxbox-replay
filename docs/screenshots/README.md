@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against **v3.10.1** on 2026-11-15. Captured from the running app at
+Refreshed against the **v3.10.1 feature build** on 2026-11-15 (v3.10.2 is a CI-only audit-scope release). Captured from the running app at
 1400×880, with phone captures at 390×844 and the narrow chat at 720×810.
 They are referenced from the root README and this page.
 

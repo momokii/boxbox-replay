@@ -10,7 +10,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 > **Latest release: `v3.10.2`** — the Telemetry AI explains the same window you see, stint/pit numbers have plain-language definitions, session-wide **Download data** lives in the printable **Report**, and the Data/AI report has closed circuit geometry, key takeaways, a glossary and no blank print pages. `v3.10.2` scopes the CI audit to shipped dependencies; all screenshots are from the v3.10 feature build.
 
-## What's new in v3.10.0
+## What's new in v3.10
 
 - **Telemetry AI grounding fixed.** The explain request now uses the selected Replay/Fixed/Full window, so the narrative aggregates match the chart instead of describing a different (often empty) window.
 - **Stint explanations.** Every summary (`stints`, `stops`, `best`, `overtakes/lost`) has a tooltip and a visible “how to read a row” definition. Best stop is stationary time, not pit-lane loss.
