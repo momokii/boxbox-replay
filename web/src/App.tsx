@@ -13,6 +13,7 @@ import StrategyPanel from "./components/StrategyPanel";
 import StandingsPanel from "./components/StandingsPanel";
 import ArchiveView from "./components/ArchiveView";
 import SessionReport from "./components/SessionReport";
+import SessionDownloadButton from "./components/SessionDownloadButton";
 import TelemetryLabPanel from "./components/TelemetryLabPanel";
 import SessionMap from "./components/SessionMap";
 import SpeedChart, { type SpeedSeries } from "./components/SpeedChart";
@@ -681,9 +682,12 @@ export default function App() {
           Archive
         </button>
         {sessionKey && (
-          <button type="button" className="archive-open" onClick={() => setReportOpen(true)}>
-            Report
-          </button>
+          <>
+            <button type="button" className="archive-open" onClick={() => setReportOpen(true)}>
+              Report
+            </button>
+            <SessionDownloadButton sessionKey={sessionKey} sessionName={`${gpName} ${sessName}`} />
+          </>
         )}
         {sessionKey && (
         <div className="layout-switch" role="group" aria-label="Layout">

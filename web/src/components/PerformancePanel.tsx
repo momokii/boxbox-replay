@@ -140,8 +140,9 @@ export default function PerformancePanel(p: Props) {
       />
 
       <p className="dim small">
-        Session-wide downloads (laps, stints, weather, race control, radio, pit
-        stops, overtakes) live in <strong>Report</strong>.
+        Session-wide downloads (classification, fastest laps, laps, stints,
+        weather, race control, radio, pit stops, overtakes) are in the header
+        <strong>Download</strong> and in <strong>Report</strong>.
       </p>
       <div className="row" style={{ marginBottom: 10 }}>
         <button className={scope === "focus" ? "chip on" : "chip"} onClick={() => setScope("focus")}>

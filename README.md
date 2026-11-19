@@ -8,14 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.10.2`** — the Telemetry AI explains the same window you see, stint/pit numbers have plain-language definitions, session-wide **Download data** lives in the printable **Report**, and the Data/AI report has closed circuit geometry, key takeaways, a glossary and no blank print pages. `v3.10.2` scopes the CI audit to shipped dependencies; all screenshots are from the v3.10 feature build.
+> **Latest release: `v3.10.3`** — Telemetry AI uses the visible window, stint/pit numbers are defined, **Download** is directly in the session header (and Report), and the printable Data/AI report has closed circuit geometry, key takeaways, a glossary, a disabled print action while AI is generating, and no blank print pages.
 
 ## What's new in v3.10
 
 - **Telemetry AI grounding fixed.** The explain request now uses the selected Replay/Fixed/Full window, so the narrative aggregates match the chart instead of describing a different (often empty) window.
 - **Stint explanations.** Every summary (`stints`, `stops`, `best`, `overtakes/lost`) has a tooltip and a visible “how to read a row” definition. Best stop is stationary time, not pit-lane loss.
-- **Session-wide download.** **Report → Download data** exports Classification, Fastest laps, Laps, Stints, Weather, Race control, Radio, Pit stops and Overtake counts as CSV (opens in Excel) or a multi-table JSON bundle. Client-side, no new requests.
-- **Session report.** A print-first A4 report with a closed circuit outline, key takeaways, summary cards, classification, tyre/pit table, fastest laps and a report glossary. Choose **Data** or **AI-enhanced** (a three-part grounded analysis), then **Print / Save PDF**; print CSS removes the app chrome and no longer leaves blank lead pages.
+- **Session-wide download.** **Download** is directly in the session header (also available inside Report). It exports Classification, Fastest laps, Laps, Stints, Weather, Race control, Radio, Pit stops and Overtake counts as CSV (opens in Excel) or a multi-table JSON bundle. Client-side, no new requests.
+- **Session report.** A print-first A4 report with a closed circuit outline, key takeaways, summary cards, classification, tyre/pit table, fastest laps and a report glossary. **Data** shows measured tables only; **AI-enhanced** adds a three-part analysis (what decided it, tyres/pits, what the data cannot show) without changing the tables. **Print / Save PDF** is disabled while the analysis is generating; print CSS removes app chrome and no longer leaves blank lead pages.
 
 ## What's new in v3.9.0
 
@@ -47,7 +47,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Driver drill-down.** Click any car or tower row for position, gap, tyre age, result, a five-lap strip, pit stops, overtakes — each opening a full view.
 - **Lap times.** Sortable by time or sector (fastest first), filterable by driver, and comparable across any number of drivers.
 - **Qualifying mini-sectors (v3).** Real segment strips (green/purple/yellow) for qualifying and practice, with placeholder detection; races show nothing rather than fake segments.
-- **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds, with definitions for timed stops, stationary time vs pit-lane loss, and incomplete overtake counts.
+- **Pit crews & overtakes (v3).** Stop-time distribution, median/best, outlier flags and the most overtakes, from the cached feeds, with definitions for timed stops, stationary time vs pit-lane loss, and incomplete overtake counts. The report distinguishes **pit visits** from visits with a timed stationary stop.
 - **Championship standings (v3.6+).** A Standings tab resolves the current weekend to its championship round and shows the driver/team table plus a selectable points-by-round chart, per-round tooltips and a head-to-head table. Source: Jolpica F1 (CC BY-NC-SA 4.0), attributed in the panel; the archive is revalidated hourly and can be refreshed on demand.
 - **Results archive (v3.6+).** A separate, full-screen archive for every Jolpica season through 2026: season → race → result, with standings beside it. Results and standings only — replay telemetry starts in 2023. Season/race changes show explicit loading states; missing and future rounds have honest fallbacks.
 - **Session data download (v3.10).** Dedicated modal for the available session tables, CSV or JSON, generated entirely in the browser.

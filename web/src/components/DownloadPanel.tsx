@@ -1,14 +1,7 @@
 import { useState } from "react";
-import { downloadFile, toCsv, type Column } from "../export";
+import { downloadFile, toCsv } from "../export";
+import type { DownloadDataset } from "../downloads";
 import Modal from "./Modal";
-
-export interface DownloadDataset {
-  key: string;
-  label: string;
-  description: string;
-  rows: Record<string, unknown>[];
-  columns: Column[];
-}
 
 interface Props {
   open: boolean;

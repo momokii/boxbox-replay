@@ -3673,6 +3673,12 @@ tr.driver-marked td {
   border-radius: var(--radius);
   backdrop-filter: blur(8px);
 }
+.report-mode-help {
+  flex-basis: 100%;
+  color: var(--dim);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
 .report-sheet {
   max-width: 1000px;
   margin: 0 auto 40px;
@@ -3892,7 +3898,13 @@ tr.driver-marked td {
   .no-print {
     display: none !important;
   }
-  .report-sheet {
+  .report-mode-help {
+  flex-basis: 100%;
+  color: var(--dim);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+.report-sheet {
     max-width: none;
     margin: 0;
     padding: 0;
@@ -3914,7 +3926,13 @@ tr.driver-marked td {
   .report-overlay {
     padding: 8px;
   }
-  .report-sheet {
+  .report-mode-help {
+  flex-basis: 100%;
+  color: var(--dim);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+.report-sheet {
     padding: 24px 18px;
   }
   .report-title {

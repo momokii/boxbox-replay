@@ -241,6 +241,18 @@
 **Impact:** v3.10.1; docs/screenshots/state updated
 ---
 
+## v3.10.3 Download Access / Print Gate Decision (2026-11-15)
+
+---
+**Decision:** D17 — Put session downloads in the header and gate printing on AI completion
+**Date:** 2026-11-15
+**Context:** Downloads were only reachable after opening Report; Print could be pressed while AI analysis was still generating; report pit visits were confused with timed stops
+**Rationale:** Session-wide data should be one click from the session header. Printing mid-generation risks an incomplete AI section, so Print/Save PDF is disabled until the analysis resolves or fails. Report cards explicitly distinguish all pit visits from visits with a timed stationary stop.
+**Alternatives Rejected:** Leaving downloads only inside Report (hidden); disabling the whole report while AI runs (data report must stay usable); treating unmeasured stops as timed
+**Security Implications:** None new; same client-side export and optional AI endpoint
+**Impact:** v3.10.3; docs/screenshots/state updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

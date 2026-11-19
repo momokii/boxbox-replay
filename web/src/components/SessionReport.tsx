@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type PitStop, type PitStopSummary, type SessionResultRow } from "../api";
 import { compoundColor, formatLapTime } from "../format";
-import DownloadPanel, { type DownloadDataset } from "./DownloadPanel";
+import DownloadPanel from "./DownloadPanel";
+import { buildSessionDatasets } from "../downloads";
 import type { Driver, Geometry, Lap, SessionInfoFull, Stint } from "../types";
 
 interface Props {
@@ -156,6 +157,8 @@ export default function SessionReport({
     ? stints.filter((s) => s.driver_number === ranked[0].driver_number).sort((a, b) => (a.stint_number ?? 0) - (b.stint_number ?? 0))
     : [];
   const retired = result.filter((row) => row.dnf || row.dns || row.dsq);
+  const timedStops = pitStops.filter((stop) => stop.stop_duration != null && stop.stop_duration > 0).length;
+  const printDisabled = mode === "ai" && (summaryBusy || (!summary && !summaryError));
   const fastestRow = fastest ? byNumber.get(fastest.driver_number) : null;
 
   const track = useMemo(() => {
@@ -188,80 +191,17 @@ export default function SessionReport({
     .map((point) => Number(point.track_temperature))
     .filter((value) => Number.isFinite(value));
 
-  const datasets = (() => {
-    const cols = (keys: string[]) => keys.map((key) => ({ key, label: key }));
-    const fastestRows = fastestFive.map((lap, index) => ({
-      rank: index + 1,
-      driver: name(lap.driver_number),
-      lap: lap.lap_number,
-      time: formatLapTime(lap.lap_duration),
-    }));
-    return [
-      {
-        key: "classification",
-        label: "Classification",
-        description: "Official session order, status and points.",
-        rows: result as unknown as Record<string, unknown>[],
-        columns: cols(["position", "driver_number", "gap_text", "points", "dnf", "dns", "dsq"]),
-      },
-      {
-        key: "fastest-laps",
-        label: "Fastest laps",
-        description: "The five quickest timed laps.",
-        rows: fastestRows,
-        columns: cols(["rank", "driver", "lap", "time"]),
-      },
-      {
-        key: "laps",
-        label: "Laps",
-        description: "Every lap, sector time and pit-out flag.",
-        rows: laps as unknown as Record<string, unknown>[],
-        columns: cols(["driver_number", "lap_number", "lap_duration", "duration_sector_1", "duration_sector_2", "duration_sector_3", "is_pit_out_lap"]),
-      },
-      {
-        key: "stints",
-        label: "Stints",
-        description: "Tyre runs, compounds and stint lap ranges.",
-        rows: stints as unknown as Record<string, unknown>[],
-        columns: cols(["driver_number", "stint_number", "lap_start", "lap_end", "compound", "tyre_age_at_start"]),
-      },
-      {
-        key: "weather",
-        label: "Weather",
-        description: "Air/track temperature, humidity and rainfall samples.",
-        rows: weather,
-        columns: cols(["t", "air_temperature", "track_temperature", "humidity", "rainfall"]),
-      },
-      {
-        key: "race-control",
-        label: "Race control",
-        description: "Flags, safety cars, penalties and messages.",
-        rows: control,
-        columns: cols(["t", "category", "flag", "message", "scope", "driver_number", "lap_number"]),
-      },
-      {
-        key: "radio",
-        label: "Team radio",
-        description: "Radio metadata and recording links; no transcript is published.",
-        rows: radio,
-        columns: cols(["t", "driver_number", "recording_url"]),
-      },
-      {
-        key: "pit-stops",
-        label: "Pit stops",
-        description: "Stationary and pit-lane duration per recorded stop.",
-        rows: pitStops as unknown as Record<string, unknown>[],
-        columns: cols(["driver_number", "lap_number", "stop_duration", "pit_duration"]),
-      },
-      {
-        key: "overtakes",
-        label: "Overtake counts",
-        description: "Made/lost counts by driver; the feed may be incomplete.",
-        rows: overtakeCounts as unknown as Record<string, unknown>[],
-        columns: cols(["driver_number", "made", "lost"]),
-      },
-    ] satisfies DownloadDataset[];
-  })();
+  const datasets = buildSessionDatasets({
+    laps,
+    stints,
+    weather,
+    control,
+    radio,
+    pitStops,
+    pitSummary,
+    overtakeCounts,
+    result,
+  });
 
   return (
     <div className="report-overlay" role="dialog" aria-modal="true" aria-label="Session report">
@@ -281,12 +221,16 @@ export default function SessionReport({
         <button type="button" className="player-action" onClick={() => setDownloadOpen(true)}>
           Download data
         </button>
-        <button type="button" className="primary" onClick={() => window.print()}>
-          Print / Save PDF
+        <button type="button" className="primary" onClick={() => window.print()} disabled={printDisabled} title={printDisabled ? "Wait for the AI analysis to finish" : "Print or save the report as PDF"}>
+          {printDisabled ? "Generating…" : "Print / Save PDF"}
         </button>
         <button type="button" className="archive-close" onClick={onClose} aria-label="Close report">
           Close ✕
         </button>
+        <span className="report-mode-help">
+          Data mode is measured tables only. AI-enhanced adds a three-part
+          analysis; the tables never change.
+        </span>
       </div>
 
       <article className="report-sheet">
@@ -326,9 +270,9 @@ export default function SessionReport({
             <small>classified finishers</small>
           </div>
           <div className="report-card">
-            <span>Pit stops</span>
+            <span>Pit visits</span>
             <strong>{pitSummary.reduce((sum, p) => sum + p.stops, 0)}</strong>
-            <small>recorded stops</small>
+            <small>{timedStops ? `${timedStops} with a timed stationary stop` : "no timed stops published"}</small>
           </div>
           <div className="report-card">
             <span>Race control</span>
@@ -356,8 +300,8 @@ export default function SessionReport({
             <li>
               <strong>Tyres and pits:</strong>{" "}
               {winnerStints.length
-                ? `${name(ranked[0].driver_number)} ran ${winnerStints.map((s) => s.compound ?? "?").join(" → ")}; the race recorded ${pitSummary.reduce((sum, p) => sum + p.stops, 0)} stops.`
-                : `The feed recorded ${pitSummary.reduce((sum, p) => sum + p.stops, 0)} stops, but no winner stint rows.`}
+                ? `${name(ranked[0].driver_number)} ran ${winnerStints.map((s) => s.compound ?? "?").join(" → ")}; the feed recorded ${pitSummary.reduce((sum, p) => sum + p.stops, 0)} pit visits${timedStops ? ` (${timedStops} with a timed stationary stop)` : " with no timed stationary stops"}.`
+                : `The feed recorded ${pitSummary.reduce((sum, p) => sum + p.stops, 0)} pit visits${timedStops ? `, ${timedStops} timed` : ", none timed"}.`}
             </li>
             <li>
               <strong>Overtaking:</strong>{" "}

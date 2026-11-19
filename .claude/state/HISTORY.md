@@ -613,3 +613,8 @@ vitest.
 v3.10.2: CI-only maintenance. The npm audit step now covers shipped dependencies
 only (`--omit=dev`); the remaining advisory is a withdrawn picomatch ReDoS in
 Vite/Vitest tooling with no patched version. Production audit: 0 vulnerabilities.
+
+v3.10.3: Download is a direct header button (also inside Report); Print / Save
+PDF is disabled while the AI analysis is generating; the report distinguishes
+pit visits from visits with a timed stationary stop; mode help explains Data vs
+AI-enhanced; report circuit/print/page fixes retained. 90 pytest + 74 vitest.
