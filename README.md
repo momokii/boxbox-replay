@@ -8,14 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.10.3`** — Telemetry AI uses the visible window, stint/pit numbers are defined, **Download** is directly in the session header (and Report), and the printable Data/AI report has closed circuit geometry, key takeaways, a glossary, a disabled print action while AI is generating, and no blank print pages.
+> **Latest release: `v3.10.4`** — Telemetry AI uses the visible window, stint/pit numbers are defined, **Download data** is directly in the session header (and Report), and the printable Data/AI report has closed circuit geometry, key takeaways, a glossary, explanations of Data vs AI-enhanced, a disabled print action while AI is generating, and no blank print pages.
 
 ## What's new in v3.10
 
 - **Telemetry AI grounding fixed.** The explain request now uses the selected Replay/Fixed/Full window, so the narrative aggregates match the chart instead of describing a different (often empty) window.
 - **Stint explanations.** Every summary (`stints`, `stops`, `best`, `overtakes/lost`) has a tooltip and a visible “how to read a row” definition. Best stop is stationary time, not pit-lane loss.
-- **Session-wide download.** **Download** is directly in the session header (also available inside Report). It exports Classification, Fastest laps, Laps, Stints, Weather, Race control, Radio, Pit stops and Overtake counts as CSV (opens in Excel) or a multi-table JSON bundle. Client-side, no new requests.
-- **Session report.** A print-first A4 report with a closed circuit outline, key takeaways, summary cards, classification, tyre/pit table, fastest laps and a report glossary. **Data** shows measured tables only; **AI-enhanced** adds a three-part analysis (what decided it, tyres/pits, what the data cannot show) without changing the tables. **Print / Save PDF** is disabled while the analysis is generating; print CSS removes app chrome and no longer leaves blank lead pages.
+- **Session-wide download.** **Download data** is directly in the session header (also available inside Report). It exports Classification, Fastest laps, Laps, Stints, Weather, Race control, Radio, Pit stops and Overtake counts as CSV (opens in Excel) or a multi-table JSON bundle. Client-side, no new requests.
+- **Session report.** A print-first A4 report with a closed circuit outline, key takeaways, summary cards, classification, tyre/pit table, fastest laps and a report glossary. **Data** shows measured tables only; **AI-enhanced** adds a three-part analysis (what decided it, tyres/pits, what the data cannot show) without changing the tables. **Print / Save PDF** is disabled while the analysis is generating; print CSS removes app chrome and no longer leaves blank lead pages. Pit visits are labelled separately from visits with a timed stationary stop. A feed with no timed stops shows an explicit empty state, not a blank table.
 
 ## What's new in v3.9.0
 

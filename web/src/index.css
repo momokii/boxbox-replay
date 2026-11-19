@@ -3942,3 +3942,20 @@ tr.driver-marked td {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.pit-empty {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-top: 6px;
+  color: var(--dim);
+  font-size: 0.76rem;
+}
+.pit-empty strong {
+  display: block;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.pit-empty p {
+  margin: 0;
+}

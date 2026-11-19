@@ -253,6 +253,18 @@
 **Impact:** v3.10.3; docs/screenshots/state updated
 ---
 
+## v3.10.4 Empty-State / Label Decision (2026-11-15)
+
+---
+**Decision:** D18 — Label the export action explicitly and never render an empty timed-stop table
+**Date:** 2026-11-15
+**Context:** Header said only “Download”; a session with pit visits but no stationary times showed an empty Driver/Lap/Stationary table and a duplicated explanation
+**Rationale:** “Download data” names the action. A no-timed-stops feed gets an explicit state that reports the number of pit visits and explains why median/best are unavailable; the overtakes table remains independent. No timing value is invented.
+**Alternatives Rejected:** Hiding the whole Pit crews section (overtakes are still useful); showing zero times; keeping empty headers
+**Security Implications:** None
+**Impact:** v3.10.4; docs/screenshots/state updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

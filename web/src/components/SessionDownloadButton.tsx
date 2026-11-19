@@ -59,7 +59,7 @@ export default function SessionDownloadButton({ sessionKey, sessionName }: Props
         disabled={loading}
         title="Download session-wide data as CSV or JSON"
       >
-        {loading ? "Preparing…" : "Download"}
+        {loading ? "Preparing…" : "Download data"}
       </button>
       {open && datasets && (
         <DownloadPanel

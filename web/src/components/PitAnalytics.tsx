@@ -19,6 +19,7 @@ export default function PitAnalytics({ stops, overtakeCounts, driverCode }: Prop
         .slice(0, 6),
     [stops],
   );
+  const visits = stops.length;
   const overtakes = useMemo(
     () => [...overtakeCounts].sort((a, b) => b.made - a.made).slice(0, 5),
     [overtakeCounts],
@@ -42,29 +43,34 @@ export default function PitAnalytics({ stops, overtakeCounts, driverCode }: Prop
             {stats.median == null ? "—" : `${stats.median.toFixed(2)}s`} · best{" "}
             {stats.best == null ? "—" : `${stats.best.toFixed(2)}s`}
           </p>
-          {stats.count === 0 && (
-            <p className="dim small">
-              The feed did not publish timed pit stops for this session, so median
-              and best are unavailable rather than zero.
-            </p>
+          {stats.count === 0 ? (
+            <div className="pit-empty">
+              <strong>No timed stops to rank</strong>
+              <p>
+                {visits > 0
+                  ? `The feed lists ${visits} pit visit${visits === 1 ? "" : "s"} but no stationary times, so median and best stay unavailable.`
+                  : "The feed did not publish any pit stops for this session."}
+              </p>
+            </div>
+          ) : (
+            <table className="laps mono">
+              <thead>
+                <tr><th>Driver</th><th>Lap</th><th>Stationary</th></tr>
+              </thead>
+              <tbody>
+                {quickest.map((stop, index) => (
+                  <tr
+                    key={`${stop.driver_number}-${stop.lap_number}-${index}`}
+                    title={`${driverCode(stop.driver_number)} · lap ${stop.lap_number ?? "—"} · ${stop.stop_duration?.toFixed(2)}s stationary`}
+                  >
+                    <td>{driverCode(stop.driver_number)}</td>
+                    <td className="dim">L{stop.lap_number ?? "—"}</td>
+                    <td>{stop.stop_duration?.toFixed(2)}s</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
-          <table className="laps mono">
-            <thead>
-              <tr><th>Driver</th><th>Lap</th><th>Stationary</th></tr>
-            </thead>
-            <tbody>
-              {quickest.map((stop, index) => (
-                <tr
-                  key={`${stop.driver_number}-${stop.lap_number}-${index}`}
-                  title={`${driverCode(stop.driver_number)} · lap ${stop.lap_number ?? "—"} · ${stop.stop_duration?.toFixed(2)}s stationary`}
-                >
-                  <td>{driverCode(stop.driver_number)}</td>
-                  <td className="dim">L{stop.lap_number ?? "—"}</td>
-                  <td>{stop.stop_duration?.toFixed(2)}s</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
           {stats.outliers.length > 0 && (
             <p className="dim small">
               Outliers (&gt;1.5× median):{" "}
@@ -76,26 +82,24 @@ export default function PitAnalytics({ stops, overtakeCounts, driverCode }: Prop
         </div>
         <div>
           <p className="dim small">Most overtakes (feed count, may be incomplete)</p>
-          {stats.count === 0 && (
-            <p className="dim small">
-              The feed did not publish timed pit stops for this session, so median
-              and best are unavailable rather than zero.
-            </p>
+          {overtakes.length ? (
+            <table className="laps mono">
+              <thead>
+                <tr><th>Driver</th><th>Made</th><th>Lost</th></tr>
+              </thead>
+              <tbody>
+                {overtakes.map((row) => (
+                  <tr key={row.driver_number}>
+                    <td>{driverCode(row.driver_number)}</td>
+                    <td>{row.made} made</td>
+                    <td className="dim">{row.lost} lost</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="dim small">No overtake counts were published for this session.</p>
           )}
-          <table className="laps mono">
-            <thead>
-              <tr><th>Driver</th><th>Made</th><th>Lost</th></tr>
-            </thead>
-            <tbody>
-              {overtakes.map((row) => (
-                <tr key={row.driver_number}>
-                  <td>{driverCode(row.driver_number)}</td>
-                  <td>{row.made} made</td>
-                  <td className="dim">{row.lost} lost</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </section>

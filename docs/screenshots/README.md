@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v3.10.3 feature build** on 2026-11-15. Captured from the running app at
+Refreshed against the **v3.10.4 feature build** on 2026-11-15. Captured from the running app at
 1400×880, with phone captures at 390×844 and the narrow chat at 720×810.
 They are referenced from the root README and this page.
 
@@ -51,4 +51,5 @@ They are referenced from the root README and this page.
 | `43-report-ai.png` | AI-enhanced session report |
 | `44-telemetry-ai.png` | Scoped Telemetry AI explanation matching the chart |
 | `45-pit-analytics.png` | Pit-stop and overtake tables with definitions |
-| `46-header-download.png` | Direct Download button in the session header |
+| `46-header-download.png` | Direct Download data button in the session header |
+| `47-pit-empty.png` | Explicit no-timed-stops state with pit visits and overtakes |

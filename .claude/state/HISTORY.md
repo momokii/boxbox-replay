@@ -618,3 +618,9 @@ v3.10.3: Download is a direct header button (also inside Report); Print / Save
 PDF is disabled while the AI analysis is generating; the report distinguishes
 pit visits from visits with a timed stationary stop; mode help explains Data vs
 AI-enhanced; report circuit/print/page fixes retained. 90 pytest + 74 vitest.
+
+v3.10.4: header action renamed Download data; Pit crews & overtakes no longer
+renders an empty timed-stop table. When the feed has visits but no stationary
+times it shows an explicit "No timed stops to rank" state with the visit count,
+while the overtakes table remains. Report Data/AI help and print gate retained.
+90 pytest + 74 vitest.

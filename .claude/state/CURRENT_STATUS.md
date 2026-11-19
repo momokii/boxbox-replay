@@ -1,5 +1,5 @@
 ## Project Phase
-v2 shipped (`v1.0.0`…`v2.13.1`). v3 complete through **`v3.10.3`**: V3.1 strategy, V3.2 Telemetry Lab, V3.3 grounded explain, V3.4a/c/d/e supporting analytics, the optional lazy **3D replay** (V3.5a), plus **championship standings** and the **results archive through 2026** (V3.5b/c, Jolpica), plus the v3.7 freshness/comparison/telemetry fixes and the v3.8 window/snapshot/mini/share-card pass.
+v2 shipped (`v1.0.0`…`v2.13.1`). v3 complete through **`v3.10.4`**: V3.1 strategy, V3.2 Telemetry Lab, V3.3 grounded explain, V3.4a/c/d/e supporting analytics, the optional lazy **3D replay** (V3.5a), plus **championship standings** and the **results archive through 2026** (V3.5b/c, Jolpica), plus the v3.7 freshness/comparison/telemetry fixes and the v3.8 window/snapshot/mini/share-card pass.
 DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Completed
@@ -22,6 +22,7 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] v3.10 scoped Telemetry AI, stint/pit definitions, session-wide downloads in Report, printable Data/AI report
 - [x] v3.10.1 report polish: closed circuit, key takeaways/glossary, three-part AI analysis, no blank print pages
 - [x] v3.10.3 direct header Download, AI-busy print lock, pit-visit vs timed-stop clarity
+- [x] v3.10.4 unambiguous Download data label and explicit empty timed-stops state
 
 ## Blocked / Deferred (deliberate, documented)
 - V2-4 historical Fight Finder: DEFERRED (noisy/sparse feeds)
@@ -36,4 +37,4 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-15: `v3.10.3` shipped: direct header Download, AI-busy print lock, pit-visit/timed-stop clarity, report mode help. v3.10 adds scoped Telemetry AI explain, stint/pit definitions, session-wide downloads in Report (nine tables) and a printable Data/AI report with closed circuit, key takeaways, glossary, three-part AI analysis and no blank print pages. 90 pytest + 74 vitest; ruff/tsc/build clean; CI green on `v3.10.3`; prod healthy.
+2026-11-15: `v3.10.4` shipped: ambiguous Download label fixed, explicit empty timed-stops state; report Data/AI help and print gate retained. direct header Download, AI-busy print lock, pit-visit/timed-stop clarity, report mode help. v3.10 adds scoped Telemetry AI explain, stint/pit definitions, session-wide downloads in Report (nine tables) and a printable Data/AI report with closed circuit, key takeaways, glossary, three-part AI analysis and no blank print pages. 90 pytest + 74 vitest; ruff/tsc/build clean; CI green on `v3.10.4`; prod healthy.
