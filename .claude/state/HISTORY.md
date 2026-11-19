@@ -624,3 +624,8 @@ renders an empty timed-stop table. When the feed has visits but no stationary
 times it shows an explicit "No timed stops to rank" state with the visit count,
 while the overtakes table remains. Report Data/AI help and print gate retained.
 90 pytest + 74 vitest.
+
+v3.11.0: cold replay loads now expose per-session build progress (drivers done,
+total, elapsed) and cancel the previous session's build when switching.
+Per-driver location caches remain; partial replay files are not written. Loading
+copy explains OpenF1's 30/min budget. 92 pytest + 74 vitest.

@@ -8,7 +8,12 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.10.4`** — Telemetry AI uses the visible window, stint/pit numbers are defined, **Download data** is directly in the session header (and Report), and the printable Data/AI report has closed circuit geometry, key takeaways, a glossary, explanations of Data vs AI-enhanced, a disabled print action while AI is generating, and no blank print pages.
+> **Latest release: `v3.11.0`** — cold replay loading now shows per-driver progress and cancels the previous build when you switch sessions, so a slow Baku → Austria change has context instead of looking stuck. Telemetry scoping, Download data, the Data/AI report and the v3.10 fixes remain.
+
+## What's new in v3.11
+
+- **Replay loading progress.** A cold session needs one OpenF1 location request per driver; the free feed allows 30 requests/minute. The loading card now shows `N/total drivers · elapsed` and says why the first visit takes about a minute.
+- **Switching cancels stale work.** Selecting another session cancels the previous replay build before it consumes more of the request budget; cached per-driver locations remain reusable. The second visit to a session is still instant.
 
 ## What's new in v3.10
 
@@ -221,6 +226,8 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 | `GET /session/info` | Session clock, race distance, entry count |
 | `GET /session/geometry` | Circuit outline, corners, DRS zones, rotation |
 | `GET /session/replay` | Every driver's positions, sampled; lap markers |
+| `GET /session/replay/status?session_key=` | Local build progress: state, drivers done, elapsed |
+| `POST /session/replay/cancel?session_key=` | Cancel a superseded cold build |
 | `GET /session/gaps` | Gaps to leader (live intervals, else derived from lap times) |
 | `GET /session/speed?driver_number=` | One driver's speed for the session |
 | `GET /session/duel?a_driver=&a_lap=&b_driver=&b_lap=` | Two laps aligned by distance: traces plus the time delta at equal progress |
@@ -247,7 +254,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ## Quality gates
 
 ```bash
-pytest                       # 87 Python tests, all HTTP mocked
+pytest                       # 93 Python tests, all HTTP mocked
 ruff check .                 # lint
 cd web && npm test           # 74 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle

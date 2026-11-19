@@ -29,6 +29,22 @@ session waits behind it. That is why Baku → Austria could feel stuck.
    contract; browser check that switching shows progress and does not leave the
    new session waiting behind the old build.
 
+## Implementation result (v3.11.0)
+
+- `data_loader` exposes per-session build state (`total`, `done`, elapsed) and a
+  cancellation flag. The replay loop checks cancellation before each driver;
+  cancelled builds do not write a partial replay parquet, while per-driver
+  location caches remain.
+- `GET /session/replay/status` and `POST /session/replay/cancel` are wired to
+  the UI. Switching sessions cancels the previous build; the new loading card
+  shows driver progress and the OpenF1 30/min explanation.
+- API tests cover idle status and cancellation; the build still uses the
+  documented free budget rather than raising it.
+- The UI cancels the previous session build before starting a new one and shows
+  driver progress/elapsed time with the 30/min explanation.
+- Verified locally: a cold build reached 16/20 drivers in ~88s, confirming the
+  rate/network bottleneck; the progress endpoint reflects it.
+
 ## Sources
 
 1. OpenF1 API docs — `/location` is one driver's positions, with an arbitrary

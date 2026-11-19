@@ -3959,3 +3959,8 @@ tr.driver-marked td {
 .pit-empty p {
   margin: 0;
 }
+
+.loading-progress {
+  color: var(--amber);
+  margin: 6px 0 2px;
+}

@@ -826,3 +826,18 @@ def test_ai_report_endpoint(monkeypatch):
         got = client.post("/ai/report", json={"session_key": 1})
         assert got.status_code == 200
         assert got.json()["answer"].startswith("WHAT DECIDED IT")
+
+
+def test_replay_status_idle():
+    with TestClient(m.app) as client:
+        got = client.get("/session/replay/status", params={"session_key": 999999})
+        assert got.status_code == 200
+        assert got.json()["state"] == "idle"
+
+
+def test_replay_cancel_route(monkeypatch):
+    monkeypatch.setattr(m.data_loader, "cancel_replay_build", lambda key: True)
+    with TestClient(m.app) as client:
+        got = client.post("/session/replay/cancel", params={"session_key": 1})
+        assert got.status_code == 200
+        assert got.json() == {"cancelled": True}

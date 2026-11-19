@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v3.10.4 feature build** on 2026-11-15. Captured from the running app at
+Refreshed against the **v3.11.0 build** on 2026-11-15. Captured from the running app at
 1400×880, with phone captures at 390×844 and the narrow chat at 720×810.
 They are referenced from the root README and this page.
 

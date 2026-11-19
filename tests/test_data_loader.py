@@ -272,3 +272,40 @@ def test_lap_window_handles_a_driver_with_no_laps():
     # An unknown driver returns a frame with no columns; this must be a clean
     # "no window", not a KeyError that surfaces as a 500.
     assert data_loader.lap_window(pd.DataFrame(), 1) == (None, None)
+
+
+def test_build_session_replay_cancels_before_next_driver(monkeypatch, tmp_path):
+    import pandas as pd
+
+    import data_loader
+
+    base = pd.Timestamp("2024-01-01T00:00:00Z")
+    monkeypatch.setattr(data_loader, "_session_cache", lambda key, name: tmp_path / name)
+    monkeypatch.setattr(
+        data_loader,
+        "session_window",
+        lambda key: (base, base + pd.Timedelta(minutes=5)),
+    )
+    monkeypatch.setattr(
+        data_loader,
+        "list_drivers",
+        lambda key: pd.DataFrame({"driver_number": [1, 2]}),
+    )
+    seen = []
+
+    def fake_location(session_key, driver):
+        seen.append(driver)
+        data_loader.cancel_replay_build(session_key)
+        return pd.DataFrame(
+            {
+                "date": [base + pd.Timedelta(seconds=1)],
+                "x": [10.0],
+                "y": [20.0],
+            }
+        )
+
+    monkeypatch.setattr(data_loader, "get_location", fake_location)
+    with pytest.raises(data_loader.ReplayCancelled):
+        data_loader.build_session_replay(1234, hz=1)
+    assert seen == [1]
+    assert not (tmp_path / "session_pos_v2_1hz.parquet").exists()

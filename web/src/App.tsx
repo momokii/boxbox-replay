@@ -255,6 +255,7 @@ export default function App() {
       : Promise.resolve({ ...EMPTY_GEO, driver: 0, lap: 0 }),
   );
   const [replayRetry, setReplayRetry] = useState(0);
+  const [replayProgress, setReplayProgress] = useState<{ done: number; total: number; elapsed: number } | null>(null);
   const [pausedAt, setPausedAt] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
   const autoRetried = useRef<Set<number>>(new Set());
@@ -273,10 +274,45 @@ export default function App() {
     const id = window.setTimeout(() => setReplayRetry((n) => n + 1), 1200);
     return () => window.clearTimeout(id);
   }, [sessionKey, replay.error]);
+  const previousReplaySession = useRef<number | null>(null);
+  useEffect(() => {
+    const previous = previousReplaySession.current;
+    if (previous != null && previous !== sessionKey) {
+      api.cancelReplay(previous).catch(() => undefined);
+    }
+    previousReplaySession.current = sessionKey ?? null;
+  }, [sessionKey]);
+
   const gaps = useAsync(`gaps:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionGaps(sessionKey) : Promise.resolve(null as unknown as SessionGaps),
   );
   const sessionLoading = sessionKey != null && replay.error == null && replay.data == null;
+  useEffect(() => {
+    if (!sessionLoading || !sessionKey) {
+      setReplayProgress(null);
+      return;
+    }
+    let live = true;
+    const read = () =>
+      api
+        .replayStatus(sessionKey)
+        .then((status) => {
+          if (!live) return;
+          setReplayProgress(
+            status.state === "building"
+              ? { done: status.done, total: status.total, elapsed: status.elapsed_s }
+              : null,
+          );
+        })
+        .catch(() => undefined);
+    read();
+    const id = window.setInterval(read, 1500);
+    return () => {
+      live = false;
+      window.clearInterval(id);
+    };
+  }, [sessionLoading, sessionKey, replayRetry]);
+
   const drivers = useAsync(`drivers:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.drivers(sessionKey) : Promise.resolve([]),
   );
@@ -870,8 +906,14 @@ export default function App() {
                   <div className="loading-card">
                     <p className="loading-title">Loading {gpName} · {sessName}</p>
                     <p className="dim small">
-                      Building the replay from telemetry. The first visit to a session takes about a
-                      minute; afterwards it is instant.
+                      A cold replay needs one OpenF1 location request per driver. The free feed
+                      allows 30 requests per minute, so the first build can take about a minute;
+                      switching sessions cancels the old build. Later visits are instant.
+                    </p>
+                    <p className="mono small loading-progress" role="status" aria-live="polite">
+                      {replayProgress
+                        ? `Building replay · ${replayProgress.done}/${replayProgress.total} drivers · ${Math.round(replayProgress.elapsed)}s`
+                        : "Waiting for the OpenF1 request budget…"}
                     </p>
                     <div className="loading-bar"><span /></div>
                   </div>

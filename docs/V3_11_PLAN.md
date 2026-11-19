@@ -1,6 +1,6 @@
 # V3.11 — Replay progress and cancellation
 
-Release `v3.11.0`.
+Release `v3.11.0` — implemented.
 
 ## Backend
 
@@ -29,4 +29,4 @@ Release `v3.11.0`.
 - New session shows progress and eventually loads; second visit is instant.
 - No partial replay cache is written.
 - API tests for status/cancel, data-loader tests for progress/cancel.
-- 90+ pytest, 74+ vitest, browser audit, CI green; docs/README/screenshots updated.
+- 93 pytest, 74 vitest, browser audit, CI green; docs/README/screenshots updated.

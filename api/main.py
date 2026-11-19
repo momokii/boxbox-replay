@@ -633,6 +633,16 @@ def session_geometry(session_key: int, driver_number: int | None = None) -> dict
     }
 
 
+@app.get("/session/replay/status")
+def replay_status(session_key: int) -> dict:
+    return data_loader.replay_build_status(session_key)
+
+
+@app.post("/session/replay/cancel")
+def replay_cancel(session_key: int) -> dict:
+    return {"cancelled": data_loader.cancel_replay_build(session_key)}
+
+
 @app.get("/session/replay")
 def session_replay(session_key: int, hz: int | None = None, refresh: bool = False) -> dict:
     """Whole-session positions for every driver, zeroed at lights-out.
@@ -647,7 +657,10 @@ def session_replay(session_key: int, hz: int | None = None, refresh: bool = Fals
         for hz_name in {rate, 1, 2}:
             cache = data_loader._session_cache(session_key, f"session_pos_v2_{hz_name}hz.parquet")
             cache.unlink(missing_ok=True)
-    df = data_loader.build_session_replay(session_key, hz=rate)
+    try:
+        df = data_loader.build_session_replay(session_key, hz=rate)
+    except data_loader.ReplayCancelled as exc:
+        raise HTTPException(409, "replay build cancelled") from exc
     if df.empty:
         raise HTTPException(404, "no telemetry for this session")
     t0 = float(markers["t"].min()) if not markers.empty else 0.0

@@ -265,6 +265,18 @@
 **Impact:** v3.10.4; docs/screenshots/state updated
 ---
 
+## v3.11 Build Cancellation Decision (2026-11-15)
+
+---
+**Decision:** D19 — Expose replay build progress and cancel stale session builds
+**Date:** 2026-11-15
+**Context:** Cold Baku/Austria loads took very long; switching sessions left the old build consuming OpenF1’s 30/min budget
+**Rationale:** A cold replay needs one /location request per driver. The free budget cannot be raised, and the bulk endpoint rejects the request as too much data. Progress makes the cost visible; cancellation stops superseded work before it consumes more budget. Per-driver location caches remain reusable and partial replay files are never written.
+**Alternatives Rejected:** Raising the upstream rate (not allowed on free tier); bulk location (upstream 422); keeping stale builds running
+**Security Implications:** Local status/cancel endpoints expose no data and no upstream credentials
+**Impact:** v3.11.0; docs/README/state updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

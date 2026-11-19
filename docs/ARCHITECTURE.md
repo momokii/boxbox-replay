@@ -91,6 +91,10 @@ retired cars (result feed, or no fresh laps) are classified last.
   resolved by `windows.ts` (replay lap / fixed lap / full session).
 - Battle can freeze its clock on a replay lap marker; returning to replay resumes
   the normal clock without touching the shared playback store.
+- A cold replay is built one driver at a time from `/location`; the free OpenF1
+  budget is 30 req/min, so the loader exposes progress and a cancellation flag.
+  Switching sessions cancels the stale build; partial replay files are never
+  written, but per-driver location caches are reused.
 - `SessionReport.tsx` is a print-first A4 report; `@media print` hides app chrome
   and keeps report sections from splitting. AI-enhanced mode calls the
   `/ai/report` three-part analysis, and a failed summary never blocks the data
@@ -150,6 +154,8 @@ report.
 | `GET /session/info` | Clock, race distance, driver count, scheduled window |
 | `GET /session/geometry` | `outline[]`, `corners[]`, `zones[]`, `angle` |
 | `GET /session/replay` | `drivers[{driver_number,t[],x[],y[]}]`, `laps[]`, `positions_end_s`, coverage counts |
+| `GET /session/replay/status?session_key=` | Local cold-build progress: state, total, done, elapsed_s |
+| `POST /session/replay/cancel?session_key=` | Cancel a superseded cold build |
 | `GET /session/speed?driver_number=` | 1 Hz speed |
 | `GET /session/timeline` | Weather + race-control events normalized to the replay clock; counts and bands |
 | `POST /session/telemetry` | Multi-driver traces over a session-time window; channels, not distance alignment (that is `/session/duel`) |

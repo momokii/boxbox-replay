@@ -45,6 +45,16 @@ _limiter = TokenBucket(RATE_PER_SEC, RATE_PER_MIN)
 _cache_locks: dict[str, threading.Lock] = {}
 _cache_locks_guard = threading.Lock()
 
+# Replay build progress/cancellation. OpenF1's free budget is 30 requests/min
+# and a cold replay needs one /location call per driver, so a cold build is
+# bound by that budget. Expose it so the UI can explain and cancel stale work.
+_replay_builds: dict[int, dict] = {}
+_replay_builds_guard = threading.Lock()
+
+
+class ReplayCancelled(RuntimeError):
+    """The previous session's replay build was superseded by a new session."""
+
 
 def _cache_lock(path: Path) -> threading.Lock:
     key = str(path.resolve())
@@ -436,6 +446,28 @@ def clamp_to_session(
     return df[(stamps >= start_ts) & (stamps <= end_ts)]
 
 
+def replay_build_status(session_key: int) -> dict:
+    with _replay_builds_guard:
+        state = _replay_builds.get(session_key)
+        if state is None:
+            return {"state": "idle", "total": 0, "done": 0, "elapsed_s": 0}
+        return {
+            "state": "building",
+            "total": int(state["total"]),
+            "done": int(state["done"]),
+            "elapsed_s": round(time.monotonic() - state["started"], 1),
+        }
+
+
+def cancel_replay_build(session_key: int) -> bool:
+    with _replay_builds_guard:
+        state = _replay_builds.get(session_key)
+        if state is None:
+            return False
+        state["cancel"].set()
+        return True
+
+
 def build_session_replay(session_key: int, hz: int = 2) -> pd.DataFrame:
     """Per-driver positions for a WHOLE session, cached as parquet.
 
@@ -461,46 +493,66 @@ def _build_session_replay_locked(
         cache_file.unlink(missing_ok=True)
     start_ts, _ = session_window(session_key)
     drivers = list_drivers(session_key)
+    numbers = [int(n) for n in drivers.get("driver_number", [])]
+    state = {
+        "total": len(numbers),
+        "done": 0,
+        "started": time.monotonic(),
+        "cancel": threading.Event(),
+    }
+    with _replay_builds_guard:
+        _replay_builds[session_key] = state
     frames: list[pd.DataFrame] = []
-    for num in [int(n) for n in drivers.get("driver_number", [])]:
-        try:
-            raw = get_location(session_key, num)
-        except RuntimeError:
-            # One driver's feed failing must not sink the whole session.
-            continue
-        loc = clamp_to_session(raw, session_key)
-        if loc.empty:
-            continue
-        loc = loc.copy()
-        loc["date"] = to_dt(loc["date"])
-        loc = loc.sort_values("date").reset_index(drop=True)
-        # OpenF1 emits x=y=0 placeholders before a car has a position fix;
-        # keeping them piles every car on the origin.
-        loc = loc[~((loc["x"] == 0) & (loc["y"] == 0))]
-        if loc.empty:
-            continue
-        loc["t"] = (loc["date"] - start_ts).dt.total_seconds()
-        loc = downsample_by_time(loc, hz, time_col="t")
-        frames.append(
-            pd.DataFrame(
-                {
-                    "driver_number": num,
-                    "t": loc["t"].round(1),
-                    "x": loc["x"].round(1),
-                    "y": loc["y"].round(1),
-                }
+    try:
+        for num in numbers:
+            if state["cancel"].is_set():
+                raise ReplayCancelled(f"replay build cancelled for session {session_key}")
+            try:
+                raw = get_location(session_key, num)
+            except RuntimeError:
+                # One driver's feed failing must not sink the whole session.
+                state["done"] += 1
+                continue
+            state["done"] += 1
+            loc = clamp_to_session(raw, session_key)
+            if loc.empty:
+                continue
+            loc = loc.copy()
+            loc["date"] = to_dt(loc["date"])
+            loc = loc.sort_values("date").reset_index(drop=True)
+            # OpenF1 emits x=y=0 placeholders before a car has a position fix;
+            # keeping them piles every car on the origin.
+            loc = loc[~((loc["x"] == 0) & (loc["y"] == 0))]
+            if loc.empty:
+                continue
+            loc["t"] = (loc["date"] - start_ts).dt.total_seconds()
+            loc = downsample_by_time(loc, hz, time_col="t")
+            frames.append(
+                pd.DataFrame(
+                    {
+                        "driver_number": num,
+                        "t": loc["t"].round(1),
+                        "x": loc["x"].round(1),
+                        "y": loc["y"].round(1),
+                    }
+                )
             )
+        if state["cancel"].is_set():
+            raise ReplayCancelled(f"replay build cancelled for session {session_key}")
+        out = (
+            pd.concat(frames, ignore_index=True)
+            if frames
+            else pd.DataFrame(columns=["driver_number", "t", "x", "y"])
         )
-    out = (
-        pd.concat(frames, ignore_index=True)
-        if frames
-        else pd.DataFrame(columns=["driver_number", "t", "x", "y"])
-    )
-    # Never cache an empty result: a transient feed failure must not turn into a
-    # permanent "no data" for this session.
-    if not out.empty:
-        _write_parquet(out, cache_file)
-    return out
+        # Never cache a partial/empty result: a transient feed failure must not
+        # turn into a permanent "no data" for this session.
+        if not out.empty:
+            _write_parquet(out, cache_file)
+        return out
+    finally:
+        with _replay_builds_guard:
+            if _replay_builds.get(session_key) is state:
+                _replay_builds.pop(session_key, None)
 
 
 def session_speed(session_key: int, driver_number: int, hz: int = 1) -> pd.DataFrame:

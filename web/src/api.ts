@@ -88,6 +88,12 @@ export const api = {
     get<Geometry & { driver: number; lap: number }>(`/session/geometry?session_key=${sessionKey}`),
   sessionReplay: (sessionKey: number, refresh = false) =>
     get<ReplayPayload>(`/session/replay?session_key=${sessionKey}${refresh ? "&refresh=1" : ""}`),
+  replayStatus: (sessionKey: number) =>
+    get<{ state: "idle" | "building"; total: number; done: number; elapsed_s: number }>(
+      `/session/replay/status?session_key=${sessionKey}`,
+    ),
+  cancelReplay: (sessionKey: number) =>
+    post<{ cancelled: boolean }>(`/session/replay/cancel?session_key=${sessionKey}`, {}),
   sessionGaps: (sessionKey: number) =>
     get<SessionGaps>(`/session/gaps?session_key=${sessionKey}`),
   sessionSpeed: (sessionKey: number, driver: number) =>
