@@ -133,6 +133,10 @@ Jolpica (standings and the pre-2023 archive) needs no key. It uses
 volume; attribution is in the UI. If the source is down, those surfaces show a
 retry message and the replay keeps working.
 
+The web container also sends a same-origin CSP and standard security headers
+(nosniff, frame denial, strict referrer, permissions policy). Google Fonts and
+the F1 media host are explicitly allowed; team-radio audio may use HTTPS.
+
 The optional 3D view is a separate lazy JavaScript chunk; nginx serves it with
 the immutable asset cache. It is deliberately not part of the offline app shell,
 so the 3D button is disabled while offline.

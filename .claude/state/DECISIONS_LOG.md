@@ -289,6 +289,18 @@
 **Impact:** v3.12.0; docs/screenshot/state updated
 ---
 
+## v3.13 Close-out Decision (2026-11-15)
+
+---
+**Decision:** D21 — Add a same-origin CSP/security headers and remove non-product artifacts
+**Date:** 2026-11-15
+**Context:** Public-repo readiness review found tracked `.coverage`, stale pre-v3 Playwright scripts, and no browser security header baseline
+**Rationale:** The app is a same-origin static SPA plus API; a CSP limited to self, Google Fonts, F1 headshots and HTTPS audio preserves functionality while reducing injection/framing risk. Keep the product tree free of generated coverage and stale tooling. A security policy and contributor guide make the public boundary explicit.
+**Alternatives Rejected:** No CSP (needless exposure); a CSP that breaks external fonts/headshots (tested and adjusted); deleting docs history (kept)
+**Security Implications:** Adds nosniff, frame denial, referrer, permissions and CSP headers; no secrets or new endpoints
+**Impact:** v3.13.0; docs/security policy/closeout updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

@@ -36,3 +36,8 @@ Thumbs.db
 *.swp
 *~
 .omo/
+
+# Coverage/test artifacts
+.coverage
+coverage.xml
+htmlcov/

@@ -8,7 +8,12 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.12.0`** — hovering any car now loads its speed on demand and shows either a measured value, a real loading state, or `speed —` if the feed has no samples. Replay progress/cancellation, Telemetry scoping, Download data and the Data/AI report remain.
+> **Latest release: `v3.13.0` — v3 complete.** This is the v3 close-out: security headers, repository cleanup, final documentation and a verified build. The product includes replay, Battle/Duel, Telemetry scopes, Performance/mini-sectors, Strategy, grounded AI, Standings, Archive, CSV/JSON downloads, a printable Data/AI report, offline mode and an optional 3D view. See [`docs/V3_CLOSEOUT.md`](docs/V3_CLOSEOUT.md).
+
+## What's new in v3.13
+
+- **v3 close-out.** Security headers (CSP, nosniff, frame denial, referrer and permissions policy), removal of tracked coverage/dead scripts, a security policy, contribution guide and a final architecture/limitations document.
+- **Verified latest build.** All v3 surfaces rechecked under the CSP; headshots, 3D, reports, downloads and mobile remain functional.
 
 ## What's new in v3.12
 
@@ -329,3 +334,7 @@ a number the feeds do not provide — show an empty state instead.
 
 [MIT](LICENSE) © 2026 Kelana Chandra Helyandika — use it, fork it, learn from it.
 Data belongs to its sources; see the credits above.
+
+## v3 close-out
+
+See [`docs/V3_CLOSEOUT.md`](docs/V3_CLOSEOUT.md), [`SECURITY.md`](SECURITY.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).

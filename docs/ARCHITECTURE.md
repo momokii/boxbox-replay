@@ -199,6 +199,15 @@ loading/empty states. The API exposes `/standings`,
 a round by name/date; the Archive is a separate full-screen surface and is
 explicitly results-only. Attribution: Jolpica F1, CC BY-NC-SA 4.0.
 
+## Browser security baseline
+
+`nginx.conf` sets a same-origin CSP, `nosniff`, `DENY` framing, a strict
+referrer policy and a permissions policy. The CSP allows Google Fonts styles and
+the F1 media host for driver headshots, and HTTPS audio for team-radio links;
+everything else is same-origin. Headers are included in the document and hashed
+asset locations because nginx does not inherit a server-level `add_header` into
+a location that defines its own.
+
 ## Security and deployment
 
 - No secrets in the repo; `.env` is gitignored and `.env.example` is the

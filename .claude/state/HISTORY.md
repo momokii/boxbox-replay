@@ -633,3 +633,9 @@ copy explains OpenF1's 30/min budget. 92 pytest + 74 vitest.
 v3.12.0: map hover now requests the hovered driver's speed on demand and caches
 the result; the card distinguishes loading from a genuinely empty speed feed
 (“speed —”). No all-driver prefetch; 93 pytest + 74 vitest.
+
+v3.13.0 — v3 close-out. Added nginx CSP/security headers (with Google Fonts,
+F1 headshots and HTTPS audio explicitly allowed), removed tracked `.coverage`
+and stale pre-v3 Playwright scripts, and added SECURITY.md, CONTRIBUTING.md and
+docs/V3_CLOSEOUT.md. Verified headshots, 3D, Report and browsers under CSP;
+93 pytest + 74 vitest; final docs/screenshots/state aligned.

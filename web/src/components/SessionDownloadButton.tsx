@@ -13,6 +13,7 @@ export default function SessionDownloadButton({ sessionKey, sessionName }: Props
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [datasets, setDatasets] = useState<DownloadDataset[] | null>(null);
+  const [error, setError] = useState(false);
 
   const start = async () => {
     if (datasets) {
@@ -20,6 +21,7 @@ export default function SessionDownloadButton({ sessionKey, sessionName }: Props
       return;
     }
     setLoading(true);
+    setError(false);
     try {
       const [laps, stints, weather, control, radio, pit, overtakes, result] = await Promise.all([
         api.laps(sessionKey),
@@ -45,6 +47,8 @@ export default function SessionDownloadButton({ sessionKey, sessionName }: Props
         }),
       );
       setOpen(true);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -57,9 +61,9 @@ export default function SessionDownloadButton({ sessionKey, sessionName }: Props
         className="archive-open"
         onClick={start}
         disabled={loading}
-        title="Download session-wide data as CSV or JSON"
+        title={error ? "Could not prepare the download; retry" : "Download session-wide data as CSV or JSON"}
       >
-        {loading ? "Preparing…" : "Download data"}
+        {loading ? "Preparing…" : error ? "Retry download" : "Download data"}
       </button>
       {open && datasets && (
         <DownloadPanel
