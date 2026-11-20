@@ -91,6 +91,9 @@ retired cars (result feed, or no fresh laps) are classified last.
   resolved by `windows.ts` (replay lap / fixed lap / full session).
 - Battle can freeze its clock on a replay lap marker; returning to replay resumes
   the normal clock without touching the shared playback store.
+- Map hover speed is fetched on demand for the hovered driver and cached;
+  failed/empty responses are cached as empty so the card can show `speed —`
+  rather than an endless loading label.
 - A cold replay is built one driver at a time from `/location`; the free OpenF1
   budget is 30 req/min, so the loader exposes progress and a cancellation flag.
   Switching sessions cancels the stale build; partial replay files are never

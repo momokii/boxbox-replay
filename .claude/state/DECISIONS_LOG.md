@@ -277,6 +277,18 @@
 **Impact:** v3.11.0; docs/README/state updated
 ---
 
+## v3.12 Hover Speed Decision (2026-11-15)
+
+---
+**Decision:** D20 — Fetch speed for the hovered driver on demand
+**Date:** 2026-11-15
+**Context:** Hover cards for non-followed drivers showed “speed loading…” forever because only followed/default drivers were prefetched
+**Rationale:** One small request per first hover is cheaper than prefetching all drivers against a 30/min budget. Caching empty/error results lets the card say “speed —” instead of misrepresenting a failed request as loading.
+**Alternatives Rejected:** Prefetch all drivers (budget); hide the speed line (loses a useful datum); keep the infinite loading label
+**Security Implications:** Same server-side OpenF1 endpoint; no new data exposure
+**Impact:** v3.12.0; docs/screenshot/state updated
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

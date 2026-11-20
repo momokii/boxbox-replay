@@ -44,7 +44,8 @@ interface Props {
   selectedDriver: number | null;
   onCorner: (label: string) => void;
   onDriver: (driver: number) => void;
-  hoverInfo: (driver: number) => { pos: number | null; gap: number | null; tyre: string | null; speed: number | null };
+  hoverInfo: (driver: number) => { pos: number | null; gap: number | null; tyre: string | null; speed: number | null; speedLoading: boolean };
+  onHoverDriver: (driver: number | null) => void;
   theme: "night" | "day";
   online: boolean;
 }
@@ -62,7 +63,7 @@ function rotate(x: number, y: number, deg: number): { x: number; y: number } {
 function HoverCard(p: {
   hover: { x: number; y: number; driver: number };
   dots: DotMeta[];
-  info: { pos: number | null; gap: number | null; tyre: string | null; speed: number | null };
+  info: { pos: number | null; gap: number | null; tyre: string | null; speed: number | null; speedLoading: boolean };
 }) {
   const meta = p.dots.find((d) => d.driver === p.hover.driver);
   return (
@@ -74,7 +75,13 @@ function HoverCard(p: {
         P{p.info.pos ?? "—"} · gap {p.info.gap == null ? "—" : `+${p.info.gap.toFixed(3)}`}
       </div>
       <div>{p.info.tyre ?? "tyre unknown"}</div>
-      <div>{p.info.speed == null ? "speed loading…" : `${p.info.speed} km/h`}</div>
+      <div>
+        {p.info.speedLoading
+          ? "speed loading…"
+          : p.info.speed == null
+            ? "speed —"
+            : `${p.info.speed} km/h`}
+      </div>
     </div>
   );
 }
@@ -260,10 +267,12 @@ export default function SessionMap(p: Props) {
     const hit = nearestDot(x, y);
     if (!hit) {
       setHover(null);
+      p.onHoverDriver(null);
       if (canvasRef.current) canvasRef.current.style.cursor = "default";
       return;
     }
     setHover({ x: x + 14, y: y + 14, driver: hit.driver });
+    p.onHoverDriver(hit.driver);
     if (canvasRef.current) canvasRef.current.style.cursor = "pointer";
   };
 
@@ -291,7 +300,15 @@ export default function SessionMap(p: Props) {
       </div>
       {mode === "2d" ? (
         <>
-          <canvas ref={canvasRef} onClick={onClick} onMouseMove={onMove} onMouseLeave={() => setHover(null)} />
+          <canvas
+            ref={canvasRef}
+            onClick={onClick}
+            onMouseMove={onMove}
+            onMouseLeave={() => {
+              setHover(null);
+              p.onHoverDriver(null);
+            }}
+          />
           {hover && <HoverCard hover={hover} dots={p.dots} info={p.hoverInfo(hover.driver)} />}
         </>
       ) : (

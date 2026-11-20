@@ -8,7 +8,12 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.11.0`** — cold replay loading now shows per-driver progress and cancels the previous build when you switch sessions, so a slow Baku → Austria change has context instead of looking stuck. Telemetry scoping, Download data, the Data/AI report and the v3.10 fixes remain.
+> **Latest release: `v3.12.0`** — hovering any car now loads its speed on demand and shows either a measured value, a real loading state, or `speed —` if the feed has no samples. Replay progress/cancellation, Telemetry scoping, Download data and the Data/AI report remain.
+
+## What's new in v3.12
+
+- **Hover speed on demand.** The map hover card no longer says “speed loading…” forever for a car that is not followed. It requests that driver’s speed once, caches it, and distinguishes loading from genuinely unavailable data.
+- **No all-driver prefetch.** Only the hovered car is fetched, preserving the 30 req/min OpenF1 budget.
 
 ## What's new in v3.11
 

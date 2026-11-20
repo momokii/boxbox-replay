@@ -159,6 +159,7 @@ export default function App() {
   const [highlight, setHighlight] = useState<number[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<number | null>(null);
   const [selectedCorner, setSelectedCorner] = useState<string | null>(null);
+  const [hoveredDriver, setHoveredDriver] = useState<number | null>(null);
   const [view, setView] = useState<
     | "replay"
     | "battle"
@@ -451,6 +452,25 @@ export default function App() {
     };
   }, [sessionKey, highlight, selectedDriver, speedByDriver]);
 
+  // The hover card must not wait forever for a driver that is not followed.
+  useEffect(() => {
+    if (!sessionKey || hoveredDriver == null || speedByDriver.has(hoveredDriver)) return;
+    const driver = hoveredDriver;
+    let live = true;
+    api
+      .sessionSpeed(sessionKey, driver)
+      .then((pts) => {
+        if (live) setSpeedByDriver((prev) => new Map(prev).set(driver, pts));
+      })
+      .catch(() => {
+        // Cache the failure as an empty series so hovering does not re-request it.
+        if (live) setSpeedByDriver((prev) => new Map(prev).set(driver, []));
+      });
+    return () => {
+      live = false;
+    };
+  }, [sessionKey, hoveredDriver, speedByDriver]);
+
   const tyreFor = (driver: number, lap: number): string | null => {
     const row = (stints.data ?? [])
       .filter((s) => s.driver_number === driver)
@@ -466,6 +486,7 @@ export default function App() {
       gap: row?.gap ?? null,
       tyre: tyreFor(driver, Math.max(1, progress.lap)),
       speed: speedAt(driver),
+      speedLoading: !speedByDriver.has(driver),
     };
   };
 
@@ -958,6 +979,7 @@ export default function App() {
                         onCorner={setSelectedCorner}
                         onDriver={(n) => setSelectedDriver((cur) => (cur === n ? null : n))}
                         hoverInfo={hoverInfo}
+                        onHoverDriver={setHoveredDriver}
                         theme={theme}
                         online={online}
                       />

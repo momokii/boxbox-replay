@@ -1,6 +1,6 @@
 # V3.12 — Implementation plan
 
-Release `v3.12.0`.
+Release `v3.12.0` — implemented.
 
 1. Add `onHoverDriver` from SessionMap and `hoveredDriver` state in App.
 2. Fetch `/session/speed` on first hover of an uncached driver; cache empty
@@ -9,5 +9,4 @@ Release `v3.12.0`.
    measured speed distinctly.
 4. Verify hover on a non-followed driver loads a speed; verify an empty feed
    shows “speed —”.
-5. Update README/ARCHITECTURE/TESTING/state and screenshots; run 93 pytest + 74
-   vitest, browser audit, CI, deploy, tag.
+5. Verified 93 pytest + 74 vitest, browser hover audit, CI, deploy, tag.
