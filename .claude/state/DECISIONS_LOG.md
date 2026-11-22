@@ -353,6 +353,26 @@
 **Impact:** v4.1.0; GameCanvas and GameRace; tests/screenshots.
 ---
 
+## v4.2 Grid UX decisions (2026-11-22)
+
+---
+**Decision:** D27 — Make qualifying a visible phase and hover a pace/mode card in Grid
+**Date:** 2026-11-22
+**Context:** The v4.1 checkbox only changed the grid heading; the Grid canvas had no hover handler. Users could not tell that qualifying happened or inspect a car.
+**Rationale:** A single flying-lap qualifying screen with pole/order/gaps makes the checkbox real. Hover exposes only defensible simulation data: position, player/AI, lap, pace, gap and derived mode. No fake km/h.
+**Alternatives Rejected:** Jumping straight to grid; adding a fabricated speed channel; a full Q1/Q2/Q3 format in v1.
+**Impact:** v4.2.0; GameView/GameCanvas/game.css.
+---
+
+---
+**Decision:** D28 — Add a selected-driver telemetry card to 3D
+**Date:** 2026-11-22
+**Context:** The 3D view had Follow/Overview/Free and markers but no selected-car readout; the 2D map had position/gap/tyre/speed.
+**Rationale:** Reuse the existing `hoverInfo` bundle in a compact 3D HUD. It improves the 3D without inventing a second data path or changing scale.
+**Alternatives Rejected:** Duplicating telemetry logic inside Track3D; adding fake car data; a separate 3D-only endpoint.
+**Impact:** v4.2.0; Track3D/SessionMap/index.css.
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

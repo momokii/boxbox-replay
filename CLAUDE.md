@@ -41,7 +41,7 @@ Stack: FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, OpenCode Go for AI.
 
 | Purpose      | Command           | Status          |
 |--------------|-------------------|-----------------|
-| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | v4.1.0 verified |
+| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | v4.2.0 verified |
 | Test (API)   | `.venv/bin/python -m pytest` | 93 pass |
 | Test (web)   | `cd web && npm test` (vitest) | 93 pass |
 | Lint (API)   | `.venv/bin/python -m ruff check .` | clean |

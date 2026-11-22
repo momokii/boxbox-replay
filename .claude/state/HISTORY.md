@@ -657,3 +657,10 @@ duplicate-looking 3D line. Free/Overview now show car markers at true-circuit
 distance. Grid markers use exact track progress (no side stagger) and 1× runs
 at ~8 s/lap, so a 5-lap race remains on lap 2 after 8 s. Baku and Grid browser
 checks clean; 93 pytest + 93 vitest; screenshots 49–60.
+
+
+v4.2.0 — Grid UX pass. Added a visible single-flying-lap qualifying phase, Grid
+hover with pace/gap/mode, a lap strip, and a selected-driver 3D telemetry card.
+Reproduced the 5-lap 1× race end to end (Lap 2 at 8 s, result at ~40 s); the
+hover card identifies player/AI and intention. 93 pytest + 93 vitest; browser
+checks clean; screenshots 55/56/57/61/62.
