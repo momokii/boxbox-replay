@@ -645,7 +645,13 @@ def test_telemetry_endpoint_shapes_and_validation(monkeypatch):
 
 def test_ai_explain_strategy_uses_server_built_facts(monkeypatch):
     monkeypatch.setattr(m.ai, "configured", lambda: True)
-    monkeypatch.setattr(m, "_driver_meta", lambda session_key: {1: {"code": "VER", "name": "Max VERSTAPPEN", "team": "Red Bull"}})
+    monkeypatch.setattr(
+        m,
+        "_driver_meta",
+        lambda session_key: {
+            1: {"code": "VER", "name": "Max VERSTAPPEN", "team": "Red Bull"}
+        },
+    )
     monkeypatch.setattr(
         m,
         "session_strategy",
