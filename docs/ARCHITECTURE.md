@@ -127,15 +127,17 @@ retired cars (result feed, or no fresh laps) are classified last.
   “Not on track” rail keeps the result visible. `pitlane.ts` builds the guide
   from a recorded short transit, or falls back to a labelled schematic.
 - `game.ts` is a pure seeded BoxBox Grid engine (form ratings, two-run
-  qualifying with best-time grid, race snapshots, `lapFraction` so each lap
-  crosses the whole circuit, seeded SC/VSC/crash events, retirement clocks).
-  `GameView.tsx` loads a real OpenF1 circuit and Jolpica standings, drafts 1–4
-  player drivers, then runs a local 3/5/10-lap race. The race screen has a live
-  driver desk, an A/B comparison, a race-control event banner and Top/Angle
-  canvas projection; 1× is a 12 s/lap viewing pace. `gameShareCard.ts` draws a
-  client-side 1200×630 result PNG. The model is not a prediction; SC/VSC are
-  stated lap-time losses and crashes are seeded retirements, not collision
-  physics or real race control. No tyre/pit/reliability claims.
+  qualifying with best-time grid, race snapshots, `lapFraction`, seeded
+  SC/VSC/crash events, retirement clocks, per-lap history and incident playback
+  factors). `GameView.tsx` loads a real OpenF1 circuit and Jolpica standings,
+  drafts 1–4 player drivers, then runs a local 3/5/10-lap race. The race screen
+  has a live driver desk, an A/B comparison, a per-lap modal, a race-control
+  event banner, VSC/SC playback slowdown, and Top/Angle canvas projection with
+  zoom and drag-pan; 1× is a 20 s/lap viewing pace. `gameShareCard.ts` draws a
+  client-side 1200×630 result PNG with fastest lap, mover, players and DNFs.
+  The model is not a prediction; SC/VSC are stated lap-time losses and crashes
+  are seeded retirements, not collision physics or real race control. The
+  VSC/SC slow-down is a playback effect. No tyre/pit/reliability claims.
 - The page around them subscribes through a **trailing-edge throttle** (~8 Hz).
   A drop-if-too-soon throttle was the cause of the "button stuck on Pause" bug:
   the last event of a burst was discarded, so pause never repainted.

@@ -475,3 +475,57 @@
 **Alternatives Rejected:** Screenshot service (new backend/privacy surface); PDF (the review asked for an image); all 25 rows (unreadable at 1200×630).
 **Security Implications:** Client-only; no data leaves the browser.
 **Impact:** `gameShareCard.ts`, `GameShareCard.test.ts`, `GameResult`, screenshots 57/71.
+
+---
+**Decision:** D39 — 1× is a 20 s/lap viewing pace.
+**Date:** 2026-11-22
+**Context:** 12 s/lap still felt too fast for the banner, order and desk.
+**Rationale:** Set `GAME_SECONDS_PER_LAP = 20`; five laps ≈100 s, ten ≈200 s. 2×/4× remain. Label it as a viewing pace.
+**Alternatives Rejected:** Real-time (~90 s/lap); another small step to 15 s; a user speed slider.
+**Security Implications:** None.
+**Impact:** `game.ts`, labels, README, screenshots.
+
+---
+**Decision:** D40 — Per-lap driver modal from the desk, not a replacement for selection.
+**Date:** 2026-11-22
+**Context:** The desk shows only current/last pace; review wants per-lap numbers and a popup.
+**Rationale:** Add `driverLapHistory`; a `Lap by lap` button and tower double-click open the existing accessible Modal. Single click still selects for the desk. Retirement rows have `time: null` and DNF status, never a fabricated partial lap.
+**Alternatives Rejected:** Opening a modal on every single car click (interrupts the race); a second data source; inventing sectors.
+**Security Implications:** None; client-only.
+**Impact:** `game.ts`, `GameView`, `game.css`, modal screenshot 73.
+
+---
+**Decision:** D41 — Result image carries fastest lap, biggest mover, players and DNFs.
+**Date:** 2026-11-22
+**Context:** The v4.5 result card was visually complete but still mostly a table.
+**Rationale:** Compute fastest completed lap, biggest grid-to-finish gain only when positive, player count and DNF count; draw a four-stat strip above the top-10 + players table.
+**Alternatives Rejected:** All 25 rows (unreadable); invented telemetry stats; a second screenshot service.
+**Security Implications:** None; client canvas.
+**Impact:** `gameShareCard.ts`, tests, screenshot 71.
+
+---
+**Decision:** D42 — VSC/SC slow playback for a bounded window.
+**Date:** 2026-11-22
+**Context:** The banner claimed time loss but the animation looked unchanged.
+**Rationale:** `incidentPlaybackFactor` scales the viewing clock (SC 0.35 for 12 model seconds, VSC 0.45 for 8). The model and result are unchanged; the banner says PLAYBACK SLOWED and the time loss remains separate.
+**Alternatives Rejected:** Moving cars arbitrarily (distorts positions); field-bunching physics (out of scope); a purely decorative yellow overlay.
+**Security Implications:** None.
+**Impact:** `game.ts`, `GameView`, tests, docs.
+
+---
+**Decision:** D43 — Zoom, drag-pan and a more pronounced angle.
+**Date:** 2026-11-22
+**Context:** Top/Angle looked nearly identical and the user could not inspect a corner.
+**Rationale:** Zoom 1–2.5× with wheel/buttons; pan by drag when zoomed; Fit resets both; apply after the existing projection so hit-testing/hover stay consistent. Angle uses a stronger rotation/compression but remains illustrative.
+**Alternatives Rejected:** Mouse-only wheel without controls; WebGL; a new geometry source.
+**Security Implications:** None.
+**Impact:** `GameView`, `game.css`, screenshots 66/74.
+
+---
+**Decision:** D44 — Calendar and font loading must not blank the app.
+**Date:** 2026-11-22
+**Context:** E2E exposed two resilience failures: the GP picker waited for the standings request, and an unreachable Google Fonts stylesheet blocked the deferred module script.
+**Rationale:** Load meetings and standings independently; set page loading false only when both settle. Start the font stylesheet as `media="print"` and switch it to `all` in the app boot so a font CDN outage falls back to system fonts.
+**Alternatives Rejected:** Removing web fonts; a blocking font stylesheet; a backend timeout-only fix.
+**Security Implications:** None.
+**Impact:** `GameView`, `index.html`, `main.tsx`.

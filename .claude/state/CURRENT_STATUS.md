@@ -1,9 +1,10 @@
 ## Project Phase
-v4 shipped as **`v4.5.0`**. It closes the v3 replay work with a truthful
+v4 shipped as **`v4.6.0`**. It closes the v3 replay work with a truthful
 3D/circuit view, retirement/pit status, and the local **BoxBox Grid** race room
 (2023–2026 circuits, real season tables, 1–4 players, 3/5/10 laps, explainer,
-live driver desk/compare, seeded incidents, two-run qualifying, a 12 s/lap
-viewing pace, start lights and a downloadable result image).
+live driver desk/compare, two-run qualifying, per-lap modal, seeded incidents,
+a 20 s/lap viewing pace, VSC playback slowdown, start lights, zoom/pan and a
+downloadable result image).
 DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Completed
@@ -13,6 +14,7 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] v4.3.0: fixed five-lap circuit mapping, Run/Skip choice, live qualifying and preserved GP selection; screenshots 55/56/62/63
 - [x] v4.4.0: Grid explainer + full-width qualifying facts, driver desk/compare, seeded SC/VSC/crash incidents, Top/Angle view; screenshots 64–69
 - [x] v4.5.0: two-run qualifying best counts, 12 s/lap 1× pace, five-light start, full-width card and 1200×630 result image; screenshots 54–72
+- [x] v4.6.0: 20 s/lap 1× pace, per-lap driver modal, richer result card, visible VSC slowdown, zoom/pan and font/calendar resilience; screenshots 54–74
 - [x] TASK-001 foundation + TASK-002 guardrails (FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, CI/pre-commit)
 - [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
@@ -39,17 +41,17 @@ DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Blocked / Deferred (deliberate, documented)
 - V4 3D: no metrically measured pit lane, track width or elevation; OpenF1 location has no lateral placement. Recorded transit is labelled approximate; fallback is schematic.
-- V4 Grid: no pre-2023 circuit geometry, online play, accounts, leaderboards, tyres/pit stops/collision physics/reliability, or real-world prediction. SC/VSC are seeded stated lap-time losses; crash is a seeded retirement, not real race control. Qualifying is two runs, not Q1/Q2/Q3; the result card is top 10 + players, not all 25.
+- V4 Grid: no pre-2023 circuit geometry, online play, accounts, leaderboards, tyres/pit stops/collision physics/reliability, or real-world prediction. SC/VSC are seeded stated lap-time losses and VSC playback slowdown is a viewing effect; crash is a seeded retirement, not real race control. Qualifying is two runs, not Q1/Q2/Q3; the result card is top 10 + players, not all classified rows. 1× is a 20 s/lap viewing pace.
 - V2-4 historical Fight Finder: DEFERRED (noisy/sparse feeds)
 - V2-7 race mini-sectors: BLOCKED for races; V3.4a conditional for quali/practice when segments meaningful
 - GitHub Releases (tags only), demo prewarm: user-side pending. API key replaced in `.env` and live-verified; rotate again if the pasted key was exposed.
 
 ## Open Questions
-- None blocking implementation; D1–D38 are recorded. Revisit only if a data source or licence posture changes.
+- None blocking implementation; D1–D44 are recorded. Revisit only if a data source or licence posture changes.
 - Staging target none (prod covers staging via `APP_ENV=staging`)
 
 ## Security Notes
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-22: **v4.5.0 — a calmer Grid race.** 1× is 12 s/lap, qualifying has two runs with best counts, the grid shows Start race, five lights gate the clock, and the result downloads as a 1200×630 PNG. Tests: 93 pytest + 102 vitest; browser checks clean; production healthy.
+2026-11-22: **v4.6.0 — deeper Grid viewing.** 1× is 20 s/lap; per-lap driver modal; richer result image; VSC playback slowdown; zoom/pan; font/calendar resilience. Tests: 93 pytest + 105 vitest; browser checks clean; production bundle served.

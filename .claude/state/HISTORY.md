@@ -690,3 +690,12 @@ the clock, and the result screen can download a client-side 1200×630 PNG with
 the winner, top 10 plus players, incidents and model disclaimer. The grid and
 result tables use bounded scroll areas so the actions stay visible. 93 pytest
 + 102 vitest; desktop/mobile browser passes; screenshots 54–72.
+
+
+v4.6.0 — deeper Grid viewing. 1× moved to 20 s/lap (five laps about 100 s),
+added a per-lap driver modal with a truthful DNF row, enriched the 1200×630
+result image with fastest lap/biggest mover/players/DNFs, slowed playback during
+SC/VSC with an explicit PLAYBACK SLOWED label, added circuit zoom plus drag-pan
+and a more distinct angle, and fixed two E2E resilience issues: the calendar no
+longer waits for standings and an unreachable font CDN no longer blocks the
+app. 93 pytest + 105 vitest; Baku 2024 browser pass; screenshots 54–74.

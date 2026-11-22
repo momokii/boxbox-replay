@@ -8,7 +8,16 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.5.0` — a calmer Grid race.** Slows 1× to a 12 s/lap viewing pace, adds two seeded qualifying runs (best counts), a five-light Start race sequence and a downloadable 1200×630 result image. The qualifying card now uses the full width and the result image carries the classification, player badges and incidents. See [`docs/V4_5_CLOSEOUT.md`](docs/V4_5_CLOSEOUT.md), [`docs/V4_5_GRID_EXPERIENCE_RESEARCH.md`](docs/V4_5_GRID_EXPERIENCE_RESEARCH.md) and [`docs/V4_5_GRID_EXPERIENCE_PLAN.md`](docs/V4_5_GRID_EXPERIENCE_PLAN.md).
+> **Latest release: `v4.6.0` — deeper Grid viewing.** Slows 1× to 20 s/lap, adds a per-lap driver modal, a richer result image, visible VSC playback slowdown, zoom/pan and a clearer angle view. Two seeded qualifying runs, start lights and the result download remain. See [`docs/V4_6_CLOSEOUT.md`](docs/V4_6_CLOSEOUT.md), [`docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md`](docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md) and [`docs/V4_6_GRID_RACE_DEPTH_PLAN.md`](docs/V4_6_GRID_RACE_DEPTH_PLAN.md).
+
+## What's new in v4.6
+
+- **A slower 1×.** Five laps now take about 100 seconds (20 s/lap); 2×/4× remain for a quick result.
+- **Per-lap driver modal.** Lap by lap shows every completed lap with lap time, cumulative race time, position, gap and incident; a retirement row is DNF with no invented lap time.
+- **More result statistics.** The downloaded 1200×630 image adds fastest lap, biggest mover, player count and DNF/incident counts to the winner and top 10.
+- **VSC actually slows.** SC/VSC reduce the playback scale for a short window; the banner says PLAYBACK SLOWED and the model time loss stays separately stated.
+- **Zoom and pan.** `− / + / Fit` and wheel zoom work in Top and Angle; drag the circuit when zoomed. Fit resets both.
+- **Resilience.** The calendar no longer waits for a slow standings request, and an unreachable font CDN can no longer block the app from rendering.
 
 ## What's new in v4.5
 
@@ -119,9 +128,13 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 |---|---|
 | ![Grid result](docs/screenshots/57-grid-result.png) | ![Grid skipped](docs/screenshots/63-grid-skip.png) |
 
-| Grid start lights | Downloaded result image |
+| Grid start lights | Driver lap-by-lap modal |
 |---|---|
-| ![Grid start](docs/screenshots/70-grid-start.png) | ![Grid result image](docs/screenshots/71-grid-result-card.png) |
+| ![Grid start](docs/screenshots/70-grid-start.png) | ![Grid lap modal](docs/screenshots/73-grid-driver-modal.png) |
+
+| Grid zoom and pan | Downloaded result image |
+|---|---|
+| ![Grid zoom](docs/screenshots/74-grid-zoom-pan.png) | ![Grid result image](docs/screenshots/71-grid-result-card.png) |
 
 | Grid explainer | Grid race-control event |
 |---|---|
@@ -145,7 +158,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Full-field replay.** All 20+ cars on the circuit at once, moving on the real session clock (lights out to chequered flag). Play, pause, 1×–8×, scrub, or press Space.
 - **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
 - **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
-- **BoxBox Grid (v4.5).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, two seeded flying laps (best counts) or an explicit skipped grid, seeded race, player badges and result. Setup explains the model and its arithmetic. Hover a car for position, player/AI, lap, pace, gap and race mode (leading/attacking/defending/clear air); click a car or tower row for a live driver desk and A/B comparison. Pace is the honest readout, not a fake km/h. Seeded SC/VSC/crash events interrupt the race with a banner; crashes classify a driver DNF. Every lap crosses the whole circuit (`progress % 1`), 1× is a 12 s/lap viewing pace with a lap strip, and 2×/4× remain. Start race runs five lights before the clock moves, and the result can be downloaded as a 1200×630 PNG. The model does not simulate tyres, pit stops, collision physics or reliability; incidents are game events, not real race control.
+- **BoxBox Grid (v4.6).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, two seeded flying laps (best counts) or an explicit skipped grid, seeded race, player badges and result. Setup explains the model and its arithmetic. Hover a car for position, player/AI, lap, pace, gap and race mode (leading/attacking/defending/clear air); click a car or tower row for a live driver desk and A/B comparison; open **Lap by lap** for per-lap times, race time, position, gap and incident. Pace is the honest readout, not a fake km/h. Seeded SC/VSC/crash events interrupt the race; VSC/SC also visibly slow playback, and crashes classify a driver DNF. Every lap crosses the whole circuit (`progress % 1`), 1× is a 20 s/lap viewing pace with a lap strip, and 2×/4× remain. Start race runs five lights before the clock moves. The circuit supports Top/Angle, zoom and drag-pan. The result can be downloaded as a 1200×630 PNG with fastest lap, biggest mover, player and incident counts. The model does not simulate tyres, pit stops, collision physics or reliability; incidents are game events, not real race control.
 - **Replay truth (v4).** Retirements are timed from the final result plus last-lap evidence; DNF/DNS/DSQ cars are hidden from that clock and listed in a status rail. The latest race-control message is shown as text. No collision marker is invented.
 - **Battle view.** A live **Battles now** strip lists neighbouring drivers within 1 s at the current frame (click to compare), plus an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
 - **Performance.** Stint timeline with pit-stop notches (hover for compound, tyre age and the gap at the stint start), wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters. Summary definitions: a **stint** is one continuous tyre run; a **stop** is a recorded pit visit; **best stop** is the fastest stationary time (not full pit-lane loss); **overtakes made/lost** are timing-feed counts and may be incomplete.
@@ -356,7 +369,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 93 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 102 frontend tests (vitest)
+cd web && npm test           # 105 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
@@ -420,7 +433,8 @@ Known limitations, stated plainly:
   standings and a seeded model; it does not simulate tyres, pit stops,
   collision physics or reliability. SC/VSC are stated lap-time losses and a
   crash is a seeded retirement, not a reconstruction of real race control.
-  Two qualifying runs are a game choice, not Q1/Q2/Q3. 1× is a 12 s/lap
+  VSC/SC playback slowdown is a viewing effect, not field-bunching physics.
+  Two qualifying runs are a game choice, not Q1/Q2/Q3. 1× is a 20 s/lap
   viewing pace, not real time. The downloaded card shows the top 10 plus any
   player outside it; the in-app result remains complete. Hover shows pace, not
   a fabricated km/h speed. Pre-2023 circuits are not in the game.
@@ -445,6 +459,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.6:** [`docs/V4_6_CLOSEOUT.md`](docs/V4_6_CLOSEOUT.md), [`docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md`](docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md), [`docs/V4_6_GRID_RACE_DEPTH_PLAN.md`](docs/V4_6_GRID_RACE_DEPTH_PLAN.md)
 - **v4.5:** [`docs/V4_5_CLOSEOUT.md`](docs/V4_5_CLOSEOUT.md), [`docs/V4_5_GRID_EXPERIENCE_RESEARCH.md`](docs/V4_5_GRID_EXPERIENCE_RESEARCH.md), [`docs/V4_5_GRID_EXPERIENCE_PLAN.md`](docs/V4_5_GRID_EXPERIENCE_PLAN.md)
 - **v4.4:** [`docs/V4_4_CLOSEOUT.md`](docs/V4_4_CLOSEOUT.md), [`docs/V4_4_GRID_RACE_RESEARCH.md`](docs/V4_4_GRID_RACE_RESEARCH.md), [`docs/V4_4_GRID_RACE_PLAN.md`](docs/V4_4_GRID_RACE_PLAN.md)
 - **v4.3:** [`docs/V4_3_CLOSEOUT.md`](docs/V4_3_CLOSEOUT.md), [`docs/V4_3_GRID_LAP_RESEARCH.md`](docs/V4_3_GRID_LAP_RESEARCH.md), [`docs/V4_3_GRID_LAP_PLAN.md`](docs/V4_3_GRID_LAP_PLAN.md)

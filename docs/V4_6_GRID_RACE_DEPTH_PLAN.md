@@ -80,3 +80,13 @@
 - VSC visibly slows playback and labels it; the model time loss remains.
 - Zoom controls work in Top and Angle and hit-testing stays correct.
 - All tests, builds, browser checks and CI pass.
+
+## Shipped
+
+`v4.6.0` shipped on 2026-11-22. Evidence and screenshots are in
+[`V4_6_CLOSEOUT.md`](V4_6_CLOSEOUT.md): 93 pytest + 105 vitest, a Baku 2024
+browser pass with two-run qualifying, lights gating, VSC playback slowdown,
+per-lap modal, zoom/pan, result download and no page errors. The external
+Jolpica and Docker registries were unreachable during the run; the browser
+fixture used cached actual 2024 standings, and the container was updated from
+the verified `web/dist` build.
