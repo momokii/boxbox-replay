@@ -17,6 +17,14 @@ export interface CarMeta {
 
 type CameraMode = "follow" | "overview" | "free";
 
+interface SelectedInfo {
+  pos: number | null;
+  gap: number | null;
+  tyre: string | null;
+  speed: number | null;
+  speedLoading: boolean;
+}
+
 interface Props {
   playback: Playback;
   outline: number[][];
@@ -27,6 +35,7 @@ interface Props {
   highlight: number[];
   angle: number;
   selectedDriver: number | null;
+  selectedInfo: SelectedInfo | null;
   focusDriver: number | null;
   theme: "night" | "day";
   exits: Map<number, DriverExit>;
@@ -747,6 +756,20 @@ export default function Track3D(p: Props) {
         ))}
       </div>
       <div ref={labelRef} className="map3d-driver-label" aria-hidden="true" />
+      {p.selectedDriver != null && p.selectedInfo && (
+        <div className="map3d-driver-card">
+          <b>{p.dots.find((d) => d.driver === p.selectedDriver)?.code ?? `#${p.selectedDriver}`}</b>
+          <span>P{p.selectedInfo.pos ?? "—"} · gap {p.selectedInfo.gap == null ? "—" : `+${p.selectedInfo.gap.toFixed(3)}`}</span>
+          <span>{p.selectedInfo.tyre ?? "tyre unknown"}</span>
+          <span>
+            {p.selectedInfo.speedLoading
+              ? "speed loading…"
+              : p.selectedInfo.speed == null
+                ? "speed —"
+                : `${p.selectedInfo.speed} km/h`}
+          </span>
+        </div>
+      )}
       <canvas ref={miniRef} className="map3d-mini" aria-hidden="true" />
       <p className="map3d-note">
         Follow the selected/leading car; Overview/Free use markers at true track scale. Track width is a visual constant;

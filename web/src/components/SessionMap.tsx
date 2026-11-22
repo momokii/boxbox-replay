@@ -366,6 +366,7 @@ export default function SessionMap(p: Props) {
               highlight={p.highlight}
               angle={p.angle}
               selectedDriver={p.selectedDriver}
+              selectedInfo={p.selectedDriver == null ? null : p.hoverInfo(p.selectedDriver)}
               focusDriver={p.leaderDriver}
               exits={p.exits}
               pitStops={p.pitStops}

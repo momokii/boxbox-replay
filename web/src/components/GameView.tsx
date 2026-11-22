@@ -20,7 +20,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Phase = "setup" | "grid" | "race" | "result";
+type Phase = "setup" | "qualifying" | "grid" | "race" | "result";
 
 function yearLabel(year: number, latest: number | null): string {
   return year === latest ? "Current standings" : "Final standings";
@@ -219,7 +219,7 @@ export default function GameView({ onClose }: Props) {
       setSeed(nextSeed);
       setGrid(nextGrid);
       setSim(nextSim);
-      setPhase("grid");
+      setPhase(quali ? "qualifying" : "grid");
     } catch (e) {
       if (mounted.current) setMessage(errorMessage(e));
     } finally {
@@ -448,6 +448,18 @@ export default function GameView({ onClose }: Props) {
           </>
         )}
 
+        {phase === "qualifying" && sim && geometry && (
+          <GameQuali
+            grid={grid}
+            players={playerLabels}
+            drivers={gameDrivers}
+            meeting={selectedMeeting}
+            seed={seed}
+            onBack={() => setPhase("setup")}
+            onContinue={() => setPhase("grid")}
+          />
+        )}
+
         {phase === "grid" && sim && geometry && (
           <GameGrid
             sim={sim}
@@ -488,6 +500,69 @@ export default function GameView({ onClose }: Props) {
   );
 
   return createPortal(body, document.body);
+}
+
+function GameQuali(p: {
+  grid: QualiRow[];
+  players: Map<string, number>;
+  drivers: GameDriver[];
+  meeting: Meeting | null;
+  seed: number;
+  onBack: () => void;
+  onContinue: () => void;
+}) {
+  const pole = p.grid[0];
+  const poleDriver = p.drivers.find((d) => d.id === pole?.driverId);
+  return (
+    <section className="game-stage" aria-label="Qualifying session">
+      <header className="game-stage-head">
+        <div>
+          <p className="game-kicker">{p.meeting?.meeting_name ?? "Race"} · Qualifying</p>
+          <h2>One flying lap. The order is set.</h2>
+          <p className="dim small">
+            Pole {poleDriver?.code ?? "—"} · seed {p.seed} · simulated from the season table
+          </p>
+        </div>
+        <button type="button" className="game-pill" onClick={p.onBack}>Back to setup</button>
+      </header>
+      <div className="game-quali-summary" role="status">
+        <span className="game-kicker">Session complete</span>
+        <strong>{poleDriver ? `${poleDriver.name} on pole` : "Qualifying complete"}</strong>
+        <span className="dim small">Single flying lap · no Q1/Q2/Q3 split in v1</span>
+      </div>
+      <div className="game-grid-table">
+        <table className="laps game-table">
+          <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Lap time</th><th>Gap</th><th>Player</th></tr></thead>
+          <tbody>
+            {p.grid.map((row) => {
+              const driver = p.drivers.find((d) => d.id === row.driverId);
+              const best = pole?.time ?? row.time;
+              return (
+                <tr key={row.driverId} className={p.players.get(row.driverId) ? "on" : ""}>
+                  <td className="mono">{row.position}</td>
+                  <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code} <span className="dim small">{driver?.name}</span></td>
+                  <td className="dim">{driver?.team}</td>
+                  <td className="mono">{fmtLap(row.time)}</td>
+                  <td className="mono">{row.position === 1 ? "—" : `+${(row.time - best).toFixed(3)}`}</td>
+                  <td>{p.players.get(row.driverId) ? <span className="game-player">P{p.players.get(row.driverId)}</span> : <span className="dim">AI</span>}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="game-actions">
+        <button type="button" className="primary" onClick={p.onContinue}>Continue to grid →</button>
+        <p className="dim small">The same seeded times are used by the race; skipping qualifying does not randomise a different grid.</p>
+      </div>
+    </section>
+  );
+}
+
+function fmtLap(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = (seconds % 60).toFixed(2).padStart(5, "0");
+  return `${m}:${s}`;
 }
 
 function GameGrid(p: {
@@ -605,6 +680,18 @@ function GameRace(p: {
           <button type="button" className="game-pill" onClick={() => { setElapsed(p.sim.duration); p.onFinish(); }}>Skip</button>
         </div>
       </header>
+      <div className="game-lapstrip" role="status" aria-label="Race progress">
+        <span className="game-kicker">Lap {state.rows[0]?.lap ?? 1}/{p.sim.laps}</span>
+        <div className="game-lap-segments" aria-hidden="true">
+          {Array.from({ length: p.sim.laps }, (_, i) => {
+            const leaderProgress = state.rows[0]?.progress ?? 0;
+            const done = leaderProgress >= i + 1;
+            const current = !done && leaderProgress >= i;
+            return <i key={i} className={done ? "done" : current ? "current" : ""} />;
+          })}
+        </div>
+        <span className="dim small">1× = ~8 s/lap · {p.sim.duration.toFixed(0)} model seconds</span>
+      </div>
       <div className="game-race-grid">
         <div className="game-canvas-wrap">
           <GameCanvas geometry={p.geometry} sim={p.sim} state={state} players={p.players} drivers={p.drivers} />
@@ -648,6 +735,13 @@ function GameCanvas(p: {
   drivers: GameDriver[];
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const screen = useRef(new Map<string, { x: number; y: number }>());
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
+  const hoverRow = hover ? p.state.rows.find((row) => row.driverId === hover.id) : null;
+  const hoverDriver = hover ? p.drivers.find((d) => d.id === hover.id) : null;
+  const hoverSim = hover ? p.sim.drivers.find((d) => d.id === hover.id) : null;
+  const hoverLap = hoverSim && hoverRow ? hoverSim.lapTimes[Math.min(hoverSim.lapTimes.length - 1, Math.max(0, hoverRow.lap - 1))] : null;
+  const hoverMode = hoverRow ? raceMode(p.state.rows, hoverRow) : null;
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
@@ -662,6 +756,7 @@ function GameCanvas(p: {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
+    screen.current.clear();
     const outline = p.geometry.outline;
     if (outline.length < 3) return;
     const xs = outline.map(([x]) => x);
@@ -724,6 +819,7 @@ function GameCanvas(p: {
       const marker = driver ? 7 : 4;
       const px = X(pt.x);
       const py = Y(pt.y);
+      screen.current.set(row.driverId, { x: px, y: py });
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(-pt.angle);
@@ -759,14 +855,67 @@ function GameCanvas(p: {
       }
     }
   }, [p.geometry, p.sim, p.state, p.players]);
+  const onMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    let bestId: string | null = null;
+    let bestX = 0;
+    let bestY = 0;
+    let bestD = 15;
+    screen.current.forEach((pt, id) => {
+      const d = Math.hypot(pt.x - x, pt.y - y);
+      if (d < bestD) {
+        bestD = d;
+        bestId = id;
+        bestX = pt.x;
+        bestY = pt.y;
+      }
+    });
+    setHover(bestId ? { id: bestId, x: bestX, y: bestY } : null);
+  };
+
   return (
-    <canvas
-      ref={ref}
-      className="game-canvas"
-      role="img"
-      aria-label="Top-down circuit with simulated car positions"
-    />
+    <div className="game-canvas-live">
+      <canvas
+        ref={ref}
+        className="game-canvas"
+        role="img"
+        aria-label="Top-down circuit with simulated car positions"
+        onMouseMove={onMove}
+        onMouseLeave={() => setHover(null)}
+      />
+      {hover && hoverRow && (
+        <div
+          className="game-hover"
+          role="tooltip"
+          style={{
+            left: Math.min(hover.x + 12, (ref.current?.clientWidth ?? 390) - 190),
+            top: Math.max(8, hover.y - 12),
+          }}
+        >
+          <b style={{ color: hoverDriver?.color }}>{hoverDriver?.code ?? hoverRow.driverId}</b>
+          {hoverRow.player ? <span className="game-player">P{hoverRow.player}</span> : <span className="dim small">AI</span>}
+          <span>P{hoverRow.position} · {hoverRow.finished ? "finished" : `lap ${hoverRow.lap}`}</span>
+          <span>{hoverMode}</span>
+          <span>{hoverLap != null ? `Pace ${fmtLap(hoverLap)}` : "Pace —"}</span>
+          <span>{hoverRow.position === 1 ? "Leader" : `+${hoverRow.gap.toFixed(1)}s`}</span>
+        </div>
+      )}
+    </div>
   );
+}
+
+function raceMode(rows: ReturnType<typeof raceState>["rows"], row: ReturnType<typeof raceState>["rows"][number]): string {
+  const index = rows.findIndex((r) => r.driverId === row.driverId);
+  if (index <= 0) return "Leading";
+  const ahead = rows[index - 1];
+  const behind = rows[index + 1];
+  if (ahead && row.gap - ahead.gap < 1) return "Attacking";
+  if (behind && behind.gap - row.gap < 1) return "Defending";
+  return "Clear air";
 }
 
 function GameResult(p: {
