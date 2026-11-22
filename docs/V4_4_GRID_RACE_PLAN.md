@@ -49,3 +49,12 @@
   angle toggle, 1×/4×, mobile; no page errors.
 - Refresh screenshots; README/architecture/testing/closeout/state; commit per
   phase; tag `v4.4.0`.
+
+## Shipped
+
+`v4.4.0` shipped on 2026-11-22. Evidence, screenshots and the honest limits are
+recorded in [`V4_4_CLOSEOUT.md`](V4_4_CLOSEOUT.md): 93 pytest + 97 vitest,
+desktop and mobile browser checks with no page errors, and screenshots 64–69.
+The driver desk moved into the right-hand order column so it is visible without
+scrolling on desktop; the seeded incident model labels SC/VSC as stated lap-time
+losses rather than claiming a field-bunching simulation.

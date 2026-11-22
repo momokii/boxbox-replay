@@ -403,3 +403,39 @@
 **Security Implications:** [Any security impact]
 **Impact:** [What it affects downstream]
 ---
+
+---
+**Decision:** D31 — Grid incidents are seeded game events with stated time losses.
+**Date:** 2026-11-22
+**Context:** v4.4 adds SC/VSC/crash incidents to the local Grid race, but the app must not imply real race-control reconstruction or collision physics.
+**Rationale:** Generate deterministic events from the race seed; SC/VSC add a stated lap-time loss to active cars, a crash retires one active driver, and the UI labels the banner as a game event. SC/VSC are labelled as time additions, not “field bunched”.
+**Alternatives Rejected:** Reconstructing real yellow periods (not in Grid data/model); visual collision simulation (out of scope and would imply measured physics); random non-deterministic events (breaks reproducibility).
+**Security Implications:** None; client-only simulation, no new data or secrets.
+**Impact:** `game.ts`, `GameView.tsx`, `game.test.ts`, V4.4 docs.
+
+---
+**Decision:** D32 — Driver desk lives in the race order column.
+**Date:** 2026-11-22
+**Context:** The first desk placement below the canvas was off-screen at 900 px and the right column had unused space.
+**Rationale:** Put the desk above the order table with a compact single-column layout and a scrollable 250 px tower. It is visible on desktop, still keyboard/clickable, and stacks inside the same column on mobile.
+**Alternatives Rejected:** A modal (interrupts live race); a bottom sheet (hides data); scrolling the page on selection (jarring and invisible).
+**Security Implications:** None.
+**Impact:** `GameView.tsx`, `game.css`, screenshot 67.
+
+---
+**Decision:** D33 — Qualifying summary fills the card with facts, not decoration.
+**Date:** 2026-11-22
+**Context:** The v4.3 summary was left-aligned and the right side was empty.
+**Rationale:** Add Pole, Pole lap, Player/AI and Field as a real `<dl>` beside the progress; keep the existing live progress. On phones the facts stack under the progress. No invented values: missing pole shows “—”.
+**Alternatives Rejected:** Stretching a single line across the card (still looks empty); adding decorative copy (no information).
+**Security Implications:** None.
+**Impact:** `GameView.tsx`, `game.css`, screenshots 55.
+
+---
+**Decision:** D34 — Angle view is a projection of the same circuit, not new geometry.
+**Date:** 2026-11-22
+**Context:** The Grid circuit was top-down only; users asked for more angle.
+**Rationale:** Use one `project()` function for track, start line, markers, labels and hit-testing. Angle is a fixed rotation plus vertical compression, explicitly illustrative. Top remains the default and analytical view.
+**Alternatives Rejected:** A second data path or a faux-3D elevation (would imply measured geometry); WebGL for the Grid (additional weight for a 2D model).
+**Security Implications:** None.
+**Impact:** `GameCanvas`, `game.css`, screenshot 66.

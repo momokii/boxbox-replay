@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.3.0 build** on 2026-11-22. New captures use 1440×900,
+Refreshed against the **v4.4.0 build** on 2026-11-22. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
@@ -61,12 +61,18 @@ They are referenced from the root README and this page.
 | `52-3d-day.png` | v4 3D in the day theme |
 | `53-grid-lobby.png` | BoxBox Grid setup: season, Grand Prix, laps, players, qualifying |
 | `54-grid-lineup.png` | 2-player line-up with two distinct drivers |
-| `55-grid-qualifying.png` | v4.3 live/complete single flying-lap qualifying session with pole and player marker |
-| `56-grid-race.png` | v4.3 local race at 1×: lap strip, cars crossing the full circuit, player ring, live order |
-| `57-grid-result.png` | Classification and player marker after the chequered flag |
+| `55-grid-qualifying.png` | v4.4 live/complete single flying-lap session with full-width pole/field facts |
+| `56-grid-race.png` | v4.4 local race: lap strip, full-circuit cars, player ring and race-control event banner |
+| `57-grid-result.png` | Classification with player marker and seeded DNF after the chequered flag |
 | `58-3d-mobile.png` | v4.1 3D Free at 390 px |
-| `59-grid-mobile.png` | BoxBox Grid at 390 px |
+| `59-grid-mobile.png` | BoxBox Grid race at 390 px with the event banner |
 | `60-3d-free.png` | v4.1 3D Free with the field visible as markers and no duplicate circuit line |
 | `61-3d-selected.png` | v4.2 3D selected-driver telemetry card |
 | `62-grid-hover.png` | v4.2 Grid hover: pace, gap, mode, player identity |
 | `63-grid-skip.png` | v4.3 explicit “Qualifying skipped” grid state |
+| `64-grid-how.png` | v4.4 setup explainer, arithmetic and game-model disclosure |
+| `65-grid-event.png` | v4.4 seeded VSC banner at Lap 2 |
+| `66-grid-angle.png` | v4.4 illustrative Angle circuit view |
+| `67-grid-driver-desk.png` | v4.4 selected driver with compare select and A/B deltas |
+| `68-grid-mobile-setup.png` | v4.4 setup at 390 px |
+| `69-grid-mobile-desk.png` | v4.4 driver desk at 390 px |

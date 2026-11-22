@@ -672,3 +672,12 @@ test. Replaced the qualifying checkbox with Run/Skip and a live single-lap
 session with a gated Continue. Preserved an explicit GP selection against a
 late calendar response and separated session loading from standings loading.
 93 pytest + 94 vitest; browser checks clean; screenshots 55/56/62/63.
+
+
+v4.4.0 — the Grid race desk. Added a setup explainer with the exact form
+arithmetic, a full-width qualifying facts card, a click/keyboard driver desk
+with any-driver A/B comparison, seeded SC/VSC time-loss and crash-retirement
+events with a race-control banner, an optional reproducible seed, and a
+Top/Angle circuit projection. The desk sits in the right order column; the
+desktop and mobile browser runs had no page errors or horizontal overflow.
+93 pytest + 97 vitest; screenshots 55–57 and 64–69.
