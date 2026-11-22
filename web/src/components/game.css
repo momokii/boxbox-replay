@@ -342,6 +342,7 @@
 }
 @media (max-width: 920px) {
   .game-setup { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .game-how { grid-template-columns: 1fr; }
   .game-board { grid-template-columns: 1fr; }
   .game-scroll { max-height: 38vh; }
 }
@@ -356,21 +357,100 @@
   .game-table th, .game-table td { padding: 6px 6px; font-size: 0.7rem; }
   .game-table th:nth-child(3), .game-table td:nth-child(3) { display: none; }
   .game-source { font-size: 0.6rem; }
+  .game-quali-summary { grid-template-columns: 1fr; }
+  .game-quali-facts { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 7px; }
 }
 
+.game-how {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: 18px;
+  margin-top: 12px;
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--amber);
+  border-radius: 6px;
+  background: var(--panel);
+}
+.game-how h2 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 1.35rem;
+}
+.game-how-steps {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--dim);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+.game-how-steps b { color: var(--ink); font-weight: 600; }
+.game-how-model {
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 5px;
+  background: var(--panel-2);
+}
+.game-how-model .game-kicker { margin-bottom: 6px; }
+.game-how-model dl { display: grid; gap: 6px; margin: 0; }
+.game-how-model dl div { display: grid; gap: 1px; }
+.game-how-model dt {
+  color: var(--dim);
+  font: 600 0.6rem "JetBrains Mono", monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.game-how-model dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+.game-how-model > p:last-child {
+  margin: 8px 0 0;
+  color: var(--dim);
+  font-size: 0.67rem;
+  line-height: 1.3;
+}
 .game-quali-summary {
   display: grid;
-  gap: 2px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
   margin: 12px 16px 0;
   padding: 10px 12px;
   border-left: 2px solid var(--amber);
   background: var(--panel-2);
 }
+.game-quali-main { display: grid; gap: 2px; min-width: 0; }
 .game-quali-summary .game-kicker { margin: 0; }
 .game-quali-summary strong {
   color: var(--ink);
   font-family: "Barlow Condensed", system-ui, sans-serif;
   font-size: 1.2rem;
+}
+.game-quali-facts {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+}
+.game-quali-facts div { min-width: 48px; }
+.game-quali-facts dt {
+  color: var(--dim);
+  font: 600 0.55rem "JetBrains Mono", monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.game-quali-facts dd {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 1.1rem;
 }
 .game-quali-progress {
   width: min(360px, 100%);
@@ -437,4 +517,217 @@
 @media (max-width: 640px) {
   .game-lapstrip { flex-wrap: wrap; gap: 5px 10px; }
   .game-lap-segments { max-width: none; width: 100%; }
+}
+
+.game-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-2) 80%, transparent);
+  color: var(--ink);
+  font-size: 0.76rem;
+}
+.game-event b {
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  color: var(--amber);
+  font: 700 0.6rem "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
+}
+.game-event.vsc b { color: var(--warning, #f6c453); }
+.game-event.crash b { color: var(--destructive, #ff6b6b); }
+.game-event-lap { margin-left: auto; color: var(--dim); font: 500 0.65rem "JetBrains Mono", monospace; }
+
+.game-canvas-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.game-canvas-head .game-kicker { margin: 0; }
+.game-view-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+}
+.game-view-toggle button {
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--dim);
+  font: 600 0.62rem "Barlow", system-ui, sans-serif;
+  padding: 4px 7px;
+  cursor: pointer;
+}
+.game-view-toggle button[aria-pressed="true"] {
+  background: var(--amber);
+  color: #0b0f16;
+}
+
+.game-tower tbody tr {
+  cursor: pointer;
+}
+.game-tower tbody tr:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+.game-tower tbody tr.selected {
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+.game-tower tbody tr.retired { opacity: 0.55; }
+.game-dnf {
+  margin-left: 5px;
+  color: var(--destructive, #ff6b6b);
+  font: 700 0.55rem "JetBrains Mono", monospace;
+  letter-spacing: 0.05em;
+}
+
+.game-driver-desk {
+  margin: 0 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+.game-desk-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.game-desk-head h3 {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font: 600 0.9rem "Barlow Condensed", system-ui, sans-serif;
+}
+.game-compare-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dim);
+  font: 600 0.62rem "JetBrains Mono", monospace;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.game-compare-select select {
+  max-width: 120px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--ink);
+  font: 600 0.7rem "Barlow", system-ui, sans-serif;
+}
+.game-desk-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 10px;
+  padding: 10px 12px 12px;
+}
+.game-desk-driver {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-left: 2px solid;
+  border-radius: 4px;
+  background: var(--panel);
+}
+.game-desk-driver > .game-player { justify-self: start; margin: 0; }
+.game-desk-driver strong {
+  font: 700 1.05rem "Barlow Condensed", system-ui, sans-serif;
+}
+.game-desk-driver strong span { color: var(--dim); font-weight: 400; }
+.game-desk-driver > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--dim);
+  font-size: 0.68rem;
+}
+.game-desk-driver > div b { color: var(--ink); font-weight: 600; }
+.game-desk-compare {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.7fr) minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+}
+.game-desk-delta {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  padding: 9px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  color: var(--dim);
+  font-size: 0.68rem;
+}
+.game-desk-delta .game-kicker { margin: 0 0 2px; }
+.game-desk-delta strong { color: var(--ink); font: 700 0.85rem "Barlow Condensed", system-ui, sans-serif; }
+.game-desk-driver.compact { grid-column: 2; }
+@media (max-width: 920px) {
+  .game-desk-grid { grid-template-columns: 1fr; }
+  .game-desk-compare { grid-template-columns: 1fr 1fr; }
+  .game-desk-driver.compact { grid-column: auto; }
+}
+@media (max-width: 640px) {
+  .game-desk-head { align-items: flex-start; flex-direction: column; }
+  .game-desk-compare { grid-template-columns: 1fr; }
+  .game-event { flex-wrap: wrap; }
+  .game-event-lap { margin-left: 0; }
+}
+
+.game-seed {
+  display: grid;
+  gap: 4px;
+  color: var(--dim);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.game-seed input {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--ink);
+  font: 500 0.75rem "JetBrains Mono", monospace;
+}
+
+.game-tower-scroll { max-height: 250px; overflow: auto; }
+.game-tower .game-driver-desk { margin: 0 0 10px; border: 0; background: transparent; }
+.game-tower .game-desk-head { padding: 0 0 8px; border-bottom: 1px solid var(--line); }
+.game-tower .game-desk-head h3 { font-size: 0.82rem; }
+.game-tower .game-desk-grid { grid-template-columns: 1fr; padding: 0 0 8px; }
+.game-tower .game-desk-compare { grid-template-columns: 1fr; }
+.game-tower .game-desk-driver.compact { grid-column: auto; }
+.game-tower .game-compare-select { align-items: flex-start; flex-direction: column; gap: 3px; }
+.game-tower .game-compare-select select { max-width: 150px; }
+.game-tower .game-desk-driver { padding: 7px 8px; }
+.game-tower .game-desk-driver > div { gap: 5px; }
+
+/* End-of-file overrides: the base .game-how/.game-quali-summary rules are
+   declared after the earlier responsive blocks, so restate the mobile layout
+   here where it wins the cascade. */
+@media (max-width: 920px) {
+  .game-how { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .game-quali-summary { grid-template-columns: 1fr; }
+  .game-quali-facts {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 7px;
+  }
 }

@@ -3,6 +3,7 @@ import {
   buildGameDrivers,
   lapFraction,
   mulberry32,
+  RACE_EVENT_LOSS,
   raceState,
   simulateQualifying,
   simulateRace,
@@ -92,6 +93,64 @@ describe("race", () => {
     expect(state.finished).toBe(true);
     expect(state.rows[0].progress).toBe(laps);
     expect(state.rows.every((r) => r.finished)).toBe(true);
+  });
+
+  it("produces deterministic seeded race-control events", () => {
+    const drivers = buildGameDrivers(standings);
+    const grid = simulateQualifying(drivers, 17);
+    const a = simulateRace(drivers, grid, 5, 17);
+    const b = simulateRace(drivers, grid, 5, 17);
+    expect(a.events).toEqual(b.events);
+    const seedWithEvent = Array.from({ length: 500 }, (_, i) => i + 1).find((seed) => {
+      const sim = simulateRace(drivers, simulateQualifying(drivers, seed), 5, seed);
+      return sim.events.length > 0;
+    });
+    expect(seedWithEvent).toBeTruthy();
+    const sim = simulateRace(drivers, simulateQualifying(drivers, seedWithEvent!), 5, seedWithEvent!);
+    expect(sim.events.every((event) => ["SC", "VSC", "CRASH"].includes(event.kind))).toBe(true);
+  });
+
+  it("applies SC and VSC time loss to the event lap", () => {
+    const drivers = buildGameDrivers(standings);
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 500 && seen.size < 2; seed += 1) {
+      const sim = simulateRace(drivers, simulateQualifying(drivers, seed), 5, seed);
+      for (const kind of ["SC", "VSC"] as const) {
+        if (seen.has(kind)) continue;
+        const event = sim.events.find((item) => item.kind === kind);
+        if (!event) continue;
+        const active = sim.drivers.filter(
+          (driver) => driver.retiredLap == null || driver.retiredLap > event.lap,
+        );
+        if (!active.length) continue;
+        const driver = active[0];
+        const others = driver.lapTimes
+          .filter((_, index) => index !== event.lap - 1)
+          .sort((a, b) => a - b);
+        const median = others[Math.floor(others.length / 2)];
+        expect(driver.lapTimes[event.lap - 1] - median).toBeGreaterThan(
+          RACE_EVENT_LOSS[kind] * 0.8,
+        );
+        seen.add(kind);
+      }
+    }
+    expect([...seen].sort()).toEqual(["SC", "VSC"]);
+  });
+
+  it("keeps crash retirements out of the active classification", () => {
+    const drivers = buildGameDrivers(standings);
+    for (let seed = 1; seed <= 500; seed += 1) {
+      const sim = simulateRace(drivers, simulateQualifying(drivers, seed), 5, seed);
+      const crash = sim.events.find((event) => event.kind === "CRASH");
+      if (!crash) continue;
+      const retired = sim.preview.find((row) => row.driverId === crash.driverId);
+      expect(retired?.retired).toBe(true);
+      expect(retired?.position).toBeGreaterThan(sim.preview.filter((r) => !r.retired).length);
+      const state = raceState(sim, sim.duration);
+      expect(state.rows.find((r) => r.driverId === crash.driverId)?.retired).toBe(true);
+      return;
+    }
+    throw new Error("no seeded crash found");
   });
 
   it("starts at zero progress and advances on the clock", () => {

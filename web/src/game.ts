@@ -29,6 +29,19 @@ export interface QualiRow {
   position: number;
 }
 
+export type RaceEventKind = "SC" | "VSC" | "CRASH";
+
+export const RACE_EVENT_LOSS: Record<"SC" | "VSC", number> = { SC: 12, VSC: 4.5 };
+
+export interface RaceEvent {
+  id: string;
+  t: number;
+  lap: number;
+  kind: RaceEventKind;
+  label: string;
+  driverId?: string;
+}
+
 export interface SimDriver {
   id: string;
   overall: number;
@@ -37,6 +50,8 @@ export interface SimDriver {
   startDelay: number;
   lapTimes: number[];
   finishTime: number;
+  retiredAt: number | null;
+  retiredLap: number | null;
 }
 
 export interface RaceResult {
@@ -45,6 +60,7 @@ export interface RaceResult {
   player: number | null;
   time: number;
   gap: number;
+  retired: boolean;
 }
 
 export interface RaceState {
@@ -59,6 +75,7 @@ export interface RaceState {
     gap: number;
     player: number | null;
     finished: boolean;
+    retired: boolean;
   }[];
 }
 
@@ -69,6 +86,7 @@ export interface RaceSim {
   baseLap: number;
   duration: number;
   preview: RaceResult[];
+  events: RaceEvent[];
 }
 
 export const GAME_MODEL =
@@ -229,16 +247,79 @@ export function simulateRace(
       grid: gridPos,
       startDelay,
       lapTimes,
-      finishTime: startDelay + lapTimes.reduce((sum, value) => sum + value, 0),
+      finishTime: 0,
+      retiredAt: null,
+      retiredLap: null,
     };
   });
-  const ordered = [...sims].sort((a, b) => a.finishTime - b.finishTime);
+
+  // Seeded race-control incidents. These are game events, not a claim about the
+  // simulated source session.
+  const eventRng = mulberry32(seed ^ 0x7f4a7c15);
+  const events: RaceEvent[] = [];
+  const lossByLap = new Map<number, number>();
+  const retiredLap = new Map<string, number>();
+  for (let lap = 2; lap <= laps; lap += 1) {
+    const roll = eventRng();
+    if (roll < 0.13) {
+      const kind: RaceEventKind = eventRng() < 0.5 ? "SC" : "VSC";
+      const loss = RACE_EVENT_LOSS[kind];
+      lossByLap.set(lap, loss);
+      events.push({
+        id: `${kind.toLowerCase()}-${lap}`,
+        t: (lap - 1) * baseLap,
+        lap,
+        kind,
+        label: kind === "SC"
+          ? `Safety car — ${RACE_EVENT_LOSS.SC}s added to the lap`
+          : `Virtual safety car — ${RACE_EVENT_LOSS.VSC}s added to the lap`,
+      });
+    } else if (roll < 0.21) {
+      const active = sims.filter((driver) => !retiredLap.has(driver.id));
+      if (active.length) {
+        const victim = active[Math.floor(eventRng() * active.length)];
+        const driver = drivers.find((d) => d.id === victim.id);
+        retiredLap.set(victim.id, lap);
+        events.push({
+          id: `crash-${lap}-${victim.id}`,
+          t: (lap - 1) * baseLap + baseLap * 0.45,
+          lap,
+          kind: "CRASH",
+          label: `Crash — ${driver?.code ?? victim.id} retires`,
+          driverId: victim.id,
+        });
+      }
+    }
+  }
+
+  for (const [lap, loss] of lossByLap) {
+    for (const driver of sims) {
+      if (lap <= (retiredLap.get(driver.id) ?? laps)) driver.lapTimes[lap - 1] += loss;
+    }
+  }
+
+  for (const driver of sims) {
+    const lastLap = retiredLap.get(driver.id);
+    if (lastLap != null) {
+      const completed = driver.lapTimes.slice(0, lastLap - 1).reduce((sum, value) => sum + value, 0);
+      driver.retiredLap = lastLap;
+      driver.retiredAt = driver.startDelay + completed + driver.lapTimes[lastLap - 1] * 0.9;
+      driver.finishTime = driver.retiredAt;
+    } else {
+      driver.finishTime = driver.startDelay + driver.lapTimes.reduce((sum, value) => sum + value, 0);
+    }
+  }
+
+  const active = sims.filter((driver) => driver.retiredAt == null).sort((a, b) => a.finishTime - b.finishTime);
+  const retired = sims.filter((driver) => driver.retiredAt != null).sort((a, b) => (a.retiredAt ?? 0) - (b.retiredAt ?? 0));
+  const ordered = [...active, ...retired];
   const preview: RaceResult[] = ordered.map((sim, index) => ({
     driverId: sim.id,
     position: index + 1,
     player: sim.player,
     time: sim.finishTime,
-    gap: sim.finishTime - ordered[0].finishTime,
+    gap: active.length ? Math.max(0, sim.finishTime - active[0].finishTime) : 0,
+    retired: sim.retiredAt != null,
   }));
   return {
     grid,
@@ -247,6 +328,7 @@ export function simulateRace(
     baseLap,
     duration: Math.max(...sims.map((s) => s.finishTime)) + 0.5,
     preview,
+    events,
   };
 }
 
@@ -257,6 +339,7 @@ export function simulateRace(
 export function raceState(sim: RaceSim, elapsed: number): RaceState {
   const t = Math.max(0, elapsed);
   const rows = sim.drivers.map((driver) => {
+    const retired = driver.retiredAt != null && t >= driver.retiredAt;
     const local = t - driver.startDelay;
     let lapProgress = 0;
     let consumed = 0;
@@ -271,20 +354,22 @@ export function raceState(sim: RaceSim, elapsed: number): RaceState {
         consumed += lapTime;
       }
     }
-    const finished = lapProgress >= sim.laps;
+    const finished = !retired && lapProgress >= sim.laps;
     return {
       driverId: driver.id,
       position: 0,
-      progress: finished ? sim.laps : Math.max(0, Math.min(sim.laps, lapProgress)),
-      lap: Math.min(sim.laps, Math.floor(lapProgress) + 1),
+      progress: retired ? (driver.retiredLap ?? 0) - 0.05 : finished ? sim.laps : Math.max(0, Math.min(sim.laps, lapProgress)),
+      lap: retired ? (driver.retiredLap ?? 1) : Math.min(sim.laps, Math.floor(lapProgress) + 1),
       gap: 0,
       player: driver.player,
       finished,
+      retired,
     };
   });
 
   const finishById = new Map(sim.drivers.map((driver) => [driver.id, driver.finishTime]));
   rows.sort((a, b) => {
+    if (a.retired !== b.retired) return a.retired ? 1 : -1;
     if (a.finished !== b.finished) return a.finished ? -1 : 1;
     if (a.finished && b.finished) {
       return (finishById.get(a.driverId) ?? 0) - (finishById.get(b.driverId) ?? 0);

@@ -68,6 +68,7 @@ export default function GameView({ onClose }: Props) {
   const [grid, setGrid] = useState<QualiRow[]>([]);
   const [sim, setSim] = useState<RaceSim | null>(null);
   const [seed, setSeed] = useState(seedNow);
+  const [seedText, setSeedText] = useState("");
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -212,7 +213,9 @@ export default function GameView({ onClose }: Props) {
     try {
       const geo = await api.sessionGeometry(raceSession.session_key);
       if (!mounted.current) return;
-      const nextSeed = seedNow();
+      const parsedSeed = Number(seedText.trim());
+      const nextSeed =
+        /^\d+$/.test(seedText.trim()) && Number.isSafeInteger(parsedSeed) ? parsedSeed : seedNow();
       const nextGrid = simulateQualifying(gameDrivers, nextSeed);
       const nextSim = simulateRace(
         gameDrivers,
@@ -349,6 +352,29 @@ export default function GameView({ onClose }: Props) {
               {standings && <span>{standings.source} · {standings.license}</span>}
             </div>
 
+            <section className="game-how" aria-label="How BoxBox Grid works">
+              <div>
+                <p className="game-kicker">How it works</p>
+                <h2>A real race weekend, turned into a local game.</h2>
+                <ol className="game-how-steps">
+                  <li><b>Pick the weekend.</b> A 2023–2026 season and a real Grand Prix. Completed seasons use final Jolpica standings; the latest uses the current table.</li>
+                  <li><b>Draft the drivers.</b> 1–4 people, one driver each, no duplicates. The rest of the field is AI.</li>
+                  <li><b>Qualify or skip.</b> A visible single-lap session sets the grid; skipping uses the same seeded model, not a different random grid.</li>
+                  <li><b>Race 3, 5 or 10 laps.</b> Seeded incidents can interrupt. Click a car for live pace, gap and race mode.</li>
+                </ol>
+              </div>
+              <aside className="game-how-model">
+                <p className="game-kicker">The calculation</p>
+                <dl>
+                  <div><dt>Driver form</dt><dd>58% points + 42% championship position</dd></div>
+                  <div><dt>Team form</dt><dd>constructor points / field maximum</dd></div>
+                  <div><dt>Overall</dt><dd>64% driver form + 36% team form</dd></div>
+                  <div><dt>Race</dt><dd>seeded lap pace + SC / VSC / crash events</dd></div>
+                </dl>
+                <p>This is a game model, not a prediction. Grid pace is not a km/h feed.</p>
+              </aside>
+            </section>
+
             {!quali && (
               <p className="game-note">
                 Qualifying is skipped on screen, but it is still simulated from the same stats and seed; the grid is not uniform random.
@@ -437,6 +463,17 @@ export default function GameView({ onClose }: Props) {
                   <b>Model</b>
                   <span>{GAME_MODEL}</span>
                 </div>
+                <label className="game-seed">
+                  Seed (optional)
+                  <input
+                    value={seedText}
+                    onChange={(e) => setSeedText(e.target.value)}
+                    inputMode="numeric"
+                    maxLength={12}
+                    placeholder="random"
+                    aria-label="Seed for reproducible qualifying and race events"
+                  />
+                </label>
                 <button type="button" className="primary game-start" disabled={startDisabled} onClick={begin}>
                   {preparing ? "Building circuit…" : quali ? "Run qualifying →" : "Set the seeded grid →"}
                 </button>
@@ -481,6 +518,7 @@ export default function GameView({ onClose }: Props) {
         {phase === "race" && sim && geometry && (
           <GameRace
             sim={sim}
+            seed={seed}
             geometry={geometry}
             players={playerLabels}
             drivers={gameDrivers}
@@ -541,10 +579,18 @@ function GameQuali(p: {
         <button type="button" className="game-pill" onClick={p.onBack}>Back to setup</button>
       </header>
       <div className="game-quali-summary" role="status">
-        <span className="game-kicker">{complete ? "Session complete" : `Live session · ${shown}/${p.grid.length} laps`}</span>
-        <strong>{complete ? (poleDriver ? `${poleDriver.name} on pole` : "Qualifying complete") : "Reading the flying laps…"}</strong>
-        <div className="game-quali-progress" aria-hidden="true"><i style={{ width: `${p.grid.length ? (shown / p.grid.length) * 100 : 0}%` }} /></div>
-        <span className="dim small">Single flying lap · no Q1/Q2/Q3 split in v1</span>
+        <div className="game-quali-main">
+          <span className="game-kicker">{complete ? "Session complete" : `Live session · ${shown}/${p.grid.length} laps`}</span>
+          <strong>{complete ? (poleDriver ? `${poleDriver.name} on pole` : "Qualifying complete") : "Reading the flying laps…"}</strong>
+          <div className="game-quali-progress" aria-hidden="true"><i style={{ width: `${p.grid.length ? (shown / p.grid.length) * 100 : 0}%` }} /></div>
+          <span className="dim small">Single flying lap · no Q1/Q2/Q3 split in v1</span>
+        </div>
+        <dl className="game-quali-facts">
+          <div><dt>Pole</dt><dd>{poleDriver?.code ?? "—"}</dd></div>
+          <div><dt>Pole lap</dt><dd>{pole ? fmtLap(pole.time) : "—"}</dd></div>
+          <div><dt>Player</dt><dd>{pole && p.players.get(pole.driverId) ? `P${p.players.get(pole.driverId)}` : "AI"}</dd></div>
+          <div><dt>Field</dt><dd>{p.grid.length}</dd></div>
+        </dl>
       </div>
       <div className="game-grid-table">
         <table className="laps game-table">
@@ -632,6 +678,7 @@ function GameGrid(p: {
 
 function GameRace(p: {
   sim: RaceSim;
+  seed: number;
   geometry: Geometry;
   players: Map<string, number>;
   drivers: GameDriver[];
@@ -642,6 +689,9 @@ function GameRace(p: {
   const [elapsed, setElapsed] = useState(0);
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState(1);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [compareId, setCompareId] = useState<string | null>(null);
+  const [view, setView] = useState<"top" | "angle">("top");
   const raf = useRef(0);
   const last = useRef(0);
   const done = useRef(false);
@@ -675,6 +725,16 @@ function GameRace(p: {
 
   const state = raceState(p.sim, elapsed);
   const leader = p.drivers.find((d) => d.id === state.leaderId);
+  const selectedRow =
+    state.rows.find((row) => row.driverId === selectedId) ?? state.rows[0] ?? null;
+  const effectiveSelectedId = selectedRow?.driverId ?? null;
+  const compareRow =
+    state.rows.find((row) => row.driverId === compareId && row.driverId !== effectiveSelectedId) ??
+    state.rows.find((row) => row.driverId !== effectiveSelectedId) ??
+    null;
+  const latestEvent = [...p.sim.events]
+    .filter((event) => event.t <= elapsed)
+    .sort((a, b) => b.t - a.t)[0] ?? null;
   const progress = Math.min(p.sim.laps, Math.max(1, Math.ceil(elapsed / Math.max(1, p.sim.duration / p.sim.laps))));
   return (
     <section className="game-stage" aria-label="Simulated race">
@@ -682,7 +742,7 @@ function GameRace(p: {
         <div>
           <p className="game-kicker">{p.meeting?.meeting_name ?? "Local race"} · {p.players.size} player{p.players.size === 1 ? "" : "s"}</p>
           <h2>{leader ? `${leader.code} leads` : "Lights out"}</h2>
-          <p className="dim small">Lap {state.rows[0]?.lap ?? 1}/{p.sim.laps} · {GAME_MODEL}</p>
+          <p className="dim small">Lap {state.rows[0]?.lap ?? 1}/{p.sim.laps} · seed {p.seed} · {GAME_MODEL}</p>
         </div>
         <div className="game-race-controls">
           <button type="button" className="game-pill" onClick={() => setPaused((v) => !v)}>
@@ -708,37 +768,142 @@ function GameRace(p: {
         </div>
         <span className="dim small">1× = ~8 s/lap · {p.sim.duration.toFixed(0)} model seconds</span>
       </div>
+      {latestEvent && (
+        <div className={`game-event ${latestEvent.kind.toLowerCase()}`} role="status">
+          <b>{latestEvent.kind}</b>
+          <span>{latestEvent.label}</span>
+          <span className="game-event-lap">Lap {latestEvent.lap}</span>
+        </div>
+      )}
       <div className="game-race-grid">
         <div className="game-canvas-wrap">
-          <GameCanvas geometry={p.geometry} sim={p.sim} state={state} players={p.players} drivers={p.drivers} />
+          <div className="game-canvas-head">
+            <span className="game-kicker">Circuit · {view === "top" ? "Top view" : "Angle view"}</span>
+            <div className="game-view-toggle" role="group" aria-label="Circuit view">
+              <button type="button" aria-pressed={view === "top"} onClick={() => setView("top")}>Top</button>
+              <button type="button" aria-pressed={view === "angle"} onClick={() => setView("angle")}>Angle</button>
+            </div>
+          </div>
+          <GameCanvas geometry={p.geometry} sim={p.sim} state={state} players={p.players} drivers={p.drivers} selectedId={effectiveSelectedId} onSelect={setSelectedId} view={view} />
           <div className="game-legend">
             {[...p.players.entries()].map(([id, player]) => {
               const driver = p.drivers.find((d) => d.id === id);
               return <span key={id}><i style={{ background: driver?.color }} />P{player} {driver?.code}</span>;
             })}
           </div>
-          <p className="game-hint">Hover a car for position, pace, gap and race mode.</p>
+          <p className="game-hint">Hover for pace; click a car or tower row for live stats and compare.</p>
         </div>
         <aside className="game-tower" aria-label="Race order">
+          <DriverDesk
+            state={state}
+            sim={p.sim}
+            drivers={p.drivers}
+            selectedId={effectiveSelectedId}
+            compareId={compareRow?.driverId ?? null}
+            onSelect={setSelectedId}
+            onCompare={setCompareId}
+          />
           <h3>Order</h3>
-          <table className="laps game-table">
-            <thead><tr><th>#</th><th>Driver</th><th>Gap</th></tr></thead>
-            <tbody>
-              {state.rows.map((row) => {
+          <div className="game-tower-scroll">
+            <table className="laps game-table">
+              <thead><tr><th>#</th><th>Driver</th><th>Gap</th></tr></thead>
+              <tbody>
+                {state.rows.map((row) => {
                 const driver = p.drivers.find((d) => d.id === row.driverId);
+                const selected = row.driverId === effectiveSelectedId;
                 return (
-                  <tr key={row.driverId} className={row.player ? "on" : ""}>
+                  <tr
+                    key={row.driverId}
+                    className={`${row.player ? "on" : ""} ${selected ? "selected" : ""} ${row.retired ? "retired" : ""}`}
+                    tabIndex={0}
+                    onClick={() => setSelectedId(row.driverId)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedId(row.driverId);
+                      }
+                    }}
+                  >
                     <td className="mono">{row.position}</td>
-                    <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code}{row.player ? <span className="game-player">P{row.player}</span> : null}</td>
-                    <td className="mono">{row.position === 1 ? "—" : `+${row.gap.toFixed(1)}`}</td>
+                    <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code}{row.player ? <span className="game-player">P{row.player}</span> : null}{row.retired ? <span className="game-dnf">DNF</span> : null}</td>
+                    <td className="mono">{row.retired ? "DNF" : row.position === 1 ? "—" : `+${row.gap.toFixed(1)}`}</td>
                   </tr>
                 );
-              })}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
           <p className="dim small game-progress">Clock {Math.min(p.sim.laps, progress)}/{p.sim.laps} · {elapsed.toFixed(0)}s</p>
           <button type="button" className="game-pill" onClick={p.onNew}>Abandon session</button>
         </aside>
+      </div>
+    </section>
+  );
+}
+
+function DriverDesk(p: {
+  state: ReturnType<typeof raceState>;
+  sim: RaceSim;
+  drivers: GameDriver[];
+  selectedId: string | null;
+  compareId: string | null;
+  onSelect: (id: string) => void;
+  onCompare: (id: string) => void;
+}) {
+  const selected = p.state.rows.find((row) => row.driverId === p.selectedId) ?? null;
+  const compare = p.state.rows.find((row) => row.driverId === p.compareId) ?? null;
+  const selectedMeta = p.drivers.find((driver) => driver.id === selected?.driverId) ?? null;
+  const compareMeta = p.drivers.find((driver) => driver.id === compare?.driverId) ?? null;
+  const selectedSim = p.sim.drivers.find((driver) => driver.id === selected?.driverId) ?? null;
+  const compareSim = p.sim.drivers.find((driver) => driver.id === compare?.driverId) ?? null;
+  if (!selected || !selectedSim) return null;
+  const pace = selectedSim.lapTimes[Math.min(selectedSim.lapTimes.length - 1, Math.max(0, selected.lap - 1))];
+  const last = selected.lap > 1 ? selectedSim.lapTimes[Math.min(selectedSim.lapTimes.length - 1, selected.lap - 2)] : null;
+  const comparePace = compareSim ? compareSim.lapTimes[Math.min(compareSim.lapTimes.length - 1, Math.max(0, (compare?.lap ?? 1) - 1))] : null;
+  const mode = raceMode(p.state.rows, selected);
+  return (
+    <section className="game-driver-desk" aria-label="Driver desk">
+      <header className="game-desk-head">
+        <div>
+          <p className="game-kicker">Driver desk · live</p>
+          <h3>Click a car or tower row to inspect. Compare against any driver.</h3>
+        </div>
+        <label className="game-compare-select">
+          Compare with
+          <select value={compare?.driverId ?? ""} onChange={(e) => p.onCompare(e.target.value)}>
+            {p.state.rows.filter((row) => row.driverId !== selected.driverId).map((row) => {
+              const driver = p.drivers.find((d) => d.id === row.driverId);
+              return <option key={row.driverId} value={row.driverId}>{driver?.code ?? row.driverId}</option>;
+            })}
+          </select>
+        </label>
+      </header>
+      <div className="game-desk-grid">
+        <div className="game-desk-driver" style={{ borderColor: selectedMeta?.color }}>
+          <span className="game-player">{selected.player ? `P${selected.player} · player` : "AI"}</span>
+          <strong style={{ color: selectedMeta?.color }}>{selectedMeta?.code} <span>{selectedMeta?.name}</span></strong>
+          <div><b>P{selected.position}</b><span>{selected.retired ? "DNF" : `Lap ${selected.lap}/${p.sim.laps}`}</span><span>{selected.position === 1 ? "leader" : `+${selected.gap.toFixed(1)}s`}</span></div>
+          <div><b>Pace</b><span>{fmtLap(pace)}</span><span>{last != null ? `last ${fmtLap(last)}` : "no previous lap"}</span></div>
+          <div><b>Mode</b><span>{mode}</span><span>{selectedMeta?.team}</span></div>
+        </div>
+        <div className="game-desk-compare">
+          {compare && compareMeta && compareSim ? (
+            <>
+              <div className="game-desk-delta">
+                <span className="game-kicker">A / B</span>
+                <strong>{selectedMeta?.code} vs {compareMeta.code}</strong>
+                <span>position {selected.position - compare.position > 0 ? `+${selected.position - compare.position}` : selected.position - compare.position}</span>
+                <span>gap {selected.gap - compare.gap >= 0 ? "+" : ""}{(selected.gap - compare.gap).toFixed(1)}s</span>
+                <span>pace {comparePace != null ? (pace - comparePace >= 0 ? "+" : "") + (pace - comparePace).toFixed(2) : "—"}s</span>
+              </div>
+              <div className="game-desk-driver compact">
+                <strong style={{ color: compareMeta.color }}>{compareMeta.code} <span>{compareMeta.name}</span></strong>{compare.player ? <span className="game-player">P{compare.player}</span> : null}
+                <div><b>P{compare.position}</b><span>{compare.retired ? "DNF" : `Lap ${compare.lap}/${p.sim.laps}`}</span><span>{compare.position === 1 ? "leader" : `+${compare.gap.toFixed(1)}s`}</span></div>
+                <div><b>Pace</b><span>{comparePace != null ? fmtLap(comparePace) : "—"}</span><span>{compareMeta.team}</span></div>
+              </div>
+            </>
+          ) : <p className="dim small">No second driver available.</p>}
+        </div>
       </div>
     </section>
   );
@@ -750,6 +915,9 @@ function GameCanvas(p: {
   state: ReturnType<typeof raceState>;
   players: Map<string, number>;
   drivers: GameDriver[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  view: "top" | "angle";
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const screen = useRef(new Map<string, { x: number; y: number }>());
@@ -788,6 +956,20 @@ function GameCanvas(p: {
     const oy = pad + (height - pad * 2 - (maxY - minY) * scale) / 2 + maxY * scale;
     const X = (x: number) => ox + x * scale;
     const Y = (y: number) => oy - y * scale;
+    const viewAngle = -0.08;
+    const project = (x: number, y: number) => {
+      const sx = X(x);
+      const sy = Y(y);
+      if (p.view === "top") return { x: sx, y: sy };
+      const cx = width / 2;
+      const cy = height / 2;
+      const dx = sx - cx;
+      const dy = sy - cy;
+      return {
+        x: cx + dx * Math.cos(viewAngle) - dy * Math.sin(viewAngle),
+        y: cy + (dx * Math.sin(viewAngle) + dy * Math.cos(viewAngle)) * 0.72,
+      };
+    };
 
     // cumulative distance for a closed circuit
     const lengths: number[] = [];
@@ -818,24 +1000,30 @@ function GameCanvas(p: {
     ctx.strokeStyle = "#3c4657";
     ctx.lineWidth = 16;
     ctx.beginPath();
-    outline.forEach(([x, y], i) => (i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
+    outline.forEach(([x, y], i) => {
+      const point = project(x, y);
+      if (i) ctx.lineTo(point.x, point.y);
+      else ctx.moveTo(point.x, point.y);
+    });
     ctx.closePath();
     ctx.stroke();
     ctx.strokeStyle = "rgba(232,237,243,0.42)";
     ctx.lineWidth = 1.5;
     ctx.stroke();
-    const start = outline[0];
+    const start = project(outline[0][0], outline[0][1]);
     ctx.fillStyle = "#ffb224";
-    ctx.fillRect(X(start[0]) - 7, Y(start[1]) - 7, 14, 14);
+    ctx.fillRect(start.x - 7, start.y - 7, 14, 14);
 
     const rows = [...p.state.rows].reverse();
     for (const row of rows) {
+      if (row.retired) continue;
       const driver = p.players.has(row.driverId) ? p.players.get(row.driverId) : null;
       const pt = sample(lapFraction(row.progress));
       const meta = p.drivers.find((d) => d.id === row.driverId);
       const marker = driver ? 7 : 4;
-      const px = X(pt.x);
-      const py = Y(pt.y);
+      const point = project(pt.x, pt.y);
+      const px = point.x;
+      const py = point.y;
       screen.current.set(row.driverId, { x: px, y: py });
       ctx.save();
       ctx.translate(px, py);
@@ -852,6 +1040,13 @@ function GameCanvas(p: {
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(0, 0, marker + 2.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (p.selectedId === row.driverId) {
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, marker + 5, 0, Math.PI * 2);
         ctx.stroke();
       }
       ctx.fillStyle = "#0b0e13";
@@ -871,7 +1066,25 @@ function GameCanvas(p: {
         ctx.fillText(`P${driver}`, px, py - 12);
       }
     }
-  }, [p.geometry, p.sim, p.state, p.players]);
+  }, [p.geometry, p.sim, p.state, p.players, p.view, p.selectedId]);
+  const onClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    let bestId: string | null = null;
+    let bestD = 15;
+    screen.current.forEach((pt, id) => {
+      const d = Math.hypot(pt.x - x, pt.y - y);
+      if (d < bestD) {
+        bestD = d;
+        bestId = id;
+      }
+    });
+    if (bestId) p.onSelect(bestId);
+  };
+
   const onMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = ref.current;
     if (!canvas) return;
@@ -900,9 +1113,10 @@ function GameCanvas(p: {
         ref={ref}
         className="game-canvas"
         role="img"
-        aria-label="Top-down circuit with simulated car positions"
+        aria-label="Circuit with simulated car positions"
         onMouseMove={onMove}
         onMouseLeave={() => setHover(null)}
+        onClick={onClick}
       />
       {hover && hoverRow && (
         <div
@@ -963,11 +1177,11 @@ function GameResult(p: {
             {p.sim.preview.map((row) => {
               const driver = p.drivers.find((d) => d.id === row.driverId);
               return (
-                <tr key={row.driverId} className={row.player ? "on" : ""}>
+                <tr key={row.driverId} className={`${row.player ? "on" : ""} ${row.retired ? "retired" : ""}`}>
                   <td className="mono">{row.position}</td>
-                  <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code}</td>
+                  <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code}{row.retired ? <span className="game-dnf">DNF</span> : null}</td>
                   <td className="dim">{driver?.team}</td>
-                  <td className="mono">{row.position === 1 ? "winner" : `+${row.gap.toFixed(3)}`}</td>
+                  <td className="mono">{row.retired ? "DNF" : row.position === 1 ? "winner" : `+${row.gap.toFixed(3)}`}</td>
                   <td>{row.player ? <span className="game-player">P{row.player}</span> : <span className="dim">AI</span>}</td>
                 </tr>
               );
@@ -976,7 +1190,8 @@ function GameResult(p: {
         </table>
       </div>
       <p className="dim small game-footnote">
-        Local time-based model: form + seeded variation. No tyre, pit stop, collision or reliability simulation.
+        Local time-based model: form + seeded variation, plus SC / VSC / crash events. No tyre or pit-stop simulation.
+        {p.sim.events.length > 0 ? ` Incidents: ${p.sim.events.map((e) => `${e.kind} L${e.lap}`).join(" · ")}.` : ""}
       </p>
     </section>
   );
