@@ -32,3 +32,14 @@
   mobile; lap geometry screenshot at lap 2 vs lap 4.
 - Replace affected screenshots, update README/docs/state, commit per phase,
   tag `v4.3.0`.
+
+
+## Completion status
+
+Shipped as `v4.3.0`. Verification and screenshots are recorded in
+[`V4_3_CLOSEOUT.md`](./V4_3_CLOSEOUT.md).
+
+## Completion status
+
+Shipped as `v4.3.0`. Verification and screenshots are recorded in
+[`V4_3_CLOSEOUT.md`](./V4_3_CLOSEOUT.md).

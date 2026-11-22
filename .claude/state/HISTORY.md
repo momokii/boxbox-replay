@@ -664,3 +664,11 @@ hover with pace/gap/mode, a lap strip, and a selected-driver 3D telemetry card.
 Reproduced the 5-lap 1× race end to end (Lap 2 at 8 s, result at ~40 s); the
 hover card identifies player/AI and intention. 93 pytest + 93 vitest; browser
 checks clean; screenshots 55/56/57/61/62.
+
+
+v4.3.0 — Grid lap/qualifying correction. Fixed `progress / laps` so five laps
+cross the circuit five times (progress % 1); added a lapFraction regression
+test. Replaced the qualifying checkbox with Run/Skip and a live single-lap
+session with a gated Continue. Preserved an explicit GP selection against a
+late calendar response and separated session loading from standings loading.
+93 pytest + 94 vitest; browser checks clean; screenshots 55/56/62/63.

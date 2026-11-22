@@ -1,5 +1,5 @@
 ## Project Phase
-v4 shipped as **`v4.2.0`**. It closes the v3 replay work with a truthful
+v4 shipped as **`v4.3.0`**. It closes the v3 replay work with a truthful
 3D/circuit view, retirement/pit status, and the local **BoxBox Grid** race room
 (2023–2026 circuits, real season tables, 1–4 players, 3/5/10 laps).
 DEPLOYED prod, healthy at http://localhost:8501.
@@ -8,6 +8,7 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] v4.0.0: true-scale 3D + cameras + minimap, exit clocks + pit guide + race-control rail, BoxBox Grid
 - [x] v4.1.0: schematic pit guide, Free/Overview car markers, exact Grid positions and an 8 s/lap 1× clock; screenshots 49–60
 - [x] v4.2.0: real Grid qualifying phase, hover pace/gap/intention, lap strip and selected-driver 3D card; screenshots 55/56/57/61/62
+- [x] v4.3.0: fixed five-lap circuit mapping, Run/Skip choice, live qualifying and preserved GP selection; screenshots 55/56/62/63
 - [x] TASK-001 foundation + TASK-002 guardrails (FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, CI/pre-commit)
 - [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
@@ -47,4 +48,4 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-22: **v4.2.0 — Grid UX pass.** Qualifying phase, hover pace/mode, lap strip, 3D selected card. Tests: 93 pytest + 93 vitest; CI green; production healthy.
+2026-11-22: **v4.3.0 — Grid lap/qualifying correction.** Five laps now cross the circuit five times; live qualifying and Run/Skip are visible; explicit GP selection is preserved. Tests: 93 pytest + 94 vitest; CI green; production healthy.

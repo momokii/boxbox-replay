@@ -373,6 +373,25 @@
 **Impact:** v4.2.0; Track3D/SessionMap/index.css.
 ---
 
+## v4.3 Grid lap/qualifying decisions (2026-11-22)
+
+---
+**Decision:** D29 — Map lap progress modulo one for the Grid circuit; make Run/Skip visible
+**Date:** 2026-11-22
+**Context:** `progress / laps` compressed five laps into one circuit; the qualifying checkbox and static grid did not feel different from skipping.
+**Rationale:** Each lap must cross the whole circuit (`lapFraction`), covered by a regression test. Run/Skip segmented controls, matching start-button copy and a live single-flying-lap session make the hand-off visible without inventing Q1/Q2/Q3.
+**Alternatives Rejected:** Keeping the divided circuit; faking km/h; a no-op checkbox; full elimination format.
+**Impact:** v4.3.0; GameCanvas/GameView/game.ts tests/screenshots.
+---
+
+---
+**Decision:** D30 — Preserve an explicit Grand Prix selection and separate session loading
+**Date:** 2026-11-22
+**Context:** A late calendar response could reset the selected meeting to round 1; the global table loading state also leaked into the roster during session fetches.
+**Rationale:** Functional setMeetingKey preserves a valid explicit selection; loadingSessions is separate from standings loading. The header now reliably matches the chosen circuit.
+**Impact:** v4.3.0; GameView.
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

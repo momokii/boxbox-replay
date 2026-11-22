@@ -123,6 +123,7 @@ Status: **v3 complete** through `v3.9.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a),
 | V4-5 | Release close-out | DONE (`v4.0.0`) | V4-1–V4-4 | README/docs/screenshots/state, full verification, tag | CI green; prod healthy; 93 pytest + 93 vitest | No pre-2023 game |
 | V4.1-FIX | Pit overlay / Free visibility / Grid clock correction | DONE (`v4.1.0`) | V4-5 | Remove ambiguous recorded pit path; show schematic lane; Free/Overview markers; remove Grid lateral offset; slow 1× to ~8 s/lap | Baku 2D/3D Free; Grid 1× lap 2/5 at 8 s; 93+93; screenshots 49–60 | UI correction only |
 | V4.2-UX | Qualifying phase, Grid hover/intention, lap strip, 3D selected card | DONE (`v4.2.0`) | V4.1-FIX | Add single flying-lap quali, hover pace/gap/mode, visible lap strip, selected 3D telemetry; review e2e | Quali→grid→race→result; hover; 5-lap 1×; 3D card; 93+93; screenshots 55/56/57/61/62 | No fake Grid km/h |
+| V4.3-LAP | Fix 5-lap circuit mapping + visible qualifying choice | DONE (`v4.3.0`) | V4.2-UX | Use progress%1 per lap; Run/Skip segmented; live quali reveal; preserve selected GP; hover hint | Five circuits over five laps; run/skip visibly distinct; 94 vitest; screenshots 55/56/62/63 | 3D unchanged |
 
 ## Deferred / excluded (unchanged)
 

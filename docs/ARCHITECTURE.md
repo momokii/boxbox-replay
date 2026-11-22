@@ -127,7 +127,7 @@ retired cars (result feed, or no fresh laps) are classified last.
   “Not on track” rail keeps the result visible. `pitlane.ts` builds the guide
   from a recorded short transit, or falls back to a labelled schematic.
 - `game.ts` is a pure seeded BoxBox Grid engine (form ratings, qualifying,
-  race snapshots). `GameView.tsx` loads a real OpenF1 circuit and Jolpica
+  race snapshots, `lapFraction` so each lap crosses the whole circuit). `GameView.tsx` loads a real OpenF1 circuit and Jolpica
   standings, drafts 1–4 player drivers, then runs a local 3/5/10-lap race. It
   is a game model, not a prediction; no tyre/pit/collision/reliability claims.
 - The page around them subscribes through a **trailing-edge throttle** (~8 Hz).

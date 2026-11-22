@@ -8,7 +8,16 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.2.0` — Grid UX pass.** Adds a real qualifying screen, 2D Grid hover with pace/gap/race mode, a visible lap strip, and a selected-driver telemetry card in 3D. V4 still includes the truthful 3D replay, retirement/pit status and the local BoxBox Grid race room. See [`docs/V4_2_CLOSEOUT.md`](docs/V4_2_CLOSEOUT.md), [`docs/V4_2_GRID_UX_RESEARCH.md`](docs/V4_2_GRID_UX_RESEARCH.md) and [`docs/V4_2_GRID_UX_PLAN.md`](docs/V4_2_GRID_UX_PLAN.md).
+> **Latest release: `v4.3.0` — Grid lap and qualifying correction.** Fixes the Grid lap-to-circuit mapping (five laps now cross the circuit five times), makes the Run/Skip qualifying choice and live session visible, preserves an explicit Grand Prix selection, and keeps the hover card discoverable. See [`docs/V4_3_CLOSEOUT.md`](docs/V4_3_CLOSEOUT.md), [`docs/V4_3_GRID_LAP_RESEARCH.md`](docs/V4_3_GRID_LAP_RESEARCH.md) and [`docs/V4_3_GRID_LAP_PLAN.md`](docs/V4_3_GRID_LAP_PLAN.md).
+
+## What's new in v4.3
+
+- **Five laps now mean five circuits.** The Grid canvas mapped `progress / laps`, compressing the whole race into one lap divided into five sectors. It now uses `progress % 1`; a lap-fraction regression test covers the mapping.
+- **Qualifying is visibly different.** Setup uses an explicit **Run / Skip** choice. Run opens a live single-flying-lap session with revealing rows, a progress bar and a gated **Continue to grid**; Skip shows the explicit skipped-grid state.
+- **The start button says what will happen:** **Run qualifying →** or **Set the seeded grid →**.
+- **Grand Prix selection is preserved.** A late calendar response no longer snaps an explicitly chosen race back to round 1.
+- **Hover is discoverable.** The race screen explains that hovering a car shows position, pace, gap and race mode. No fake km/h.
+- **3D is unchanged** in this correction pass, as requested.
 
 ## What's new in v4.2
 
@@ -89,9 +98,13 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 |---|---|
 | ![Grid hover](docs/screenshots/62-grid-hover.png) | ![3D selected driver](docs/screenshots/61-3d-selected.png) |
 
-| Grid result | Grid on a phone |
+| Grid result | Skipped qualifying |
 |---|---|
-| ![Grid result](docs/screenshots/57-grid-result.png) | ![Grid mobile](docs/screenshots/59-grid-mobile.png) |
+| ![Grid result](docs/screenshots/57-grid-result.png) | ![Grid skipped](docs/screenshots/63-grid-skip.png) |
+
+| Grid on a phone | |
+|---|---|
+| ![Grid mobile](docs/screenshots/59-grid-mobile.png) | |
 
 | Duel inputs (v3.7) | Battle inputs (v3.7) |
 |---|---|
@@ -103,7 +116,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Full-field replay.** All 20+ cars on the circuit at once, moving on the real session clock (lights out to chequered flag). Play, pause, 1×–8×, scrub, or press Space.
 - **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
 - **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
-- **BoxBox Grid (v4.2).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, a real qualifying phase or skipped grid, seeded race, player badges and result. Hover a car for position, player/AI, lap, pace, gap and race mode (leading/attacking/defending/clear air); pace is the honest readout, not a fake km/h. Cars use actual track progress, 1× is about 8 s/lap with a lap strip, and 2×/4× remain. The model does not simulate tyres, pit stops, collisions or reliability in v1.
+- **BoxBox Grid (v4.3).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, a live single-flying-lap qualifying phase or explicit skipped grid, seeded race, player badges and result. Hover a car for position, player/AI, lap, pace, gap and race mode (leading/attacking/defending/clear air); pace is the honest readout, not a fake km/h. Every lap crosses the whole circuit (`progress % 1`), 1× is about 8 s/lap with a lap strip, and 2×/4× remain. The model does not simulate tyres, pit stops, collisions or reliability in v1.
 - **Replay truth (v4).** Retirements are timed from the final result plus last-lap evidence; DNF/DNS/DSQ cars are hidden from that clock and listed in a status rail. The latest race-control message is shown as text. No collision marker is invented.
 - **Battle view.** A live **Battles now** strip lists neighbouring drivers within 1 s at the current frame (click to compare), plus an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
 - **Performance.** Stint timeline with pit-stop notches (hover for compound, tyre age and the gap at the stint start), wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters. Summary definitions: a **stint** is one continuous tyre run; a **stop** is a recorded pit visit; **best stop** is the fastest stationary time (not full pit-lane loss); **overtakes made/lost** are timing-feed counts and may be incomplete.
@@ -118,7 +131,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Selectable windows (v3.8/9).** Telemetry holds a replay lap, a fixed lap or the full session; Battle freezes at a lap snapshot, truncates its history charts to that lap, and returns to replay. Mini-sectors switch between per-tick detail and per-sector overall.
 - **Driver headshots (v3.8).** OpenF1's `headshot_url` is shown with a number fallback; the image is not rehosted.
 - **Duel and Battle comparisons (v3.7).** Duel overlays both full lap traces and compares throttle/brake/gear/DRS at the same lap progress; Battle adds point-in-time inputs for the anchor and challengers.
-- **3D replay (v4.2).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock. **Follow** tracks the selected/leading car, **Overview** fits the true-scale circuit with car markers, and **Free** enables orbit/zoom with markers at far distance and the car at close range. Selecting a driver adds a compact HUD card for position, gap, tyre and live speed. The car is 5.6 m against a 12 m visual track width; OpenF1 does not publish a metric width or lateral position, so the width is a constant and the pit guide is a labelled schematic. 2D stays the default and owns corners, DRS and hover.
+- **3D replay (v4.3).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock. **Follow** tracks the selected/leading car, **Overview** fits the true-scale circuit with car markers, and **Free** enables orbit/zoom with markers at far distance and the car at close range. Selecting a driver adds a compact HUD card for position, gap, tyre and live speed. The car is 5.6 m against a 12 m visual track width; OpenF1 does not publish a metric width or lateral position, so the width is a constant and the pit guide is a labelled schematic. 2D stays the default and owns corners, DRS and hover.
 - **Telemetry lab (v3).** Up to three drivers on the same clock: speed traces, throttle/brake/gear/DRS at the cursor, and explicit nulls when a channel is missing. Distance-aligned lap comparison stays in Lap duel.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
 - **Lap duel.** Two laps race the same circuit, aligned by distance around the lap, with a live delta that starts at 0.000 and closes exactly on the official lap-time difference.
@@ -314,7 +327,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 93 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 93 frontend tests (vitest)
+cd web && npm test           # 94 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
@@ -398,6 +411,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.3:** [`docs/V4_3_CLOSEOUT.md`](docs/V4_3_CLOSEOUT.md), [`docs/V4_3_GRID_LAP_RESEARCH.md`](docs/V4_3_GRID_LAP_RESEARCH.md), [`docs/V4_3_GRID_LAP_PLAN.md`](docs/V4_3_GRID_LAP_PLAN.md)
 - **v4.2:** [`docs/V4_2_CLOSEOUT.md`](docs/V4_2_CLOSEOUT.md), [`docs/V4_2_GRID_UX_RESEARCH.md`](docs/V4_2_GRID_UX_RESEARCH.md), [`docs/V4_2_GRID_UX_PLAN.md`](docs/V4_2_GRID_UX_PLAN.md)
 - **v4.1:** [`docs/V4_1_CLOSEOUT.md`](docs/V4_1_CLOSEOUT.md), [`docs/V4_1_UI_FIX_RESEARCH.md`](docs/V4_1_UI_FIX_RESEARCH.md), [`docs/V4_1_UI_FIX_PLAN.md`](docs/V4_1_UI_FIX_PLAN.md)
 - **v4:** [`docs/V4_CLOSEOUT.md`](docs/V4_CLOSEOUT.md), [`docs/V4_RESEARCH.md`](docs/V4_RESEARCH.md), [`docs/V4_PLAN.md`](docs/V4_PLAN.md)
