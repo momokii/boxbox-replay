@@ -25,7 +25,10 @@ export interface GameSetup {
 
 export interface QualiRow {
   driverId: string;
+  /** Best of the seeded flying laps; this is the grid time. */
   time: number;
+  /** Two seeded attempts per driver, in run order. */
+  attempts: number[];
   position: number;
 }
 
@@ -91,6 +94,12 @@ export interface RaceSim {
 
 export const GAME_MODEL =
   "64% driver form + 36% team form · seeded variation · not a prediction";
+
+/** Wall-clock seconds per lap at 1×. A viewing pace, never a real-time claim. */
+export const GAME_SECONDS_PER_LAP = 12;
+
+/** Two seeded flying laps; the best one sets the grid. */
+export const QUALI_ATTEMPTS = 2;
 
 const TEAM_COLORS: Record<string, string> = {
   "red bull": "#4781D7",
@@ -202,13 +211,30 @@ export function lapFraction(progress: number): number {
 export function simulateQualifying(drivers: GameDriver[], seed: number): QualiRow[] {
   const rng = mulberry32(seed ^ 0xa5a5a5a5);
   return drivers
-    .map((driver) => ({
-      driverId: driver.id,
-      time: 90 + (1 - driver.overall) * 6 + gaussian(rng) * 0.42,
-      position: 0,
-    }))
+    .map((driver) => {
+      const base = 90 + (1 - driver.overall) * 6;
+      const attempts = Array.from(
+        { length: QUALI_ATTEMPTS },
+        () => base + gaussian(rng) * 0.42,
+      );
+      return {
+        driverId: driver.id,
+        time: Math.min(...attempts),
+        attempts,
+        position: 0,
+      };
+    })
     .sort((a, b) => a.time - b.time)
     .map((row, index) => ({ ...row, position: index + 1 }));
+}
+
+/**
+ * Convert model seconds into the wall-clock scale used by the Grid player.
+ * At 1× a lap should take GAME_SECONDS_PER_LAP, regardless of incident losses.
+ */
+export function gameClockScale(duration: number, laps: number): number {
+  const wallSeconds = Math.max(1, laps) * GAME_SECONDS_PER_LAP;
+  return Math.max(1e-6, duration / wallSeconds);
 }
 
 /** One person gets one driver; duplicate driver ids are rejected, not replaced. */

@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGameDrivers,
+  gameClockScale,
+  GAME_SECONDS_PER_LAP,
   lapFraction,
   mulberry32,
   RACE_EVENT_LOSS,
   raceState,
+  QUALI_ATTEMPTS,
   simulateQualifying,
   simulateRace,
   validatePlayerDrivers,
@@ -66,9 +69,32 @@ describe("qualifying", () => {
     expect(a.map((r) => r.time)).toEqual([...a.map((r) => r.time)].sort((x, y) => x - y));
   });
 
+  it("gives every driver two attempts and keeps the best time", () => {
+    const drivers = buildGameDrivers(standings);
+    const rows = simulateQualifying(drivers, 42);
+    expect(QUALI_ATTEMPTS).toBe(2);
+    expect(rows.every((row) => row.attempts.length === 2)).toBe(true);
+    for (const row of rows) {
+      expect(row.time).toBe(Math.min(...row.attempts));
+    }
+    expect(rows.map((row) => row.time)).toEqual(
+      [...rows.map((row) => row.time)].sort((a, b) => a - b),
+    );
+  });
+
   it("uses the seeded random source, not Math.random", () => {
     const rng = mulberry32(7);
     expect(rng()).toBe(mulberry32(7)());
+  });
+});
+
+describe("viewing pace", () => {
+  it("makes a five-lap 1× race take 60 wall seconds", () => {
+    expect(GAME_SECONDS_PER_LAP).toBe(12);
+    const modelSeconds = 490;
+    const scale = gameClockScale(modelSeconds, 5);
+    expect(scale).toBeCloseTo(modelSeconds / 60, 6);
+    expect(modelSeconds / scale).toBeCloseTo(60, 6);
   });
 });
 

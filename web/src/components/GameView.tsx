@@ -4,6 +4,8 @@ import { api } from "../api";
 import type { Geometry, Meeting, SessionInfo, StandingsPayload } from "../types";
 import {
   GAME_MODEL,
+  GAME_SECONDS_PER_LAP,
+  gameClockScale,
   lapFraction,
   buildGameDrivers,
   type GameDriver,
@@ -11,10 +13,12 @@ import {
   type QualiRow,
   type RaceSim,
   raceState,
+  QUALI_ATTEMPTS,
   simulateQualifying,
   simulateRace,
   validatePlayerDrivers,
 } from "../game";
+import { buildGameCardData, downloadGameShareCard } from "../gameShareCard";
 import "./game.css";
 
 interface Props {
@@ -341,7 +345,7 @@ export default function GameView({ onClose }: Props) {
                   <button type="button" aria-pressed={quali} onClick={() => setQuali(true)}>Run</button>
                   <button type="button" aria-pressed={!quali} onClick={() => setQuali(false)}>Skip</button>
                 </div>
-                <small>{quali ? "A live flying-lap session sets the grid." : "The same seeded grid is set without the session."}</small>
+                <small>{quali ? "Two live flying laps set the grid; best counts." : "The same seeded grid is set without the session."}</small>
               </div>
             </section>
 
@@ -359,8 +363,9 @@ export default function GameView({ onClose }: Props) {
                 <ol className="game-how-steps">
                   <li><b>Pick the weekend.</b> A 2023–2026 season and a real Grand Prix. Completed seasons use final Jolpica standings; the latest uses the current table.</li>
                   <li><b>Draft the drivers.</b> 1–4 people, one driver each, no duplicates. The rest of the field is AI.</li>
-                  <li><b>Qualify or skip.</b> A visible single-lap session sets the grid; skipping uses the same seeded model, not a different random grid.</li>
-                  <li><b>Race 3, 5 or 10 laps.</b> Seeded incidents can interrupt. Click a car for live pace, gap and race mode.</li>
+                  <li><b>Qualify or skip.</b> Two visible flying laps per driver set the grid, best counts; skipping uses the same seeded model, not a different random grid.</li>
+                  <li><b>Race 3, 5 or 10 laps.</b> 1× is a 12 s/lap viewing pace (2×/4× available); seeded incidents can interrupt. Click a car for live pace, gap and race mode.</li>
+                  <li><b>Share the result.</b> Download a 1200×630 result image with the classification, player badges, incidents and the model disclaimer.</li>
                 </ol>
               </div>
               <aside className="game-how-model">
@@ -531,8 +536,10 @@ export default function GameView({ onClose }: Props) {
         {phase === "result" && sim && geometry && (
           <GameResult
             sim={sim}
+            seed={seed}
             players={playerLabels}
             drivers={gameDrivers}
+            meeting={selectedMeeting}
             onAgain={raceAgain}
             onNew={newSetup}
           />
@@ -571,7 +578,7 @@ function GameQuali(p: {
       <header className="game-stage-head">
         <div>
           <p className="game-kicker">{p.meeting?.meeting_name ?? "Race"} · Qualifying</p>
-          <h2>One flying lap. The order is set.</h2>
+          <h2>Two flying laps. The order is set.</h2>
           <p className="dim small">
             {complete ? `Pole ${poleDriver?.code ?? "—"}` : "Flying laps in progress"} · seed {p.seed} · simulated from the season table
           </p>
@@ -580,21 +587,23 @@ function GameQuali(p: {
       </header>
       <div className="game-quali-summary" role="status">
         <div className="game-quali-main">
-          <span className="game-kicker">{complete ? "Session complete" : `Live session · ${shown}/${p.grid.length} laps`}</span>
+          <span className="game-kicker">{complete ? "Session complete" : `Live session · ${shown}/${p.grid.length} drivers`}</span>
           <strong>{complete ? (poleDriver ? `${poleDriver.name} on pole` : "Qualifying complete") : "Reading the flying laps…"}</strong>
           <div className="game-quali-progress" aria-hidden="true"><i style={{ width: `${p.grid.length ? (shown / p.grid.length) * 100 : 0}%` }} /></div>
-          <span className="dim small">Single flying lap · no Q1/Q2/Q3 split in v1</span>
+          <span className="dim small">Two flying laps · best counts · no Q1/Q2/Q3 split in v1</span>
         </div>
         <dl className="game-quali-facts">
           <div><dt>Pole</dt><dd>{poleDriver?.code ?? "—"}</dd></div>
-          <div><dt>Pole lap</dt><dd>{pole ? fmtLap(pole.time) : "—"}</dd></div>
+          <div><dt>Best lap</dt><dd>{pole ? fmtLap(pole.time) : "—"}</dd></div>
+          <div><dt>P2 gap</dt><dd>{p.grid[1] && pole ? `+${(p.grid[1].time - pole.time).toFixed(3)}` : "—"}</dd></div>
           <div><dt>Player</dt><dd>{pole && p.players.get(pole.driverId) ? `P${p.players.get(pole.driverId)}` : "AI"}</dd></div>
+          <div><dt>Runs</dt><dd>{QUALI_ATTEMPTS}</dd></div>
           <div><dt>Field</dt><dd>{p.grid.length}</dd></div>
         </dl>
       </div>
       <div className="game-grid-table">
-        <table className="laps game-table">
-          <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Lap time</th><th>Gap</th><th>Player</th></tr></thead>
+        <table className="laps game-table game-quali-table">
+          <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Best</th><th>Runs</th><th>Gap</th><th>Player</th></tr></thead>
           <tbody>
             {p.grid.slice(0, shown).map((row) => {
               const driver = p.drivers.find((d) => d.id === row.driverId);
@@ -605,6 +614,7 @@ function GameQuali(p: {
                   <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code} <span className="dim small">{driver?.name}</span></td>
                   <td className="dim">{driver?.team}</td>
                   <td className="mono">{fmtLap(row.time)}</td>
+                  <td className="mono game-runs">{row.attempts.map((time) => fmtLap(time)).join(" · ")}</td>
                   <td className="mono">{row.position === 1 ? "—" : `+${(row.time - best).toFixed(3)}`}</td>
                   <td>{p.players.get(row.driverId) ? <span className="game-player">P{p.players.get(row.driverId)}</span> : <span className="dim">AI</span>}</td>
                 </tr>
@@ -648,7 +658,7 @@ function GameGrid(p: {
         </div>
         <button type="button" className="game-pill" onClick={p.onBack}>Back to setup</button>
       </header>
-      <div className="game-grid-table">
+      <div className="game-grid-table game-grid-scroll">
         <table className="laps game-table">
           <thead><tr><th>Grid</th><th>Driver</th><th>Team</th><th>Gap</th><th>Player</th></tr></thead>
           <tbody>
@@ -669,8 +679,8 @@ function GameGrid(p: {
         </table>
       </div>
       <div className="game-actions">
-        <button type="button" className="primary" onClick={p.onStart}>Lights out →</button>
-        <p className="dim small">No tyre, pit-stop, collision or reliability model in v1.</p>
+        <button type="button" className="primary" onClick={p.onStart}>Start race →</button>
+        <p className="dim small">Five lights, then the clock starts. No tyre, pit-stop, collision or reliability model in v1.</p>
       </div>
     </section>
   );
@@ -692,13 +702,28 @@ function GameRace(p: {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [compareId, setCompareId] = useState<string | null>(null);
   const [view, setView] = useState<"top" | "angle">("top");
+  const [started, setStarted] = useState(false);
+  const [lightStep, setLightStep] = useState(0);
   const raf = useRef(0);
   const last = useRef(0);
   const done = useRef(false);
   const finishTimer = useRef<number | null>(null);
   const finishRef = useRef(p.onFinish);
   finishRef.current = p.onFinish;
-  const timeScale = p.sim.duration / Math.max(8, p.sim.laps * 8);
+  const timeScale = gameClockScale(p.sim.duration, p.sim.laps);
+
+  useEffect(() => {
+    setStarted(false);
+    setLightStep(0);
+    const lights = window.setInterval(() => {
+      setLightStep((step) => Math.min(5, step + 1));
+    }, 550);
+    const start = window.setTimeout(() => setStarted(true), 3600);
+    return () => {
+      window.clearInterval(lights);
+      window.clearTimeout(start);
+    };
+  }, []);
 
   useEffect(() => {
     last.current = performance.now();
@@ -706,7 +731,7 @@ function GameRace(p: {
       raf.current = requestAnimationFrame(loop);
       const dt = Math.min(0.1, (now - last.current) / 1000);
       last.current = now;
-      if (paused || done.current) return;
+      if (!started || paused || done.current) return;
       setElapsed((current) => {
         const next = Math.min(p.sim.duration, current + dt * speed * timeScale);
         if (next >= p.sim.duration) {
@@ -721,7 +746,7 @@ function GameRace(p: {
       cancelAnimationFrame(raf.current);
       if (finishTimer.current != null) window.clearTimeout(finishTimer.current);
     };
-  }, [paused, speed, timeScale, p.sim.duration]);
+  }, [started, paused, speed, timeScale, p.sim.duration]);
 
   const state = raceState(p.sim, elapsed);
   const leader = p.drivers.find((d) => d.id === state.leaderId);
@@ -741,21 +766,34 @@ function GameRace(p: {
       <header className="game-stage-head">
         <div>
           <p className="game-kicker">{p.meeting?.meeting_name ?? "Local race"} · {p.players.size} player{p.players.size === 1 ? "" : "s"}</p>
-          <h2>{leader ? `${leader.code} leads` : "Lights out"}</h2>
+          <h2>{!started ? "Formation lap" : leader ? `${leader.code} leads` : "Lights out"}</h2>
           <p className="dim small">Lap {state.rows[0]?.lap ?? 1}/{p.sim.laps} · seed {p.seed} · {GAME_MODEL}</p>
         </div>
         <div className="game-race-controls">
-          <button type="button" className="game-pill" onClick={() => setPaused((v) => !v)}>
+          <button type="button" className="game-pill" disabled={!started} onClick={() => setPaused((v) => !v)}>
             {paused ? "Resume" : "Pause"}
           </button>
           {[1, 2, 4].map((value) => (
-            <button key={value} type="button" className="game-pill" aria-pressed={speed === value} onClick={() => setSpeed(value)}>
+            <button key={value} type="button" className="game-pill" aria-pressed={speed === value} disabled={!started} onClick={() => setSpeed(value)}>
               {value}×
             </button>
           ))}
-          <button type="button" className="game-pill" onClick={() => { setElapsed(p.sim.duration); p.onFinish(); }}>Skip</button>
+          <button type="button" className="game-pill" disabled={!started} onClick={() => { setElapsed(p.sim.duration); p.onFinish(); }}>Skip</button>
         </div>
       </header>
+      {!started && (
+        <div className="game-start-sequence" role="status" aria-live="polite">
+          <div className="game-lights" aria-hidden="true">
+            {Array.from({ length: 5 }, (_, index) => (
+              <i key={index} className={index < lightStep ? "on" : ""} />
+            ))}
+          </div>
+          <div>
+            <b>{lightStep >= 5 ? "Lights out" : "Formation lap"}</b>
+            <span>{lightStep >= 5 ? "The clock starts now." : "Five lights, then the race begins."}</span>
+          </div>
+        </div>
+      )}
       <div className="game-lapstrip" role="status" aria-label="Race progress">
         <span className="game-kicker">Lap {state.rows[0]?.lap ?? 1}/{p.sim.laps}</span>
         <div className="game-lap-segments" aria-hidden="true">
@@ -766,7 +804,7 @@ function GameRace(p: {
             return <i key={i} className={done ? "done" : current ? "current" : ""} />;
           })}
         </div>
-        <span className="dim small">1× = ~8 s/lap · {p.sim.duration.toFixed(0)} model seconds</span>
+        <span className="dim small">1× ≈ {GAME_SECONDS_PER_LAP} s/lap · {p.sim.duration.toFixed(0)} model seconds</span>
       </div>
       {latestEvent && (
         <div className={`game-event ${latestEvent.kind.toLowerCase()}`} role="status">
@@ -1151,12 +1189,29 @@ function raceMode(rows: ReturnType<typeof raceState>["rows"], row: ReturnType<ty
 
 function GameResult(p: {
   sim: RaceSim;
+  seed: number;
   players: Map<string, number>;
   drivers: GameDriver[];
+  meeting: Meeting | null;
   onAgain: () => void;
   onNew: () => void;
 }) {
   const winner = p.drivers.find((d) => d.id === p.sim.preview[0]?.driverId);
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const download = async () => {
+    setSharing(true);
+    setShareError(null);
+    try {
+      await downloadGameShareCard(
+        buildGameCardData(p.sim, p.drivers, p.meeting?.meeting_name ?? "Local race", p.seed),
+      );
+    } catch {
+      setShareError("The result image could not be created. The table is still available.");
+    } finally {
+      setSharing(false);
+    }
+  };
   return (
     <section className="game-stage" aria-label="Race result">
       <header className="game-stage-head">
@@ -1167,6 +1222,9 @@ function GameResult(p: {
         </div>
         <div className="game-actions">
           <button type="button" className="primary" onClick={p.onAgain}>Race again</button>
+          <button type="button" className="game-pill" onClick={download} disabled={sharing}>
+            {sharing ? "Preparing image…" : "Download result image"}
+          </button>
           <button type="button" className="game-pill" onClick={p.onNew}>New setup</button>
         </div>
       </header>
@@ -1189,6 +1247,7 @@ function GameResult(p: {
           </tbody>
         </table>
       </div>
+      {shareError && <p className="game-share-error" role="alert">{shareError}</p>}
       <p className="dim small game-footnote">
         Local time-based model: form + seeded variation, plus SC / VSC / crash events. No tyre or pit-stop simulation.
         {p.sim.events.length > 0 ? ` Incidents: ${p.sim.events.map((e) => `${e.kind} L${e.lap}`).join(" · ")}.` : ""}
