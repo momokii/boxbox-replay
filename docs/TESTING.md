@@ -1,6 +1,6 @@
 # Testing
 
-The suite is deliberately small: 93 Python and 74 frontend tests. Every test
+The suite is deliberately small: 93 Python and 93 frontend tests. Every test
 earns its place by protecting a behaviour someone could break.
 
 ## What we test
@@ -19,6 +19,10 @@ earns its place by protecting a behaviour someone could break.
 | Share card | `shareCard` | The 1200×630 layout: fit, centring, empty outline. |
 | Export | `export` | CSV headers, quoting, null cells. |
 | Battles now | `battles` | Neighbour comparison, threshold, ordering, missing gaps. |
+| 3D geometry | `track3d` | Projection, ribbon/kerb geometry, open pit ribbon, degenerate outline. |
+| Pit guide | `pitlane` | Recorded/schematic fallback, pit-window timing. |
+| Retirement clocks | `retirements` | DNS/DNF/DSQ exits, last-lap timing, not before/after. |
+| BoxBox Grid | `game` | Ratings, seeded qualifying, duplicate players, 3/5/10 laps, race snapshots. |
 
 ## What we do not test
 
@@ -49,5 +53,5 @@ earns its place by protecting a behaviour someone could break.
 
 ```bash
 .venv/bin/python -m pytest          # 93 Python tests
-cd web && npm test                  # 74 frontend tests
+cd web && npm test                  # 93 frontend tests
 ```

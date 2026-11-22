@@ -301,6 +301,38 @@
 **Impact:** v3.13.0; docs/security policy/closeout updated
 ---
 
+## v4 3D truth and Grid decisions (2026-11-22)
+
+---
+**Decision:** D22 — True relative car/track proportions with Follow/Overview/Free cameras
+**Date:** 2026-11-22
+**Context:** v3 cars were ~8× too large relative to the 100-unit circuit, making the 3D view feel anecdotal; the 3D overview also showed retired cars because it used every entry.
+**Rationale:** A 5.6 m car against a 12 m visual track width gives a credible ratio. Follow keeps it readable; Overview uses markers at true track scale; Free allows inspection. Width remains a visual constant because OpenF1 publishes no metric width or lateral placement.
+**Alternatives Rejected:** Keeping the large car (dishonest scale); fake elevation; pretending the ribbon is measured.
+**Security Implications:** No new data or permissions; same lazy WebGL surface.
+**Impact:** v4.0.0; 3D component/geometry tests and screenshots updated.
+---
+
+---
+**Decision:** D23 — Use a short recorded pit transit when usable; otherwise label the pit guide schematic
+**Date:** 2026-11-22
+**Context:** OpenF1 `/location` includes pit transit samples but documents no lateral placement. A recorded transit can be a useful orientation guide; a metrically exact lane is not supportable.
+**Rationale:** Reject lap-sized or missing transit windows; show a short recorded path labelled “approximate”, or a fallback schematic. Pit events themselves remain real.
+**Alternatives Rejected:** Drawing a real pit lane from undocumented coordinates; inventing a pit box geometry without a source; omitting the pit guide entirely.
+**Security Implications:** No new data; display-only.
+**Impact:** v4.0.0; `pitlane.ts`, 2D/3D guide and honesty note.
+---
+
+---
+**Decision:** D24 — BoxBox Grid is a local seeded game, not a prediction
+**Date:** 2026-11-22
+**Context:** The requested local race game needs real-season driver/team form and a playable race without misrepresenting a forecast.
+**Rationale:** Use final Jolpica standings for completed seasons (current table for the latest), combine 58% points + 42% position into driver form and 64% driver + 36% team overall, then apply seeded qualifying/race variation. 1–4 players, one driver each, 3/5/10 laps, run/skip qualifying. No tyre/pit/collision/reliability model in v1.
+**Alternatives Rejected:** Uniform random grids; hard-coded or invented stats; claiming the game result is a real-world prediction; pre-2023 circuits with no geometry.
+**Security Implications:** Pure client-side; no new endpoint, key or personal data. Source attribution remains Jolpica + OpenF1.
+**Impact:** v4.0.0; `game.ts`, `GameView`, tests, README/closeout.
+---
+
 ## Decision Template (copy for every new decision)
 
 ---

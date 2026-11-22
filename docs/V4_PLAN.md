@@ -46,8 +46,8 @@ classified car is never hidden. Unit tests cover DNS/DNF/DSQ/no-result.
 1. Rebuild pure track geometry:
    - Real relative car/track width in the 100-unit world.
    - Asphalt ribbon, kerbs, edge lines, start/finish, corner markers.
-   - Schematic pit lane ribbon with real pit-event badges; label it
-     “schematic”.
+   - Recorded short pit transit ribbon when the feed supports one, otherwise a
+     schematic fallback; label the source. Real pit-event badges.
 2. Rebuild the car mesh with realistic proportions:
    - 5.6 m length / 2 m width relative to a 12 m track width.
    - front/rear wing, nose, halo, sidepods, wheels, team colour, number/code.
@@ -56,7 +56,7 @@ classified car is never hidden. Unit tests cover DNS/DNF/DSQ/no-result.
    - Overview fits the whole circuit; cars stay true relative size.
    - Free enables OrbitControls.
 4. Add a minimap, camera HUD, selected driver readout, and the honest
-   “schematic pit lane / visual track width” note.
+   “recorded/schematic pit lane / visual track width” note.
 5. 2D gets the pit-lane schematic, exit filtering and status chips.
 6. Preserve WebGL fallback, lazy chunk, reduced motion and disposal.
 
@@ -109,7 +109,7 @@ reconcile with finish progress.
    - active player slot; “AI field” for everyone else.
 4. Flow: setup → grid → race → result; `Race again`, `New setup`, close.
 5. Race canvas:
-   - real circuit outline, schematic pit lane;
+   - real circuit outline, recorded/schematic pit guide;
    - car markers, player badges P1–P4;
    - timing tower, lap counter, leader;
    - pause/2×/4×/skip.

@@ -1,7 +1,7 @@
 # Screenshots
 
-Refreshed against the **v3.13.0 build** on 2026-11-15. Captured from the running app at
-1400×880, with phone captures at 390×844 and the narrow chat at 720×810.
+Refreshed against the **v4.0.0 build** on 2026-11-22. New captures use 1440×900,
+with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
 | File | Shows |
@@ -28,14 +28,14 @@ They are referenced from the root README and this page.
 | `23-offline.png` | Offline reload with the current player actions |
 | `24-mini-sectors.png` | Detail mini-sectors: per-sector ticks, lap times, legend |
 | `25-pit-analytics.png` | Pit-crew and overtake analytics |
-| `26-3d-replay.png` | Optional 3D replay (night, desktop) |
-| `27-3d-mobile.png` | 3D replay at 390 px (fitted track) |
-| `28-3d-day.png` | 3D replay in the day theme |
+| `26-3d-replay.png` | v3 3D replay (legacy; see v4 below) |
+| `27-3d-mobile.png` | v3 3D replay at 390 px (legacy; see v4 below) |
+| `28-3d-day.png` | v3 3D replay in the day theme (legacy; see v4 below) |
 | `29-standings.png` | Standings table, checked time and driver chart controls |
 | `30-standings-chart.png` | Round tooltip with race/date and points for the selected drivers |
 | `31-archive.png` | Latest archive (2026) with results and standings |
 | `32-archive-1950.png` | 1950 Italian Grand Prix, shared drives and retirements |
-| `33-3d-upgraded.png` | 3D replay with procedural F1 cars and circuit detail |
+| `33-3d-upgraded.png` | v3 procedural F1 cars and circuit detail (legacy) |
 | `34-standings-mobile.png` | Standings at 390 px |
 | `35-duel-inputs.png` | Duel throttle/brake comparison at the same lap progress |
 | `36-battle-inputs.png` | Battle current inputs for anchor and challenger |
@@ -46,7 +46,7 @@ They are referenced from the root README and this page.
 | `38-mini-overall.png` | Overall mini-sectors: sector times vs session/personal bests |
 | `39-battle-snapshot.png` | Battle snapshot at lap 20: history truncated, Back to replay shown |
 | `40-driver-headshot.png` | Driver card with an OpenF1 headshot and number fallback |
-| `41-download.png` | Download data modal: seven tables, CSV/JSON |
+| `41-download.png` | Download data modal: nine session tables, CSV/JSON |
 | `42-report-data.png` | Printable data-only session report |
 | `43-report-ai.png` | AI-enhanced session report |
 | `44-telemetry-ai.png` | Scoped Telemetry AI explanation matching the chart |
@@ -54,3 +54,15 @@ They are referenced from the root README and this page.
 | `46-header-download.png` | Direct Download data button in the session header |
 | `47-pit-empty.png` | Explicit no-timed-stops state with pit visits and overtakes |
 | `48-hover-speed.png` | Map hover card with an on-demand speed value |
+
+| `49-replay-status-pit.png` | 2D replay with the “Not on track” rail, race-control ticker and recorded pit guide |
+| `50-3d-follow.png` | v4 3D Follow camera with the proportional car, kerbs, HUD and minimap |
+| `51-3d-overview.png` | v4 true-scale Overview with car markers and circuit context |
+| `52-3d-day.png` | v4 3D in the day theme |
+| `53-grid-lobby.png` | BoxBox Grid setup: season, Grand Prix, laps, players, qualifying |
+| `54-grid-lineup.png` | 2-player line-up with two distinct drivers |
+| `55-grid-qualifying.png` | Seeded qualifying grid with player marker |
+| `56-grid-race.png` | Local race: circuit, player badges, live order |
+| `57-grid-result.png` | Classification and player marker after the chequered flag |
+| `58-3d-mobile.png` | v4 3D Follow at 390 px |
+| `59-grid-mobile.png` | BoxBox Grid at 390 px |

@@ -113,12 +113,23 @@ retired cars (result feed, or no fresh laps) are classified last.
 - Duel draws both complete lap traces plus an inputs chart resampled onto the
   shared distance grid; Battle fetches the current five-second input window for
   its anchor and challengers.
-- The optional 3D view (`Track3D.tsx`) is a lazy-loaded three.js chunk built
-  from the same outline and replay positions. It renders a flat, textured ribbon
-  with edge lines, a checkered start, corner/DRS markers and procedural F1 cars;
-  corners, DRS zones and the hover readout stay on the 2D canvas.
-  WebGL failure falls back to 2D, and the chunk is not cached offline, so the
-  3D button is disabled offline rather than failing a dynamic import.
+- The 3D view (`Track3D.tsx`) is a lazy-loaded three.js chunk built from the
+  same outline and replay positions. V4 uses true relative car/track
+  proportions, a low-poly car, kerbs, a checkered start, corner/DRS markers, a
+  recorded-or-schematic pit guide and a minimap. **Follow / Overview / Free**
+  cameras keep the car readable without pretending the whole circuit is
+  car-sized. Overview uses markers at true track scale; Follow shows the car.
+  Track width is a visual constant (OpenF1 has no lateral placement) and the
+  scene stays flat. WebGL failure falls back to 2D; the chunk is not cached
+  offline.
+- `retirements.ts` turns DNF/DNS/DSQ rows plus last-lap evidence into replay
+  exit clocks. `SessionMap`/`Track3D` hide a car only after its exit; the
+  “Not on track” rail keeps the result visible. `pitlane.ts` builds the guide
+  from a recorded short transit, or falls back to a labelled schematic.
+- `game.ts` is a pure seeded BoxBox Grid engine (form ratings, qualifying,
+  race snapshots). `GameView.tsx` loads a real OpenF1 circuit and Jolpica
+  standings, drafts 1–4 player drivers, then runs a local 3/5/10-lap race. It
+  is a game model, not a prediction; no tyre/pit/collision/reliability claims.
 - The page around them subscribes through a **trailing-edge throttle** (~8 Hz).
   A drop-if-too-soon throttle was the cause of the "button stuck on Pause" bug:
   the last event of a burst was discarded, so pause never repainted.

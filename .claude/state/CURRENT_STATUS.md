@@ -1,8 +1,11 @@
 ## Project Phase
-v2 shipped (`v1.0.0`…`v2.13.1`). v3 complete through **`v3.13.0`**: V3.1 strategy, V3.2 Telemetry Lab, V3.3 grounded explain, V3.4a/c/d/e supporting analytics, the optional lazy **3D replay** (V3.5a), plus **championship standings** and the **results archive through 2026** (V3.5b/c, Jolpica), plus the v3.7 freshness/comparison/telemetry fixes and the v3.8 window/snapshot/mini/share-card pass.
+v4 shipped as **`v4.0.0`**. It closes the v3 replay work with a truthful
+3D/circuit view, retirement/pit status, and the local **BoxBox Grid** race room
+(2023–2026 circuits, real season tables, 1–4 players, 3/5/10 laps).
 DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Completed
+- [x] v4.0.0: true-scale 3D + Follow/Overview/Free cameras + minimap, DNF/DNS/DSQ exit clocks + pit guide + race-control rail, BoxBox Grid engine/UI, 2D truth pass, docs/screenshots/state
 - [x] TASK-001 foundation + TASK-002 guardrails (FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, CI/pre-commit)
 - [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
@@ -28,16 +31,18 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] v3.13 close-out: security headers (CSP), artifact/dead-script cleanup, SECURITY/CONTRIBUTING/closeout docs, final verification
 
 ## Blocked / Deferred (deliberate, documented)
+- V4 3D: no metrically measured pit lane, track width or elevation; OpenF1 location has no lateral placement. Recorded transit is labelled approximate; fallback is schematic.
+- V4 Grid: no pre-2023 circuit geometry, online play, accounts, leaderboards, tyres/pit stops/collisions/reliability, or real-world prediction.
 - V2-4 historical Fight Finder: DEFERRED (noisy/sparse feeds)
 - V2-7 race mini-sectors: BLOCKED for races; V3.4a conditional for quali/practice when segments meaningful
 - GitHub Releases (tags only), demo prewarm: user-side pending. API key replaced in `.env` and live-verified; rotate again if the pasted key was exposed.
 
 ## Open Questions
-- None blocking implementation; D1–D12 are recorded. Revisit only if a data source or licence posture changes.
+- None blocking implementation; D1–D24 are recorded. Revisit only if a data source or licence posture changes.
 - Staging target none (prod covers staging via `APP_ENV=staging`)
 
 ## Security Notes
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-15: **v3.13.0 — v3 complete.** Security headers/CSP, tracked coverage and dead scripts removed, SECURITY.md/CONTRIBUTING.md and V3_CLOSEOUT.md added, docs/screenshots aligned. 93 pytest + 74 vitest; ruff/tsc/build clean; CI green; production healthy under the CSP.
+2026-11-22: **v4.0.0 — v4 complete.** True-scale 3D/circuit, retirement exits, pit/race-control status, and BoxBox Grid. Final docs/screenshots/state updated. Tests: see the final verification block in `docs/V4_CLOSEOUT.md`.

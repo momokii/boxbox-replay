@@ -15,7 +15,9 @@ Consequences:
 
 - The centreline is real enough to animate along.
 - Track **width** is not in the feed. It stays a visual constant.
-- A real pit-lane centreline cannot be reconstructed honestly from `location`.
+- A **metrically exact** pit lane cannot be reconstructed from `location`; a
+  recorded transit can be shown as an approximate guide, with a schematic
+  fallback. The docs do not promise lateral placement.
 - Elevation is not required for this pass; no fake hills.
 
 The existing v3 view already states the first two points in its caption. V4
@@ -35,8 +37,9 @@ must keep that honesty while making the scale and status much clearer.
 | `lane_duration` | `25.153` | pit-lane duration |
 | `pit_duration` | `25.153` | pit-lane duration in this feed |
 
-The docs do not define a lateral pit path. **Decision:** show a schematic pit
-lane and real pit-event badges; never claim the lane geometry is measured.
+The docs do not define a lateral pit path. **Decision:** use a short recorded
+pit transit as an approximate guide when the feed supplies one; otherwise show
+an explicitly schematic guide. Never claim the lane width is measured.
 
 ### OpenF1 result / retirement
 
@@ -88,7 +91,7 @@ the table after the latest round. The game must label that distinction.
 
 The current lazy three.js chunk is the right base: one renderer, one track
 ribbon, low-poly cars, capped DPR. For V4 the scene can stay small (one ribbon,
-kerbs, ~20 cars, a schematic pit strip and a minimap). No new paid asset or
+kerbs, ~20 cars, a recorded/schematic pit guide and a minimap). No new paid asset or
 model is required; procedural geometry keeps the license clean. official docs:
 [WebGLRenderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer),
 [BufferGeometry](https://threejs.org/docs/#api/en/core/BufferGeometry).
@@ -144,13 +147,15 @@ No Motorsport Manager asset, text, screenshot or proprietary layout is copied.
 
 ### 3.2 Pit lane and retirement
 
-- Draw a **schematic pit lane** parallel to the start/finish straight, labelled
-  as schematic. It exists to orient the viewer and host real pit-event badges.
+- Draw a **recorded short pit transit** when the feed supports one, labelled
+  “recorded transit (approximate)”. If it is absent or too long, fall back to a
+  clearly labelled schematic guide. It orients the viewer and hosts real
+  pit-event rings; it is never presented as measured lane width.
 - Compute `outAt` for each retired/DNS entry from the final result plus last
   lap data. Hide the car from that replay time. Show a status rail:
   `DNF · last lap 40`, `DNS`, `DSQ`.
 - Race-control messages are a ticker, not a spatial marker.
-- 2D gets the same retirement filter and pit-lane schematic.
+- 2D gets the same retirement filter and recorded/schematic pit guide.
 
 ### 3.3 BoxBox Grid
 

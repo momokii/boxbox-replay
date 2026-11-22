@@ -639,3 +639,13 @@ F1 headshots and HTTPS audio explicitly allowed), removed tracked `.coverage`
 and stale pre-v3 Playwright scripts, and added SECURITY.md, CONTRIBUTING.md and
 docs/V3_CLOSEOUT.md. Verified headshots, 3D, Report and browsers under CSP;
 93 pytest + 74 vitest; final docs/screenshots/state aligned.
+
+
+v4.0.0 — v4 complete. Rebuilt the 3D view around true car/track proportions,
+Follow/Overview/Free cameras, kerbs, minimap and a recorded-or-schematic pit
+guide. Added DNF/DNS/DSQ exit clocks, a “Not on track” rail and a race-control
+ticker; retired cars no longer keep moving in the replay. Added BoxBox Grid:
+1–4 local players, 2023–2026 real circuits, final/current standings, 3/5/10
+laps, run/skip qualifying and a seeded race with player badges. Final tests:
+93 pytest + 93 vitest; browser checks at 1440×900 and 390×844; docs,
+screenshots and state aligned. Source research is in V4_RESEARCH_SOURCES.md.

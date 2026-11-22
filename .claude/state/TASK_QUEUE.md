@@ -116,13 +116,19 @@ Status: **v3 complete** through `v3.9.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a),
 | V3-5b | Jolpica 1950+ archive view | DONE (`v3.6.0`, D11) | V3-0 | Results + final standings (no telemetry pre-2023); separate from 2023+ replay; isolated adapter + attribution | Licence posture accepted (CC BY-NC-SA, non-commercial, no dump redistribution/share-alike care); no telemetry pre-2023 | Go/no-go gate |
 | V3-5c | Championship progression | DONE (`v3.6.0`, D11) | V3-0 | Standings progression via OpenF1 beta and/or Jolpica adapter | Adapter isolated; freshness/beta/licence acceptable | Go/no-go gate |
 
+| V4-1 | Replay truth: retirement exits + pit/race-control status | DONE (`v4.0.0`) | v3.13 | Compute DNF/DNS/DSQ exit clocks from result + last lap; filter 2D/3D; status rail; pit guide; race-control ticker | Canada 11291: 5 DNF + 1 DNS hidden after last lap; classified cars stay | No invented collision marker |
+| V4-2 | 3D/circuit overhaul | DONE (`v4.0.0`) | V4-1 | True relative car/track scale, low-poly car, kerbs, start, minimap, Follow/Overview/Free, recorded/schematic pit guide | 1440/390 browser checks; car visible in Follow; Overview markers; no WebGL errors | 2D remains analytical default |
+| V4-3 | BoxBox Grid engine | DONE (`v4.0.0`) | v3.13 | Pure ratings from final/current standings, seeded qualifying, 3/5/10 race snapshots, player uniqueness | 93 vitest incl. game tests; deterministic seed and classifications | Model disclosed |
+| V4-4 | BoxBox Grid UI | DONE (`v4.0.0`) | V4-3 | Setup/draft/grid/race/result, 1–4 players, run/skip quali, real circuit + standings, player badges | 1- and 2-player browser flow; mobile 390; no page errors | No online/accounts |
+| V4-5 | Release close-out | DONE (`v4.0.0`) | V4-1–V4-4 | README/docs/screenshots/state, full verification, tag | CI green; prod healthy; 93 pytest + 93 vitest | No pre-2023 game |
+
 ## Deferred / excluded (unchanged)
 
 - Live timing / live replay: out of scope unless a paid/licensed path is explicitly chosen (OpenF1 sponsor €9.90/mo or F1TV/licensed).
 - FastF1 as runtime data source: excluded (F1TV auth required for most features).
 - Team radio transcription/audio guarantees: excluded.
 - Historical Fight Finder scan: rejected (V2-4, noisy/sparse feeds).
-- Fantasy/prediction scope creep: excluded.
+- Online fantasy/prediction scope creep: excluded. BoxBox Grid is a disclosed local game model, not a prediction.
 - GitHub Releases (tag objects only), API key rotation, demo prewarm: user-side/ops pending.
 
 ---

@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v3.13.0` — v3 complete.** This is the v3 close-out: security headers, repository cleanup, final documentation and a verified build. The product includes replay, Battle/Duel, Telemetry scopes, Performance/mini-sectors, Strategy, grounded AI, Standings, Archive, CSV/JSON downloads, a printable Data/AI report, offline mode and an optional 3D view. See [`docs/V3_CLOSEOUT.md`](docs/V3_CLOSEOUT.md).
+> **Latest release: `v4.0.0` — v4 complete.** V4 rebuilds the 3D replay around truthful scale and camera context, fixes retirement/pit status, and adds **BoxBox Grid**, a local race-weekend game built from real season standings and real circuit shapes. It remains free, open source and non-commercial. See [`docs/V4_CLOSEOUT.md`](docs/V4_CLOSEOUT.md), [`docs/V4_RESEARCH.md`](docs/V4_RESEARCH.md) and [`docs/V4_PLAN.md`](docs/V4_PLAN.md).
+
+## What's new in v4.0.0
+
+- **3D replay, rebuilt.** True relative car/track proportions, a visible low-poly car, kerbs, a start/finish strip, a recorded (or explicitly schematic) pit-lane guide, a minimap and **Follow / Overview / Free** cameras. Overview uses car markers because a true-scale car is tiny at full-circuit distance; Follow shows the actual 3D car. Track width remains a stated visual constant because OpenF1 location has no lateral placement.
+- **Cars leave the track when the data says so.** Final-result DNF/DNS/DSQ status is combined with the last recorded lap to compute an exit clock. The map and 3D hide a retired car from that moment; a “Not on track” rail keeps the status visible. The current 2026 Canada session has 5 DNFs and 1 DNS, all handled this way.
+- **Pit and race control are visible.** A recorded pit transit is drawn as an approximate guide when the feed gives a usable short path; otherwise the app says “schematic”. Active pit transits get a ring on the 2D map. The latest race-control message appears under the replay, not as an invented corner marker.
+- **BoxBox Grid.** Open it from the header or dashboard. Choose a 2023–2026 season, a real Grand Prix, 1–4 local players, 3/5/10 laps, and run or skip qualifying. The field comes from final Jolpica standings for completed seasons (current table for the latest); the circuit comes from OpenF1 geometry; the race is a deterministic local model (64% driver form + 36% team form + seeded variation), never a real-world prediction. One driver per person, no duplicates.
 
 ## What's new in v3.13
 
@@ -43,9 +50,25 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 |---|---|
 | ![Standings](docs/screenshots/29-standings.png) | ![Archive](docs/screenshots/31-archive.png) |
 
-| 3D replay (upgraded) | 3D on a phone |
+| 3D Follow | 3D Overview |
 |---|---|
-| ![3D replay](docs/screenshots/33-3d-upgraded.png) | ![3D mobile](docs/screenshots/27-3d-mobile.png) |
+| ![3D Follow](docs/screenshots/50-3d-follow.png) | ![3D Overview](docs/screenshots/51-3d-overview.png) |
+
+| 3D day theme | 3D on a phone |
+|---|---|
+| ![3D day](docs/screenshots/52-3d-day.png) | ![3D mobile](docs/screenshots/58-3d-mobile.png) |
+
+| BoxBox Grid lobby | 2-player line-up |
+|---|---|
+| ![Grid lobby](docs/screenshots/53-grid-lobby.png) | ![Grid line-up](docs/screenshots/54-grid-lineup.png) |
+
+| Grid qualifying | Grid race |
+|---|---|
+| ![Grid qualifying](docs/screenshots/55-grid-qualifying.png) | ![Grid race](docs/screenshots/56-grid-race.png) |
+
+| Grid result | Grid on a phone |
+|---|---|
+| ![Grid result](docs/screenshots/57-grid-result.png) | ![Grid mobile](docs/screenshots/59-grid-mobile.png) |
 
 | Duel inputs (v3.7) | Battle inputs (v3.7) |
 |---|---|
@@ -53,10 +76,12 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 ## What it does
 
-- **Dashboard with continue-list.** No forced session: a landing page shows the sessions you opened recently (stored on this device, filterable, removable one by one or cleared), a random “Surprise me” picker, and how the app works.
+- **Dashboard with continue-list.** No forced session: a landing page shows the sessions you opened recently (stored on this device, filterable, removable one by one or cleared), a random “Surprise me” picker, how the app works, and a **BoxBox Grid** entry point.
 - **Full-field replay.** All 20+ cars on the circuit at once, moving on the real session clock (lights out to chequered flag). Play, pause, 1×–8×, scrub, or press Space.
 - **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
 - **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
+- **BoxBox Grid (v4).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, run/skip qualifying, seeded grid and race, player badges, live order and a result. The model is explicit on screen; it does not simulate tyres, pit stops, collisions or reliability in v1.
+- **Replay truth (v4).** Retirements are timed from the final result plus last-lap evidence; DNF/DNS/DSQ cars are hidden from that clock and listed in a status rail. The latest race-control message is shown as text. No collision marker is invented.
 - **Battle view.** A live **Battles now** strip lists neighbouring drivers within 1 s at the current frame (click to compare), plus an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
 - **Performance.** Stint timeline with pit-stop notches (hover for compound, tyre age and the gap at the stint start), wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters. Summary definitions: a **stint** is one continuous tyre run; a **stop** is a recorded pit visit; **best stop** is the fastest stationary time (not full pit-lane loss); **overtakes made/lost** are timing-feed counts and may be incomplete.
 - **Driver drill-down.** Click any car or tower row for position, gap, tyre age, result, a five-lap strip, pit stops, overtakes — each opening a full view.
@@ -70,7 +95,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Selectable windows (v3.8/9).** Telemetry holds a replay lap, a fixed lap or the full session; Battle freezes at a lap snapshot, truncates its history charts to that lap, and returns to replay. Mini-sectors switch between per-tick detail and per-sector overall.
 - **Driver headshots (v3.8).** OpenF1's `headshot_url` is shown with a number fallback; the image is not rehosted.
 - **Duel and Battle comparisons (v3.7).** Duel overlays both full lap traces and compares throttle/brake/gear/DRS at the same lap progress; Battle adds point-in-time inputs for the anchor and challengers.
-- **Optional 3D replay (v3.5).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock, with orbit and click-to-select. 2D stays the default and the analytical surface (corners, DRS, hover). The track ribbon is flat and its width is a visual constant, not measured data.
+- **3D replay (v4).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock. **Follow** tracks the selected/leading car, **Overview** fits the true-scale circuit with car markers, and **Free** enables orbit/zoom. The car is 5.6 m against a 12 m visual track width; OpenF1 does not publish a metric width or lateral position, so the width is a constant and the pit guide is labelled recorded/schematic. 2D stays the default and owns corners, DRS and hover.
 - **Telemetry lab (v3).** Up to three drivers on the same clock: speed traces, throttle/brake/gear/DRS at the cursor, and explicit nulls when a channel is missing. Distance-aligned lap comparison stays in Lap duel.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
 - **Lap duel.** Two laps race the same circuit, aligned by distance around the lap, with a live delta that starts at 0.000 and closes exactly on the official lap-time difference.
@@ -266,7 +291,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 93 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 74 frontend tests (vitest)
+cd web && npm test           # 93 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
@@ -286,8 +311,12 @@ ratelimit.py         Sliding-window request budget (3/s + 30/min)
 analysis.py          Pure math: corners, deltas, wear, positions, pit model, duels
 ai.py                OpenCode Go client: chat, recap, pit explainer, scope guard
 coach.py             Corner-coach prompt + measured fallback
+web/src/game.ts      Pure seeded BoxBox Grid engine (ratings, quali, race)
+web/src/pitlane.ts   Recorded/schematic pit guide + pit-window helper
+web/src/retirements.ts  DNF/DNS/DSQ -> replay exit clocks
 web/src/             React SPA: api client, playback store, canvas map,
-                     charts, chat, dashboard, panels, modals
+                     charts, chat, dashboard, panels, modals,
+                     game engine + BoxBox Grid view
 tests/               pytest suites (pure maths, API contracts, cache, AI)
 docs/                Architecture, deployment, testing, design notes, screenshots
 scripts/setup.sh     One-command dev/prod stack
@@ -318,6 +347,14 @@ Known limitations, stated plainly:
   they are indicative rather than FIA numbering.
 - **The pit model is a toy**, and says so: linear wear, static rivals, a pit
   loss you choose.
+- **3D is not a metrically measured circuit.** OpenF1 location is approximate
+  with no lateral placement; the ribbon width is a visual constant and the pit
+  guide is recorded-transit-approximate or explicitly schematic.
+- **BoxBox Grid is a game model, not a prediction.** It uses final/current
+  standings and a seeded model; it does not simulate tyres, pit stops,
+  collisions or reliability in v1. Pre-2023 circuits are not in the game.
+- **Retirement clocks are last-lap evidence**, not an official retirement
+  timestamp; the feed does not provide one.
 - **No live timing.** Historical sessions only (a day behind at the earliest),
   because OpenF1's live window is paid.
 
@@ -335,6 +372,8 @@ a number the feeds do not provide — show an empty state instead.
 [MIT](LICENSE) © 2026 Kelana Chandra Helyandika — use it, fork it, learn from it.
 Data belongs to its sources; see the credits above.
 
-## v3 close-out
+## Close-out documentation
 
-See [`docs/V3_CLOSEOUT.md`](docs/V3_CLOSEOUT.md), [`SECURITY.md`](SECURITY.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- **v4:** [`docs/V4_CLOSEOUT.md`](docs/V4_CLOSEOUT.md), [`docs/V4_RESEARCH.md`](docs/V4_RESEARCH.md), [`docs/V4_PLAN.md`](docs/V4_PLAN.md)
+- **v3:** [`docs/V3_CLOSEOUT.md`](docs/V3_CLOSEOUT.md)
+- **Operations:** [`SECURITY.md`](SECURITY.md), [`CONTRIBUTING.md`](CONTRIBUTING.md)
