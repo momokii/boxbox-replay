@@ -795,3 +795,90 @@
   z-index: 1;
   background: var(--panel);
 }
+
+.game-desk-details {
+  justify-self: start;
+  margin-top: 3px;
+}
+.game-tower .game-desk-details { width: 100%; justify-self: stretch; }
+
+.game-lap-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(90px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.game-lap-summary div {
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-2);
+}
+.game-lap-summary span {
+  color: var(--dim);
+  font: 600 0.58rem "JetBrains Mono", monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.game-lap-summary b {
+  color: var(--ink);
+  font: 700 1.05rem "Barlow Condensed", system-ui, sans-serif;
+}
+.game-lap-table-wrap { overflow-x: auto; }
+.game-lap-table { min-width: 560px; }
+.game-lap-table tr.best td { background: color-mix(in srgb, var(--amber) 10%, transparent); }
+.game-lap-table tr.retired { opacity: 0.75; }
+.game-lap-note { margin: 10px 0 0; }
+@media (max-width: 640px) {
+  .game-lap-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .game-lap-summary div:last-child { grid-column: span 2; }
+}
+
+.game-event-slow {
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
+  border-radius: 3px;
+  color: var(--amber);
+  font: 600 0.58rem "JetBrains Mono", monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.game-canvas-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.game-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+}
+.game-zoom-controls button {
+  min-width: 24px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--dim);
+  font: 700 0.8rem "Barlow", system-ui, sans-serif;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+.game-zoom-controls button:disabled { cursor: not-allowed; opacity: 0.35; }
+.game-zoom-controls span {
+  min-width: 38px;
+  color: var(--ink);
+  font: 600 0.58rem "JetBrains Mono", monospace;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .game-canvas-head { align-items: flex-start; flex-direction: column; }
+  .game-canvas-tools { width: 100%; justify-content: space-between; }
+}

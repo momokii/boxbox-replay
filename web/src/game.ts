@@ -92,11 +92,23 @@ export interface RaceSim {
   events: RaceEvent[];
 }
 
+export interface DriverLapStat {
+  lap: number;
+  /** Null on the retirement lap: the lap was not completed. */
+  time: number | null;
+  /** Model time at the end of this lap, including the driver's start delay. */
+  raceTime: number;
+  position: number;
+  gap: number;
+  status: "completed" | "DNF";
+  event: RaceEventKind | null;
+}
+
 export const GAME_MODEL =
   "64% driver form + 36% team form · seeded variation · not a prediction";
 
 /** Wall-clock seconds per lap at 1×. A viewing pace, never a real-time claim. */
-export const GAME_SECONDS_PER_LAP = 12;
+export const GAME_SECONDS_PER_LAP = 20;
 
 /** Two seeded flying laps; the best one sets the grid. */
 export const QUALI_ATTEMPTS = 2;
@@ -235,6 +247,50 @@ export function simulateQualifying(drivers: GameDriver[], seed: number): QualiRo
 export function gameClockScale(duration: number, laps: number): number {
   const wallSeconds = Math.max(1, laps) * GAME_SECONDS_PER_LAP;
   return Math.max(1e-6, duration / wallSeconds);
+}
+
+/**
+ * Per-lap model statistics for one driver. A retirement row stops at the
+ * retirement lap and carries a null lap time rather than pretending the
+ * partial lap was completed.
+ */
+export function driverLapHistory(sim: RaceSim, driverId: string): DriverLapStat[] {
+  const driver = sim.drivers.find((item) => item.id === driverId);
+  if (!driver) return [];
+  const lastLap = driver.retiredLap ?? sim.laps;
+  const rows: DriverLapStat[] = [];
+  let raceTime = driver.startDelay;
+  for (let lap = 1; lap <= lastLap; lap += 1) {
+    const retirementLap = driver.retiredLap === lap;
+    const lapTime = driver.lapTimes[lap - 1] ?? 0;
+    raceTime += retirementLap ? lapTime * 0.9 : lapTime;
+    const state = raceState(sim, raceTime);
+    const row = state.rows.find((item) => item.driverId === driverId);
+    const event = sim.events.find(
+      (item) => item.lap === lap && (item.driverId == null || item.driverId === driverId),
+    );
+    rows.push({
+      lap,
+      time: retirementLap ? null : lapTime,
+      raceTime,
+      position: row?.position ?? 0,
+      gap: row?.gap ?? 0,
+      status: retirementLap ? "DNF" : "completed",
+      event: event?.kind ?? null,
+    });
+  }
+  return rows;
+}
+
+/** Visual playback factor after an incident; never changes model results. */
+export function incidentPlaybackFactor(
+  kind: RaceEventKind | null,
+  since: number,
+): number {
+  if (!kind || since < 0) return 1;
+  if (kind === "SC" && since <= 12) return 0.35;
+  if (kind === "VSC" && since <= 8) return 0.45;
+  return 1;
 }
 
 /** One person gets one driver; duplicate driver ids are rejected, not replaced. */

@@ -63,6 +63,11 @@ describe("game result card", () => {
     expect(data.seed).toBe(8);
     expect(data.laps).toBe(5);
     expect(data.events.every((event) => ["SC", "VSC", "CRASH"].includes(event.kind))).toBe(true);
+    expect(data.players).toBe(1);
+    expect(data.fastestLap).not.toBeNull();
+    expect(data.fastestLap?.time).toBeGreaterThan(0);
+    expect(data.fastestLap?.lap).toBeGreaterThanOrEqual(1);
+    expect(data.biggestMover === null || data.biggestMover.from > data.biggestMover.to).toBe(true);
     const retired = selectGameCardRows([row(1, null), row(2, 1, true)]);
     expect(retired.map((item) => item.retired)).toEqual([false, true]);
   });

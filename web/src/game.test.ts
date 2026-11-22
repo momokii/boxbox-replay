@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGameDrivers,
+  driverLapHistory,
   gameClockScale,
+  incidentPlaybackFactor,
   GAME_SECONDS_PER_LAP,
   lapFraction,
   mulberry32,
@@ -89,12 +91,55 @@ describe("qualifying", () => {
 });
 
 describe("viewing pace", () => {
-  it("makes a five-lap 1× race take 60 wall seconds", () => {
-    expect(GAME_SECONDS_PER_LAP).toBe(12);
+  it("makes a five-lap 1× race take 100 wall seconds", () => {
+    expect(GAME_SECONDS_PER_LAP).toBe(20);
     const modelSeconds = 490;
     const scale = gameClockScale(modelSeconds, 5);
-    expect(scale).toBeCloseTo(modelSeconds / 60, 6);
-    expect(modelSeconds / scale).toBeCloseTo(60, 6);
+    expect(scale).toBeCloseTo(modelSeconds / 100, 6);
+    expect(modelSeconds / scale).toBeCloseTo(100, 6);
+  });
+});
+
+describe("driver lap history", () => {
+  it("returns every completed lap with monotonic race time", () => {
+    const drivers = buildGameDrivers(standings);
+    const sim = simulateRace(drivers, simulateQualifying(drivers, 8), 5, 8, ["a"]);
+    const finisher = sim.drivers.find((driver) => driver.retiredLap == null);
+    expect(finisher).toBeTruthy();
+    const laps = driverLapHistory(sim, finisher!.id);
+    expect(laps).toHaveLength(5);
+    expect(laps.every((lap) => lap.time != null && lap.time > 0)).toBe(true);
+    expect(laps.map((lap) => lap.lap)).toEqual([1, 2, 3, 4, 5]);
+    expect(laps.every((lap, index) => index === 0 || lap.raceTime > laps[index - 1].raceTime)).toBe(true);
+    expect(laps.every((lap) => lap.position > 0)).toBe(true);
+  });
+
+  it("marks a retirement lap as DNF and does not invent a lap time", () => {
+    const drivers = buildGameDrivers(standings);
+    for (let seed = 1; seed <= 500; seed += 1) {
+      const sim = simulateRace(drivers, simulateQualifying(drivers, seed), 5, seed);
+      const crash = sim.events.find((event) => event.kind === "CRASH");
+      if (!crash?.driverId) continue;
+      const laps = driverLapHistory(sim, crash.driverId);
+      expect(laps.at(-1)?.status).toBe("DNF");
+      expect(laps.at(-1)?.time).toBeNull();
+      expect(laps.length).toBe(crash.lap);
+      expect(laps.some((lap) => lap.event === "CRASH")).toBe(true);
+      return;
+    }
+    throw new Error("no seeded crash found");
+  });
+});
+
+describe("incident playback", () => {
+  it("slows SC/VSC playback only inside the incident window", () => {
+    expect(incidentPlaybackFactor("SC", 0)).toBe(0.35);
+    expect(incidentPlaybackFactor("SC", 12)).toBe(0.35);
+    expect(incidentPlaybackFactor("SC", 12.1)).toBe(1);
+    expect(incidentPlaybackFactor("VSC", 0)).toBe(0.45);
+    expect(incidentPlaybackFactor("VSC", 8.1)).toBe(1);
+    expect(incidentPlaybackFactor("CRASH", 0)).toBe(1);
+    expect(incidentPlaybackFactor(null, 0)).toBe(1);
   });
 });
 

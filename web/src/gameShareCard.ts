@@ -29,6 +29,10 @@ export interface GameCardData {
   rows: GameCardRow[];
   totalRows: number;
   winner: GameCardRow | null;
+  fastestLap: { code: string; time: number; lap: number } | null;
+  biggestMover: { code: string; from: number; to: number } | null;
+  players: number;
+  dnf: number;
   events: { kind: string; lap: number }[];
 }
 
@@ -60,6 +64,31 @@ export function buildGameCardData(
       retired: row.retired,
     };
   });
+  let fastestLap: GameCardData["fastestLap"] = null;
+  for (const driver of sim.drivers) {
+    const completedLaps = driver.retiredLap == null ? sim.laps : Math.max(0, driver.retiredLap - 1);
+    for (let index = 0; index < completedLaps; index += 1) {
+      const time = driver.lapTimes[index];
+      if (time != null && (!fastestLap || time < fastestLap.time)) {
+        fastestLap = {
+          code: drivers.find((item) => item.id === driver.id)?.code ?? driver.id,
+          time,
+          lap: index + 1,
+        };
+      }
+    }
+  }
+  const gridPositions = new Map(sim.grid.map((row) => [row.driverId, row.position]));
+  let biggestMover: GameCardData["biggestMover"] = null;
+  for (const row of all) {
+    if (row.retired) continue;
+    const from = gridPositions.get(row.driverId);
+    if (from == null) continue;
+    const gained = from - row.position;
+    if (gained > 0 && (!biggestMover || gained > biggestMover.from - biggestMover.to)) {
+      biggestMover = { code: row.code, from, to: row.position };
+    }
+  }
   return {
     meeting,
     laps: sim.laps,
@@ -67,6 +96,10 @@ export function buildGameCardData(
     rows: selectGameCardRows(all),
     totalRows: all.length,
     winner: all.find((row) => !row.retired) ?? null,
+    fastestLap,
+    biggestMover,
+    players: all.filter((row) => row.player != null).length,
+    dnf: all.filter((row) => row.retired).length,
     events: sim.events.map((event) => ({ kind: event.kind, lap: event.lap })),
   };
 }
@@ -75,6 +108,10 @@ function fmtGap(row: GameCardRow): string {
   if (row.retired) return "DNF";
   if (row.position === 1) return "winner";
   return `+${row.gap.toFixed(3)}`;
+}
+
+function fmtLap(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, "0")}`;
 }
 
 function draw(ctx: CanvasRenderingContext2D, data: GameCardData): void {
@@ -145,9 +182,30 @@ function draw(ctx: CanvasRenderingContext2D, data: GameCardData): void {
     ctx.textAlign = "left";
   }
 
-  const tableTop = 225;
-  const rowHeight = 22;
-  const columns = [48, 100, 390, 850, 1020];
+  const statY = 222;
+  const statH = 48;
+  const statW = (width - 96 - 30) / 4;
+  const stats = [
+    ["FASTEST LAP", data.fastestLap ? `${data.fastestLap.code} ${fmtLap(data.fastestLap.time)}` : "—"],
+    ["BIGGEST MOVER", data.biggestMover ? `${data.biggestMover.code} +${data.biggestMover.from - data.biggestMover.to}` : "—"],
+    ["PLAYERS", `${data.players} / ${data.totalRows}`],
+    ["INCIDENTS", data.events.length ? `${data.events.length} · ${data.dnf} DNF` : `0 · ${data.dnf} DNF`],
+  ] as const;
+  stats.forEach(([label, value], index) => {
+    const x = 48 + index * (statW + 10);
+    ctx.fillStyle = panel;
+    ctx.fillRect(x, statY, statW, statH);
+    ctx.fillStyle = dim;
+    ctx.font = "600 10px 'JetBrains Mono', monospace";
+    ctx.fillText(label, x + 10, statY + 16);
+    ctx.fillStyle = ink;
+    ctx.font = "700 16px 'Barlow Condensed', system-ui, sans-serif";
+    ctx.fillText(value, x + 10, statY + 37);
+  });
+
+  const tableTop = 282;
+  const rowHeight = 18;
+  const columns = [48, 96, 300, 700, 850];
   ctx.fillStyle = dim;
   ctx.font = "600 11px 'JetBrains Mono', monospace";
   ctx.fillText("POS", columns[0], tableTop);
@@ -159,27 +217,27 @@ function draw(ctx: CanvasRenderingContext2D, data: GameCardData): void {
   ctx.fillRect(48, tableTop + 8, width - 96, 1);
 
   data.rows.forEach((row, index) => {
-    const y = tableTop + 34 + index * rowHeight;
+    const y = tableTop + 32 + index * rowHeight;
     if (row.player) {
       ctx.fillStyle = "rgba(255,178,36,0.09)";
       ctx.fillRect(40, y - 17, width - 80, rowHeight);
     }
     ctx.fillStyle = row.retired ? red : ink;
-    ctx.font = "600 16px 'JetBrains Mono', monospace";
+    ctx.font = "600 14px 'JetBrains Mono', monospace";
     ctx.fillText(String(row.position), columns[0], y);
     ctx.fillStyle = row.color;
     ctx.fillRect(columns[1], y - 10, 3, 13);
     ctx.fillStyle = ink;
-    ctx.font = "700 17px 'Barlow Condensed', system-ui, sans-serif";
+    ctx.font = "700 15px 'Barlow Condensed', system-ui, sans-serif";
     ctx.fillText(row.code, columns[1] + 10, y);
     ctx.fillStyle = dim;
-    ctx.font = "400 14px system-ui, sans-serif";
+    ctx.font = "400 13px system-ui, sans-serif";
     ctx.fillText(row.team, columns[2], y);
     ctx.fillStyle = row.retired ? red : ink;
-    ctx.font = "500 14px 'JetBrains Mono', monospace";
+    ctx.font = "500 13px 'JetBrains Mono', monospace";
     ctx.fillText(fmtGap(row), columns[3], y);
     ctx.fillStyle = row.player ? amber : dim;
-    ctx.font = "600 12px 'JetBrains Mono', monospace";
+    ctx.font = "600 11px 'JetBrains Mono', monospace";
     ctx.fillText(row.player ? `P${row.player}` : "AI", columns[4], y);
   });
 
