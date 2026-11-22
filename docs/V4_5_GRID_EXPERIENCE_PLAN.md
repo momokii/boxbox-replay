@@ -82,3 +82,11 @@
 - Result image downloads as a valid 1200×630 PNG with winner, classification,
   player badges, incidents and the model disclaimer.
 - All unit, build, lint, browser and CI checks pass.
+
+## Shipped
+
+`v4.5.0` shipped on 2026-11-22. Evidence and screenshots are in
+[`V4_5_CLOSEOUT.md`](V4_5_CLOSEOUT.md): 93 pytest + 102 vitest, desktop and
+mobile browser passes, a downloaded 1200×630 PNG, and no page errors. The
+qualifying card measures 1146 px with a 729 px progress bar; Start race is
+visible at y=766 inside a 900 px viewport.

@@ -681,3 +681,12 @@ events with a race-control banner, an optional reproducible seed, and a
 Top/Angle circuit projection. The desk sits in the right order column; the
 desktop and mobile browser runs had no page errors or horizontal overflow.
 93 pytest + 97 vitest; screenshots 55–57 and 64–69.
+
+
+v4.5.0 — a calmer Grid race. 1× moved from roughly 8 s/lap to 12 s/lap
+(five laps about 60 s), qualifying gained two seeded flying laps with the best
+counting, the grid action became Start race with a five-light sequence before
+the clock, and the result screen can download a client-side 1200×630 PNG with
+the winner, top 10 plus players, incidents and model disclaimer. The grid and
+result tables use bounded scroll areas so the actions stay visible. 93 pytest
++ 102 vitest; desktop/mobile browser passes; screenshots 54–72.

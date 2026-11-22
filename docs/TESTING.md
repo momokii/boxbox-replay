@@ -1,6 +1,6 @@
 # Testing
 
-The suite is deliberately small: 93 Python and 97 frontend tests. Every test
+The suite is deliberately small: 93 Python and 102 frontend tests. Every test
 earns its place by protecting a behaviour someone could break.
 
 ## What we test
@@ -54,5 +54,5 @@ earns its place by protecting a behaviour someone could break.
 
 ```bash
 .venv/bin/python -m pytest          # 93 Python tests
-cd web && npm test                  # 97 frontend tests
+cd web && npm test                  # 102 frontend tests
 ```

@@ -1,8 +1,9 @@
 ## Project Phase
-v4 shipped as **`v4.4.0`**. It closes the v3 replay work with a truthful
+v4 shipped as **`v4.5.0`**. It closes the v3 replay work with a truthful
 3D/circuit view, retirement/pit status, and the local **BoxBox Grid** race room
 (2023–2026 circuits, real season tables, 1–4 players, 3/5/10 laps, explainer,
-live driver desk/compare, seeded incidents and a Top/Angle circuit view).
+live driver desk/compare, seeded incidents, two-run qualifying, a 12 s/lap
+viewing pace, start lights and a downloadable result image).
 DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Completed
@@ -11,6 +12,7 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] v4.2.0: real Grid qualifying phase, hover pace/gap/intention, lap strip and selected-driver 3D card; screenshots 55/56/57/61/62
 - [x] v4.3.0: fixed five-lap circuit mapping, Run/Skip choice, live qualifying and preserved GP selection; screenshots 55/56/62/63
 - [x] v4.4.0: Grid explainer + full-width qualifying facts, driver desk/compare, seeded SC/VSC/crash incidents, Top/Angle view; screenshots 64–69
+- [x] v4.5.0: two-run qualifying best counts, 12 s/lap 1× pace, five-light start, full-width card and 1200×630 result image; screenshots 54–72
 - [x] TASK-001 foundation + TASK-002 guardrails (FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, CI/pre-commit)
 - [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
@@ -37,17 +39,17 @@ DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Blocked / Deferred (deliberate, documented)
 - V4 3D: no metrically measured pit lane, track width or elevation; OpenF1 location has no lateral placement. Recorded transit is labelled approximate; fallback is schematic.
-- V4 Grid: no pre-2023 circuit geometry, online play, accounts, leaderboards, tyres/pit stops/collision physics/reliability, or real-world prediction. SC/VSC are seeded stated lap-time losses; crash is a seeded retirement, not real race control.
+- V4 Grid: no pre-2023 circuit geometry, online play, accounts, leaderboards, tyres/pit stops/collision physics/reliability, or real-world prediction. SC/VSC are seeded stated lap-time losses; crash is a seeded retirement, not real race control. Qualifying is two runs, not Q1/Q2/Q3; the result card is top 10 + players, not all 25.
 - V2-4 historical Fight Finder: DEFERRED (noisy/sparse feeds)
 - V2-7 race mini-sectors: BLOCKED for races; V3.4a conditional for quali/practice when segments meaningful
 - GitHub Releases (tags only), demo prewarm: user-side pending. API key replaced in `.env` and live-verified; rotate again if the pasted key was exposed.
 
 ## Open Questions
-- None blocking implementation; D1–D34 are recorded. Revisit only if a data source or licence posture changes.
+- None blocking implementation; D1–D38 are recorded. Revisit only if a data source or licence posture changes.
 - Staging target none (prod covers staging via `APP_ENV=staging`)
 
 ## Security Notes
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-22: **v4.4.0 — the Grid race desk.** Setup explains the model; the qualifying card is full-width; click-to-inspect driver desk with A/B compare; seeded SC/VSC/crash events with honest labels; Top/Angle circuit view. Tests: 93 pytest + 97 vitest; browser checks clean; production healthy.
+2026-11-22: **v4.5.0 — a calmer Grid race.** 1× is 12 s/lap, qualifying has two runs with best counts, the grid shows Start race, five lights gate the clock, and the result downloads as a 1200×630 PNG. Tests: 93 pytest + 102 vitest; browser checks clean; production healthy.

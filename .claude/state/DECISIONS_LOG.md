@@ -439,3 +439,39 @@
 **Alternatives Rejected:** A second data path or a faux-3D elevation (would imply measured geometry); WebGL for the Grid (additional weight for a 2D model).
 **Security Implications:** None.
 **Impact:** `GameCanvas`, `game.css`, screenshot 66.
+
+---
+**Decision:** D35 — 1× is a 12 s/lap viewing pace.
+**Date:** 2026-11-22
+**Context:** The v4.4 1× clock ran at roughly 8 s/lap (five laps about 40 s); review feedback said it was too fast to follow the desk, banners and passes.
+**Rationale:** Set `GAME_SECONDS_PER_LAP = 12`; `gameClockScale = duration / (laps * 12)`. Five laps take about 60 s, three about 36 s, ten about 120 s. 2× and 4× remain. The UI labels it as a viewing pace, never real time.
+**Alternatives Rejected:** Real-time model (~90 s/lap; far too long); 8 s/lap (reviewed as too fast); a speed slider (more UI than needed).
+**Security Implications:** None.
+**Impact:** `game.ts`, `GameView.tsx`, tests, README.
+
+---
+**Decision:** D36 — Two seeded qualifying runs; best counts.
+**Date:** 2026-11-22
+**Context:** The single flying lap gave one noise sample and left the attempt dimension out of the screen.
+**Rationale:** `QUALI_ATTEMPTS = 2`; each driver gets two seeded laps; `time = min(attempts)`. The table shows both, the summary shows Runs, and the copy explicitly says this is not Q1/Q2/Q3 elimination.
+**Alternatives Rejected:** Three runs (more screen time without new information); full Q1/Q2/Q3 (would imply a format the model does not implement).
+**Security Implications:** None.
+**Impact:** `game.ts`, `GameView.tsx`, `game.css`, tests, docs.
+
+---
+**Decision:** D37 — Start race uses a five-light transition, not another decision screen.
+**Date:** 2026-11-22
+**Context:** Clicking “Lights out” started the clock immediately, leaving no ready moment.
+**Rationale:** The grid action is Start race. `GameRace` shows five lights over about 3.6 s; the clock is frozen at 0, pause/speed/Skip are disabled, then the race starts automatically. The grid table scrolls so the action is visible.
+**Alternatives Rejected:** A second confirmation click; a static countdown with no lights; auto-starting without a user action.
+**Security Implications:** None.
+**Impact:** `GameView.tsx`, `game.css`, screenshots 54/70/72.
+
+---
+**Decision:** D38 — Result sharing is a client-side 1200×630 PNG.
+**Date:** 2026-11-22
+**Context:** The result screen had no share artifact; the replay already had a client-side canvas share card pattern.
+**Rationale:** Add `gameShareCard.ts` using a canvas, with winner, top 10 plus any player outside, gaps/DNF, incidents, seed and disclaimer. Download with `toBlob` + `<a download>`. No server, no upload, no PDF dependency.
+**Alternatives Rejected:** Screenshot service (new backend/privacy surface); PDF (the review asked for an image); all 25 rows (unreadable at 1200×630).
+**Security Implications:** Client-only; no data leaves the browser.
+**Impact:** `gameShareCard.ts`, `GameShareCard.test.ts`, `GameResult`, screenshots 57/71.

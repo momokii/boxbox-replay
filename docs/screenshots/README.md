@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.4.0 build** on 2026-11-22. New captures use 1440×900,
+Refreshed against the **v4.5.0 build** on 2026-11-22. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
@@ -60,19 +60,22 @@ They are referenced from the root README and this page.
 | `51-3d-overview.png` | v4.1 true-scale Overview with car markers and circuit context |
 | `52-3d-day.png` | v4 3D in the day theme |
 | `53-grid-lobby.png` | BoxBox Grid setup: season, Grand Prix, laps, players, qualifying |
-| `54-grid-lineup.png` | 2-player line-up with two distinct drivers |
-| `55-grid-qualifying.png` | v4.4 live/complete single flying-lap session with full-width pole/field facts |
-| `56-grid-race.png` | v4.4 local race: lap strip, full-circuit cars, player ring and race-control event banner |
-| `57-grid-result.png` | Classification with player marker and seeded DNF after the chequered flag |
+| `54-grid-lineup.png` | Grid table within a scroll window and the Start race action visible |
+| `55-grid-qualifying.png` | v4.5 two-run qualifying: both attempts, best, full-width facts and progress |
+| `56-grid-race.png` | v4.5 1× race at 12 s/lap with the VSC event banner |
+| `57-grid-result.png` | v4.5 result with Download result image and seeded DNF |
 | `58-3d-mobile.png` | v4.1 3D Free at 390 px |
-| `59-grid-mobile.png` | BoxBox Grid race at 390 px with the event banner |
+| `59-grid-mobile.png` | v4.5 BoxBox Grid race at 390 px with the VSC banner |
 | `60-3d-free.png` | v4.1 3D Free with the field visible as markers and no duplicate circuit line |
 | `61-3d-selected.png` | v4.2 3D selected-driver telemetry card |
 | `62-grid-hover.png` | v4.2 Grid hover: pace, gap, mode, player identity |
 | `63-grid-skip.png` | v4.3 explicit “Qualifying skipped” grid state |
-| `64-grid-how.png` | v4.4 setup explainer, arithmetic and game-model disclosure |
-| `65-grid-event.png` | v4.4 seeded VSC banner at Lap 2 |
-| `66-grid-angle.png` | v4.4 illustrative Angle circuit view |
-| `67-grid-driver-desk.png` | v4.4 selected driver with compare select and A/B deltas |
-| `68-grid-mobile-setup.png` | v4.4 setup at 390 px |
-| `69-grid-mobile-desk.png` | v4.4 driver desk at 390 px |
+| `64-grid-how.png` | v4.5 setup explainer, five steps, arithmetic and game-model disclosure |
+| `65-grid-event.png` | v4.5 seeded VSC banner at Lap 2 |
+| `66-grid-angle.png` | v4.5 illustrative Angle circuit view |
+| `67-grid-driver-desk.png` | v4.5 selected driver with compare select and A/B deltas |
+| `68-grid-mobile-setup.png` | v4.5 setup at 390 px with the two-run copy |
+| `69-grid-mobile-desk.png` | v4.5 driver desk at 390 px |
+| `70-grid-start.png` | v4.5 five-light formation lap before the clock starts |
+| `71-grid-result-card.png` | v4.5 downloaded 1200×630 result PNG |
+| `72-grid-mobile-start.png` | v4.5 mobile formation lap |
