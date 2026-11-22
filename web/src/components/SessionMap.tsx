@@ -1,7 +1,10 @@
-import { Component, lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { posAt, trailAt } from "../session";
 import type { Playback } from "../playbackStore";
 import type { Corner, DrsZone, ReplayDriver } from "../types";
+import type { PitStop } from "../api";
+import { buildPitPath, inPitWindow } from "../pitlane";
+import { isOffTrack, type DriverExit } from "../retirements";
 
 const Track3D = lazy(() => import("./Track3D"));
 
@@ -38,6 +41,10 @@ interface Props {
   zones: DrsZone[];
   replay: Map<number, ReplayDriver>;
   dots: DotMeta[];
+  exits: Map<number, DriverExit>;
+  pitStops: PitStop[];
+  leaderDriver: number | null;
+  lapText: string;
   highlight: number[];
   angle: number;
   selectedCorner: string | null;
@@ -92,6 +99,10 @@ export default function SessionMap(p: Props) {
   const [hover, setHover] = useState<{ x: number; y: number; driver: number } | null>(null);
   const [mode, setMode] = useState<"2d" | "3d">("2d");
   const can3d = p.online && p.outline.length >= 3;
+  const pitPath = useMemo(
+    () => buildPitPath(p.replay, p.pitStops, p.angle, p.outline),
+    [p.replay, p.pitStops, p.angle, p.outline],
+  );
 
   useEffect(() => {
     if (!p.online && mode === "3d") setMode("2d");
@@ -143,12 +154,35 @@ export default function SessionMap(p: Props) {
     const t = p.playback.state.t;
 
     ctx.lineJoin = "round";
+    // A track surface rather than a one-pixel diagram. The width is a visual
+    // constant: OpenF1 location has no lateral placement, so it is not measured.
     ctx.strokeStyle = line;
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 12;
     ctx.beginPath();
     p.outline.forEach(([x, y], i) => (i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
     ctx.closePath();
     ctx.stroke();
+    ctx.strokeStyle = isDay ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.28)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    if (pitPath) {
+      ctx.save();
+      ctx.strokeStyle = "#9aa7ba";
+      ctx.globalAlpha = 0.8;
+      ctx.lineWidth = 5;
+      ctx.setLineDash([7, 5]);
+      ctx.beginPath();
+      pitPath.points.forEach(([x, y], i) => (i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = amber;
+      ctx.font = "600 10px 'Barlow Condensed', system-ui, sans-serif";
+      const first = pitPath.points[0];
+      ctx.fillText("PIT", X(first[0]) + 6, Y(first[1]) - 7);
+      ctx.restore();
+    }
 
     ctx.strokeStyle = amber;
     ctx.globalAlpha = 0.5;
@@ -181,6 +215,7 @@ export default function SessionMap(p: Props) {
     for (const dot of p.dots) {
       const d = p.replay.get(dot.driver);
       if (!d) continue;
+      if (isOffTrack(p.exits.get(dot.driver), t)) continue;
       const pos = posAt(d, t, maxStep);
       if (!pos) continue;
       const rp = rotate(pos.x, pos.y, -p.angle);
@@ -206,12 +241,12 @@ export default function SessionMap(p: Props) {
       ctx.globalAlpha = dim ? 0.35 : 1;
       ctx.fillStyle = dot.color;
       ctx.beginPath();
-      ctx.arc(sx, sy, 9, 0, Math.PI * 2);
+      ctx.arc(sx, sy, 6, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = p.selectedDriver === dot.driver ? amber : isDay ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.9)";
-      ctx.lineWidth = p.selectedDriver === dot.driver ? 2.5 : 1.5;
+      ctx.lineWidth = p.selectedDriver === dot.driver ? 2.2 : 1.2;
       ctx.stroke();
-      ctx.font = "600 8px 'Barlow Condensed', system-ui, sans-serif";
+      ctx.font = "600 6.5px 'Barlow Condensed', system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.lineWidth = 2.4;
@@ -219,6 +254,13 @@ export default function SessionMap(p: Props) {
       ctx.strokeText(dot.code, sx, sy);
       ctx.fillStyle = isDay ? "#0E1420" : "#FFFFFF";
       ctx.fillText(dot.code, sx, sy);
+      if (p.pitStops.some((stop) => stop.driver_number === dot.driver && inPitWindow(stop, t))) {
+        ctx.strokeStyle = amber;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 9, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.globalAlpha = 1;
     }
   });
@@ -232,7 +274,7 @@ export default function SessionMap(p: Props) {
     let best: { driver: number; d: number } | null = null;
     screen.current.forEach((pt, driver) => {
       const d = Math.hypot(pt.x - mx, pt.y - my);
-      if (d < 14 && (!best || d < best.d)) best = { driver, d };
+      if (d < 11 && (!best || d < best.d)) best = { driver, d };
     });
     return best as { driver: number; d: number } | null;
   };
@@ -298,6 +340,11 @@ export default function SessionMap(p: Props) {
           3D
         </button>
       </div>
+      {mode === "2d" && pitPath && (
+        <span className="map-pit-source">
+          PIT LANE · {pitPath.source === "recorded" ? "recorded transit (approximate)" : "schematic"}
+        </span>
+      )}
       {mode === "2d" ? (
         <>
           <canvas
@@ -324,6 +371,11 @@ export default function SessionMap(p: Props) {
               highlight={p.highlight}
               angle={p.angle}
               selectedDriver={p.selectedDriver}
+              focusDriver={p.leaderDriver}
+              exits={p.exits}
+              pitStops={p.pitStops}
+              pitPath={pitPath}
+              lapText={p.lapText}
               theme={p.theme}
               onDriver={p.onDriver}
               onFallback={() => setMode("2d")}

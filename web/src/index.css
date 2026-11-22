@@ -246,6 +246,63 @@ button:disabled {
   overflow: hidden;
 }
 
+
+.map-pit-source {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  z-index: 4;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  color: var(--dim);
+  font: 600 0.62rem var(--font-mono, monospace);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+.map-status {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.map-status-card {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--amber);
+  border-radius: 5px;
+  background: var(--panel);
+  font-size: 0.78rem;
+  color: var(--dim);
+}
+.map-status-card b {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-family: "Barlow Condensed", var(--font-sans, system-ui);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.map-status-card span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .map-status-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .map-status-card span {
+    white-space: normal;
+  }
+}
+
 .player {
   display: flex;
   align-items: center;
@@ -2908,9 +2965,90 @@ tr.driver-marked td {
   border-radius: var(--radius);
   overflow: hidden;
 }
-.map3d-note {
+.map3d-hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  display: grid;
+  gap: 1px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--panel) 84%, transparent);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+.map3d-kicker {
+  color: var(--amber);
+  font: 600 0.6rem var(--font-mono, monospace);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.map3d-hud strong {
+  color: var(--ink);
+  font: 600 0.82rem "Barlow Condensed", var(--font-sans, system-ui);
+  letter-spacing: 0.03em;
+}
+.map3d-cams {
+  position: absolute;
+  top: 48px;
+  right: 8px;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  backdrop-filter: blur(6px);
+}
+.map3d-cams button {
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--dim);
+  font: 600 0.62rem var(--font-sans, system-ui);
+  padding: 4px 7px;
+  cursor: pointer;
+}
+.map3d-cams button[aria-pressed="true"] {
+  background: var(--amber);
+  color: #0b0f16;
+}
+.map3d-driver-label {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -100%);
+  display: none;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--ink);
+  font: 600 0.62rem var(--font-mono, monospace);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.map3d-driver-label[data-pit="true"] {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.map3d-mini {
   position: absolute;
   left: 10px;
+  bottom: 8px;
+  z-index: 3;
+  width: 176px;
+  height: 110px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  pointer-events: none;
+}
+.map3d-note {
+  position: absolute;
+  right: 10px;
   bottom: 8px;
   z-index: 2;
   margin: 0;
@@ -2920,7 +3058,7 @@ tr.driver-marked td {
   color: var(--dim);
   font-size: 0.68rem;
   line-height: 1.35;
-  max-width: min(560px, calc(100% - 20px));
+  max-width: min(460px, calc(100% - 210px));
   pointer-events: none;
 }
 .map3d-loading,
@@ -2943,7 +3081,14 @@ tr.driver-marked td {
     height: 380px;
   }
   .map3d-note {
-    font-size: 0.62rem;
+    display: none;
+  }
+  .map3d-mini {
+    width: 148px;
+    height: 92px;
+  }
+  .map3d-cams {
+    top: 44px;
   }
 }
 

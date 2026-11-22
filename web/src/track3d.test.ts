@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { buildTrackMesh, makeProjection } from "./track3d";
+import { buildRibbon, buildTrackMesh, makeProjection } from "./track3d";
 
 const square = [[0, 0], [100, 0], [100, 100], [0, 100]];
 
@@ -28,6 +28,19 @@ describe("buildTrackMesh", () => {
     const right = new THREE.Vector3(mesh.positions[3], mesh.positions[4], mesh.positions[5]);
     expect(left.distanceTo(right)).toBeCloseTo(mesh.halfWidth * 2, 5);
     for (const value of mesh.positions) expect(Number.isFinite(value)).toBe(true);
+  });
+
+  it("builds kerbs inside the projected world, not in raw telemetry units", () => {
+    const mesh = buildTrackMesh(square);
+    expect(mesh.kerbs.positions.length).toBeGreaterThan(0);
+    expect(mesh.kerbs.colors.length).toBe(mesh.kerbs.positions.length);
+    for (const value of mesh.kerbs.positions) expect(Math.abs(value)).toBeLessThan(100);
+  });
+
+  it("builds an open ribbon from world points", () => {
+    const ribbon = buildRibbon([[0, 0], [1, 0], [2, 1]], 0.1);
+    expect(ribbon.positions.length).toBe(3 * 2 * 3);
+    expect(ribbon.indices.length).toBe(2 * 6);
   });
 
   it("does not crash on a degenerate outline", () => {

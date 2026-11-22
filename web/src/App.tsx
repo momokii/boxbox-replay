@@ -12,6 +12,7 @@ import PitPanel from "./components/PitPanel";
 import StrategyPanel from "./components/StrategyPanel";
 import StandingsPanel from "./components/StandingsPanel";
 import ArchiveView from "./components/ArchiveView";
+import GameView from "./components/GameView";
 import SessionReport from "./components/SessionReport";
 import SessionDownloadButton from "./components/SessionDownloadButton";
 import TelemetryLabPanel from "./components/TelemetryLabPanel";
@@ -51,6 +52,7 @@ import {
 } from "./session";
 import { createPlayback, useThrottledTick } from "./playbackStore";
 import { sectorFlags } from "./sectors";
+import { buildDriverExits, type DriverExit } from "./retirements";
 import { useTheme } from "./theme";
 import type {
   Driver,
@@ -62,6 +64,7 @@ import type {
   SessionInfo,
   SessionInfoFull,
   SpeedPoint,
+  RaceControlRow,
 } from "./types";
 import "./index.css";
 
@@ -172,6 +175,7 @@ export default function App() {
     | "standings"
   >("replay");
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [gameOpen, setGameOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [showLaps, setShowLaps] = useState(false);
   const [lapsModal, setLapsModal] = useState(false);
@@ -334,6 +338,9 @@ export default function App() {
   );
   const result = useAsync(`result:${sessionKey ?? "none"}`, () =>
     sessionKey ? api.sessionResult(sessionKey) : Promise.resolve([]),
+  );
+  const raceControl = useAsync(`race-control:${sessionKey ?? "none"}`, () =>
+    sessionKey ? api.raceControl(sessionKey) : Promise.resolve([] as RaceControlRow[]),
   );
   const allLaps = useMemo(() => laps.data ?? [], [laps.data]);
 
@@ -503,15 +510,33 @@ export default function App() {
     [positions.data],
   );
 
-  const statusByDriver = useMemo(() => {
-    const m = new Map<number, "DNF" | "DNS" | "DSQ" | "OUT">();
-    for (const r of result.data ?? []) {
-      if (r.dnf) m.set(r.driver_number, "DNF");
-      else if (r.dns) m.set(r.driver_number, "DNS");
-      else if (r.dsq) m.set(r.driver_number, "DSQ");
+  const exits = useMemo(
+    () => buildDriverExits(result.data ?? [], allLaps, replay.data?.start),
+    [result.data, allLaps, replay.data?.start],
+  );
+
+  const latestControl = useMemo(() => {
+    const rows = [...(raceControl.data ?? [])].sort((a, b) => a.t - b.t);
+    let latest: RaceControlRow | null = null;
+    for (const row of rows) {
+      if (row.t <= playT + 1) latest = row;
+      else break;
     }
-    // Without a result feed, a car that stopped setting laps is out of the race.
-    // Evidence: its last recorded lap is far behind the replay clock.
+    return latest && playT - latest.t <= 60 ? latest : null;
+  }, [raceControl.data, playT]);
+
+  const statusByDriver = useMemo(() => {
+    const m = new Map<number, DriverExit["status"] | "OUT">();
+    for (const [driver, exit] of exits) {
+      if (exit.status === "DSQ") {
+        if (playT >= dur - 30) m.set(driver, "DSQ");
+      } else if (exit.outAt != null && playT >= exit.outAt) {
+        m.set(driver, exit.status);
+      }
+    }
+    // Without a result feed, a car that stopped setting laps is out of the
+    // race. Only use this when the result did not classify the driver; a car
+    // with no fresh laps is evidence, not a guess.
     if (replay.data) {
       const startMs = Date.parse(replay.data.start);
       const lastT = new Map<number, number>();
@@ -522,15 +547,13 @@ export default function App() {
         const t = (ms - startMs) / 1000;
         if (t >= 0 && t > (lastT.get(l.driver_number) ?? -1)) lastT.set(l.driver_number, t);
       }
-      // Only for drivers the result feed did not classify: a car with no fresh
-      // laps is out, which is evidence, not a guess.
+      const classified = new Set((result.data ?? []).map((r) => r.driver_number));
       for (const [driver, t] of lastT) {
-        if (!m.has(driver) && playT - t > 180) m.set(driver, "OUT");
+        if (!classified.has(driver) && playT - t > 180) m.set(driver, "OUT");
       }
     }
     return m;
-  }, [result.data, replay.data, allLaps, playT]);
-
+  }, [exits, result.data, replay.data, allLaps, playT, dur]);
   const towerRows = useMemo(() => {
     const rows = (drivers.data ?? []).map((d) => ({
       driver: d.driver_number,
@@ -738,6 +761,9 @@ export default function App() {
         <button type="button" className="archive-open" onClick={() => setArchiveOpen(true)}>
           Archive
         </button>
+        <button type="button" className="archive-open" onClick={() => setGameOpen(true)}>
+          Grid
+        </button>
         {sessionKey && (
           <>
             <button type="button" className="archive-open" onClick={() => setReportOpen(true)}>
@@ -889,6 +915,7 @@ export default function App() {
             onClearRecents={() => setRecents(clearRecents())}
             onSurprise={surprise}
             surprising={surprising}
+            onOpenGame={() => setGameOpen(true)}
           />
         </main>
       )}
@@ -968,6 +995,10 @@ export default function App() {
                         zones={geo.data?.zones ?? []}
                         replay={replayMap}
                         angle={geo.data?.angle ?? 0}
+                        exits={exits}
+                        pitStops={pit.data?.stops ?? []}
+                        leaderDriver={towerRows[0]?.driver ?? null}
+                        lapText={`LAP ${Math.max(1, progress.lap)}/${progress.total}`}
                         dots={(drivers.data ?? []).map((d) => ({
                           driver: d.driver_number,
                           code: d.name_acronym,
@@ -984,6 +1015,42 @@ export default function App() {
                         online={online}
                       />
                     </div>
+
+                    {(() => {
+                      const visible = [...exits.entries()].filter(([driver, exit]) => {
+                        if (exit.status === "DNS") return true;
+                        if (exit.status === "DSQ") return playT >= dur - 30;
+                        if (exit.outAt == null) return false;
+                        return playT >= exit.outAt && statusByDriver.has(driver);
+                      });
+                      if (!visible.length && !latestControl) return null;
+                      return (
+                        <div className="map-status">
+                          {visible.length > 0 && (
+                            <div className="map-status-card">
+                              <b>Not on track</b>
+                              <span>
+                                {visible
+                                  .sort(([a], [b]) => a - b)
+                                  .map(([driver, exit]) =>
+                                    `${driverMetaLabel(driver)} ${exit.status}${exit.lastLap ? ` · L${exit.lastLap}` : ""}`,
+                                  )
+                                  .join(" · ")}
+                              </span>
+                            </div>
+                          )}
+                          {latestControl && (
+                            <div className="map-status-card">
+                              <b>
+                                Race control
+                                {latestControl.flag ? ` · ${latestControl.flag}` : ""}
+                              </b>
+                              <span>{latestControl.message}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     <div className="player">
                       <button className="primary" onClick={() => playback.toggle()}>
@@ -1557,6 +1624,7 @@ export default function App() {
         </section>
       )}
       {archiveOpen && <ArchiveView onClose={() => setArchiveOpen(false)} />}
+      {gameOpen && <GameView onClose={() => setGameOpen(false)} />}
       {reportOpen && sessionKey && (
         <SessionReport
           sessionKey={sessionKey}

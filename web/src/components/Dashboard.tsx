@@ -8,6 +8,7 @@ interface Props {
   onClearRecents: () => void;
   onSurprise: () => void;
   surprising: boolean;
+  onOpenGame: () => void;
 }
 
 /**
@@ -21,6 +22,7 @@ export default function Dashboard({
   onClearRecents,
   onSurprise,
   surprising,
+  onOpenGame,
 }: Props) {
   const [filter, setFilter] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
@@ -139,6 +141,24 @@ export default function Dashboard({
           </div>
           <button type="button" className="dash-surprise" onClick={onSurprise} disabled={surprising}>
             {surprising ? "Looking for one…" : "Surprise me"}
+          </button>
+        </div>
+      </section>
+
+      <section className="dash-section" aria-label="BoxBox Grid">
+        <div className="dash-section-head">
+          <h2>BoxBox Grid</h2>
+        </div>
+        <div className="dash-lucky">
+          <div>
+            <p className="dash-lucky-title">Run a local race weekend</p>
+            <p className="dim small">
+              Real season standings and a real circuit shape. Choose 1–4 drivers, qualify or skip,
+              then watch a 3/5/10-lap race with player badges.
+            </p>
+          </div>
+          <button type="button" className="dash-surprise" onClick={onOpenGame}>
+            Open race room
           </button>
         </div>
       </section>

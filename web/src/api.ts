@@ -10,6 +10,7 @@ import type {
   LocPoint,
   Meeting,
   ReplayPayload,
+  RaceControlRow,
   SessionGaps,
   SessionInfo,
   SessionInfoFull,
@@ -82,7 +83,7 @@ export const api = {
   weather: (sessionKey: number) => get<Record<string, unknown>[]>(`/weather?session_key=${sessionKey}`),
   radio: (sessionKey: number) => get<Record<string, unknown>[]>(`/radio?session_key=${sessionKey}`),
   raceControl: (sessionKey: number) =>
-    get<Record<string, unknown>[]>(`/race-control?session_key=${sessionKey}`),
+    get<RaceControlRow[]>(`/race-control?session_key=${sessionKey}`),
   sessionInfo: (sessionKey: number) => get<SessionInfoFull>(`/session/info?session_key=${sessionKey}`),
   sessionGeometry: (sessionKey: number) =>
     get<Geometry & { driver: number; lap: number }>(`/session/geometry?session_key=${sessionKey}`),

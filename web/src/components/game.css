@@ -1,0 +1,341 @@
+.game-view {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 82% 8%, color-mix(in srgb, var(--amber) 7%, transparent), transparent 32%),
+    var(--bg);
+  color: var(--ink);
+}
+.game-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 26px 0 48px;
+}
+.game-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.game-kicker {
+  margin: 0 0 7px;
+  color: var(--amber);
+  font: 600 0.66rem "JetBrains Mono", monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.game-head h1 {
+  margin: 0;
+  font-family: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+}
+.game-lede {
+  max-width: 660px;
+  margin: 12px 0 0;
+  color: var(--dim);
+  font-size: 0.95rem;
+}
+.game-close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.game-message {
+  margin: 14px 0 0;
+  padding: 9px 12px;
+  border-left: 2px solid var(--amber);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+.game-setup {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  padding: 18px 0 12px;
+}
+.game-setup label {
+  display: grid;
+  gap: 5px;
+  color: var(--dim);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.game-setup select {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--ink);
+  font: 500 0.8rem "Barlow", system-ui, sans-serif;
+}
+.game-check {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 8px !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  color: var(--ink) !important;
+  font-size: 0.8rem !important;
+  padding-top: 20px;
+}
+.game-check input { margin-top: 2px; accent-color: var(--amber); }
+.game-check small {
+  display: block;
+  margin-top: 2px;
+  color: var(--dim);
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+.game-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 9px 0 0;
+  border-top: 1px solid var(--line);
+  color: var(--dim);
+  font: 500 0.68rem "JetBrains Mono", monospace;
+}
+.game-note {
+  margin: 12px 0 0;
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+.game-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.75fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+.game-roster,
+.game-lineup,
+.game-stage {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.game-roster { min-width: 0; }
+.game-roster > header,
+.game-stage-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.game-roster h2,
+.game-lineup h2,
+.game-stage h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 0.01em;
+}
+.game-round {
+  color: var(--dim);
+  font: 600 0.68rem "JetBrains Mono", monospace;
+}
+.game-scroll { max-height: min(53vh, 540px); overflow: auto; }
+.game-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.game-table th,
+.game-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+.game-table th {
+  color: var(--dim);
+  font: 600 0.62rem "JetBrains Mono", monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.game-table tbody tr:hover { background: var(--panel-2); }
+.game-table tr.picked { background: color-mix(in srgb, var(--amber) 7%, transparent); }
+.game-table tr.on { background: color-mix(in srgb, var(--amber) 12%, transparent); }
+.game-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: 1px;
+}
+.game-pill {
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--dim);
+  font: 600 0.65rem "Barlow", system-ui, sans-serif;
+  cursor: pointer;
+}
+.game-pill:hover,
+.game-pill[aria-pressed="true"] {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.game-player {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 4px;
+  border: 1px solid var(--amber);
+  border-radius: 3px;
+  color: var(--amber);
+  font: 600 0.58rem "JetBrains Mono", monospace;
+  white-space: nowrap;
+}
+.game-lineup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+}
+.game-lineup h2 { font-size: 1.2rem; }
+.game-slots { display: grid; gap: 6px; }
+.game-slot {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.game-slot.active { border-color: var(--amber); }
+.game-slot-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  padding: 8px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.game-slot-main span:last-child { display: grid; min-width: 0; }
+.game-slot-main b { font: 600 0.9rem "Barlow Condensed", system-ui, sans-serif; }
+.game-slot-main small {
+  overflow: hidden;
+  color: var(--dim);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-player {
+  flex: 0 0 auto;
+  color: var(--amber);
+}
+.game-clear {
+  width: 28px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+.game-model {
+  display: grid;
+  gap: 3px;
+  margin-top: auto;
+  padding: 9px;
+  border: 1px dashed var(--line);
+  color: var(--dim);
+  font-size: 0.7rem;
+}
+.game-model b { color: var(--amber); font: 600 0.62rem "JetBrains Mono", monospace; text-transform: uppercase; }
+.game-start { width: 100%; margin-top: 2px; }
+.game-stage { margin-top: 16px; }
+.game-stage-head { align-items: center; }
+.game-stage-head .game-kicker { margin-bottom: 3px; }
+.game-grid-table,
+.game-result-table { padding: 10px 16px 4px; }
+.game-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 12px 16px 16px;
+}
+.game-actions p { margin: 0; }
+.game-race-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 12px;
+  padding: 12px 16px 16px;
+}
+.game-canvas-wrap { min-width: 0; }
+.game-canvas {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel-2);
+}
+.game-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 7px 2px 0;
+  color: var(--dim);
+  font-size: 0.7rem;
+}
+.game-legend span { display: flex; align-items: center; gap: 4px; }
+.game-legend i { width: 7px; height: 7px; border-radius: 50%; }
+.game-tower { min-width: 0; }
+.game-tower h3 {
+  margin: 0 0 5px;
+  color: var(--ink);
+  font: 600 0.8rem "Barlow Condensed", system-ui, sans-serif;
+}
+.game-progress { margin: 7px 0 10px; }
+.game-race-controls { display: flex; flex-wrap: wrap; gap: 3px; }
+.game-footnote { padding: 0 16px 16px; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 920px) {
+  .game-setup { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .game-board { grid-template-columns: 1fr; }
+  .game-scroll { max-height: 38vh; }
+}
+@media (max-width: 640px) {
+  .game-shell { width: calc(100% - 20px); padding-top: 14px; }
+  .game-head { gap: 10px; }
+  .game-lede { font-size: 0.84rem; }
+  .game-setup { grid-template-columns: 1fr 1fr; }
+  .game-check { grid-column: 1 / -1; padding-top: 2px; }
+  .game-race-grid { grid-template-columns: 1fr; }
+  .game-stage-head { align-items: flex-start; flex-direction: column; }
+  .game-table th, .game-table td { padding: 6px 6px; font-size: 0.7rem; }
+  .game-table th:nth-child(3), .game-table td:nth-child(3) { display: none; }
+  .game-source { font-size: 0.6rem; }
+}

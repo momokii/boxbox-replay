@@ -342,3 +342,13 @@ export interface ArchiveSeasonsPayload {
   license_url?: string;
   fetched_at?: string;
 }
+
+export interface RaceControlRow {
+  [key: string]: unknown;
+  t: number;
+  category: string | null;
+  flag: string | null;
+  driver_number: number | null;
+  lap_number: number | null;
+  message: string;
+}
