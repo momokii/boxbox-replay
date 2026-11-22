@@ -557,7 +557,7 @@ function GameRace(p: {
   const finishTimer = useRef<number | null>(null);
   const finishRef = useRef(p.onFinish);
   finishRef.current = p.onFinish;
-  const timeScale = p.sim.duration / Math.max(6, p.sim.laps * 2.3);
+  const timeScale = p.sim.duration / Math.max(8, p.sim.laps * 8);
 
   useEffect(() => {
     last.current = performance.now();
@@ -722,11 +722,8 @@ function GameCanvas(p: {
       const pt = sample(row.progress / p.sim.laps);
       const meta = p.drivers.find((d) => d.id === row.driverId);
       const marker = driver ? 7 : 4;
-      // The pack is tightly bunched in a 5-lap race. A small perpendicular
-      // stagger keeps every marker visible; it is not a second racing line.
-      const lateral = (row.position - (p.state.rows.length + 1) / 2) * 3.2;
-      const px = X(pt.x) - Math.sin(pt.angle) * lateral;
-      const py = Y(pt.y) + Math.cos(pt.angle) * lateral;
+      const px = X(pt.x);
+      const py = Y(pt.y);
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(-pt.angle);
@@ -737,6 +734,13 @@ function GameCanvas(p: {
       ctx.arc(0, 0, marker, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      if (driver) {
+        ctx.strokeStyle = "#ffb224";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, marker + 2.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       ctx.fillStyle = "#0b0e13";
       ctx.font = "700 8px 'Barlow Condensed', system-ui, sans-serif";
       ctx.textAlign = "center";

@@ -599,8 +599,9 @@ export default function Track3D(p: Props) {
         }
         if (isSelected) focusGroup = { group: car.group, driver: car.driver };
       }
-      tokens.visible = camMode === "overview";
-      if (camMode === "overview") {
+      const cameraDistance = camera.position.distanceTo(controls.target);
+      tokens.visible = camMode === "overview" || (camMode === "free" && cameraDistance > 6);
+      if (tokens.visible) {
         const positions = tokenGeo.getAttribute("position") as THREE.BufferAttribute;
         const colors = tokenGeo.getAttribute("color") as THREE.BufferAttribute;
         let count = 0;
@@ -748,8 +749,8 @@ export default function Track3D(p: Props) {
       <div ref={labelRef} className="map3d-driver-label" aria-hidden="true" />
       <canvas ref={miniRef} className="map3d-mini" aria-hidden="true" />
       <p className="map3d-note">
-        Follow the selected/leading car; overview uses markers at true track scale. Track width is a visual constant;
-        pit lane is {p.pitPath?.source === "recorded" ? "recorded transit (approximate)" : "schematic"}.
+        Follow the selected/leading car; Overview/Free use markers at true track scale. Track width is a visual constant;
+        pit lane is a labelled schematic.
       </p>
     </div>
   );

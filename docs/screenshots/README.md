@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.0.0 build** on 2026-11-22. New captures use 1440×900,
+Refreshed against the **v4.1.0 build** on 2026-11-22. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
@@ -55,14 +55,15 @@ They are referenced from the root README and this page.
 | `47-pit-empty.png` | Explicit no-timed-stops state with pit visits and overtakes |
 | `48-hover-speed.png` | Map hover card with an on-demand speed value |
 
-| `49-replay-status-pit.png` | 2D replay with the “Not on track” rail, race-control ticker and recorded pit guide |
+| `49-replay-status-pit.png` | Baku 2D replay with the labelled schematic pit guide |
 | `50-3d-follow.png` | v4 3D Follow camera with the proportional car, kerbs, HUD and minimap |
-| `51-3d-overview.png` | v4 true-scale Overview with car markers and circuit context |
+| `51-3d-overview.png` | v4.1 true-scale Overview with car markers and circuit context |
 | `52-3d-day.png` | v4 3D in the day theme |
 | `53-grid-lobby.png` | BoxBox Grid setup: season, Grand Prix, laps, players, qualifying |
 | `54-grid-lineup.png` | 2-player line-up with two distinct drivers |
 | `55-grid-qualifying.png` | Seeded qualifying grid with player marker |
-| `56-grid-race.png` | Local race: circuit, player badges, live order |
+| `56-grid-race.png` | v4.1 local race at 1×: cars on the circuit, player ring, live order |
 | `57-grid-result.png` | Classification and player marker after the chequered flag |
-| `58-3d-mobile.png` | v4 3D Follow at 390 px |
+| `58-3d-mobile.png` | v4.1 3D Free at 390 px |
 | `59-grid-mobile.png` | BoxBox Grid at 390 px |
+| `60-3d-free.png` | v4.1 3D Free with the field visible as markers and no duplicate circuit line |

@@ -99,10 +99,7 @@ export default function SessionMap(p: Props) {
   const [hover, setHover] = useState<{ x: number; y: number; driver: number } | null>(null);
   const [mode, setMode] = useState<"2d" | "3d">("2d");
   const can3d = p.online && p.outline.length >= 3;
-  const pitPath = useMemo(
-    () => buildPitPath(p.replay, p.pitStops, p.angle, p.outline),
-    [p.replay, p.pitStops, p.angle, p.outline],
-  );
+  const pitPath = useMemo(() => buildPitPath(p.outline), [p.outline]);
 
   useEffect(() => {
     if (!p.online && mode === "3d") setMode("2d");
@@ -169,18 +166,16 @@ export default function SessionMap(p: Props) {
     if (pitPath) {
       ctx.save();
       ctx.strokeStyle = "#9aa7ba";
-      ctx.globalAlpha = 0.8;
-      ctx.lineWidth = 5;
-      ctx.setLineDash([7, 5]);
+      ctx.globalAlpha = 0.72;
+      ctx.lineWidth = 4;
       ctx.beginPath();
       pitPath.points.forEach(([x, y], i) => (i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
       ctx.stroke();
-      ctx.setLineDash([]);
       ctx.globalAlpha = 1;
       ctx.fillStyle = amber;
-      ctx.font = "600 10px 'Barlow Condensed', system-ui, sans-serif";
+      ctx.font = "600 9px 'Barlow Condensed', system-ui, sans-serif";
       const first = pitPath.points[0];
-      ctx.fillText("PIT", X(first[0]) + 6, Y(first[1]) - 7);
+      ctx.fillText("PIT LANE", X(first[0]) + 6, Y(first[1]) - 6);
       ctx.restore();
     }
 
@@ -342,7 +337,7 @@ export default function SessionMap(p: Props) {
       </div>
       {mode === "2d" && pitPath && (
         <span className="map-pit-source">
-          PIT LANE · {pitPath.source === "recorded" ? "recorded transit (approximate)" : "schematic"}
+          PIT LANE · schematic
         </span>
       )}
       {mode === "2d" ? (
