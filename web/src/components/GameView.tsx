@@ -4,6 +4,7 @@ import { api } from "../api";
 import type { Geometry, Meeting, SessionInfo, StandingsPayload } from "../types";
 import {
   GAME_MODEL,
+  lapFraction,
   buildGameDrivers,
   type GameDriver,
   type GameLaps,
@@ -54,6 +55,7 @@ export default function GameView({ onClose }: Props) {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [standings, setStandings] = useState<StandingsPayload | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [laps, setLaps] = useState<GameLaps>(5);
@@ -107,7 +109,6 @@ export default function GameView({ onClose }: Props) {
     setLoading(true);
     setStandings(null);
     setMeetings([]);
-    setMeetingKey(null);
     setSessions([]);
     setGeometry(null);
     setSim(null);
@@ -121,7 +122,13 @@ export default function GameView({ onClose }: Props) {
           (m) => m.meeting_name.includes("Grand Prix") && Date.parse(m.date_start) <= Date.now() + 86400000,
         );
         setMeetings(races);
-        setMeetingKey(races[0]?.meeting_key ?? null);
+        // Preserve an explicit selection if it is still valid; a late
+        // calendar response must never silently jump back to round 1.
+        setMeetingKey((current) =>
+          current != null && races.some((m) => m.meeting_key === current)
+            ? current
+            : races[0]?.meeting_key ?? null,
+        );
       })
       .catch(() => live && setMessage("The season table or calendar did not load."))
       .finally(() => live && setLoading(false));
@@ -138,7 +145,7 @@ export default function GameView({ onClose }: Props) {
   useEffect(() => {
     if (!year || !meetingKey) return;
     let live = true;
-    setLoading(true);
+    setLoadingSessions(true);
     setSessions([]);
     setGeometry(null);
     setSim(null);
@@ -148,7 +155,7 @@ export default function GameView({ onClose }: Props) {
       .sessions(year, meetingKey)
       .then((list) => live && setSessions(list))
       .catch(() => live && setMessage("The session list did not load."))
-      .finally(() => live && setLoading(false));
+      .finally(() => live && setLoadingSessions(false));
     return () => {
       live = false;
     };
@@ -201,7 +208,6 @@ export default function GameView({ onClose }: Props) {
       return;
     }
     setPreparing(true);
-    setLoading(true);
     setMessage(null);
     try {
       const geo = await api.sessionGeometry(raceSession.session_key);
@@ -223,10 +229,7 @@ export default function GameView({ onClose }: Props) {
     } catch (e) {
       if (mounted.current) setMessage(errorMessage(e));
     } finally {
-      if (mounted.current) {
-        setLoading(false);
-        setPreparing(false);
-      }
+      if (mounted.current) setPreparing(false);
     }
   };
 
@@ -258,7 +261,7 @@ export default function GameView({ onClose }: Props) {
   const standingsLabel = year ? yearLabel(year, latestYear) : "";
   const noDrivers = !gameDrivers.length;
   const startDisabled =
-    loading || preparing || !raceSession || noDrivers || players.some((id) => !id) || duplicateError != null;
+    loading || loadingSessions || preparing || !raceSession || noDrivers || players.some((id) => !id) || duplicateError != null;
   const playerLabels = new Map(players.filter((id): id is string => id != null).map((id, i) => [id, i + 1]));
 
   const body = (
@@ -329,13 +332,14 @@ export default function GameView({ onClose }: Props) {
                   <option value={4}>4 players</option>
                 </select>
               </label>
-              <label className="game-check">
-                <input type="checkbox" checked={quali} onChange={(e) => setQuali(e.target.checked)} />
-                <span>
-                  Run qualifying
-                  <small>{quali ? "A seeded quali sets the grid." : "Skip — the same seeded model still sets the grid."}</small>
-                </span>
-              </label>
+              <div className="game-quali-choice" role="group" aria-label="Qualifying">
+                <span>Qualifying</span>
+                <div className="game-choice-buttons">
+                  <button type="button" aria-pressed={quali} onClick={() => setQuali(true)}>Run</button>
+                  <button type="button" aria-pressed={!quali} onClick={() => setQuali(false)}>Skip</button>
+                </div>
+                <small>{quali ? "A live flying-lap session sets the grid." : "The same seeded grid is set without the session."}</small>
+              </div>
             </section>
 
             <div className="game-source">
@@ -434,7 +438,7 @@ export default function GameView({ onClose }: Props) {
                   <span>{GAME_MODEL}</span>
                 </div>
                 <button type="button" className="primary game-start" disabled={startDisabled} onClick={begin}>
-                  {preparing ? "Building circuit…" : "Set the grid →"}
+                  {preparing ? "Building circuit…" : quali ? "Run qualifying →" : "Set the seeded grid →"}
                 </button>
                 {preparing && (
                   <p className="dim small" role="status">
@@ -442,7 +446,7 @@ export default function GameView({ onClose }: Props) {
                   </p>
                 )}
                 {duplicateError && players.some((id) => id) && <p className="small warn">{duplicateError}</p>}
-                {!raceSession && !loading && <p className="small warn">This Grand Prix has no race session in the feed.</p>}
+                {!raceSession && !loadingSessions && <p className="small warn">This Grand Prix has no race session in the feed.</p>}
               </section>
             </div>
           </>
@@ -513,6 +517,17 @@ function GameQuali(p: {
 }) {
   const pole = p.grid[0];
   const poleDriver = p.drivers.find((d) => d.id === pole?.driverId);
+  const [shown, setShown] = useState(0);
+  const complete = shown >= p.grid.length;
+
+  useEffect(() => {
+    setShown(0);
+    const timer = window.setInterval(() => {
+      setShown((current) => Math.min(p.grid.length, current + 1));
+    }, 70);
+    return () => window.clearInterval(timer);
+  }, [p.grid]);
+
   return (
     <section className="game-stage" aria-label="Qualifying session">
       <header className="game-stage-head">
@@ -520,21 +535,22 @@ function GameQuali(p: {
           <p className="game-kicker">{p.meeting?.meeting_name ?? "Race"} · Qualifying</p>
           <h2>One flying lap. The order is set.</h2>
           <p className="dim small">
-            Pole {poleDriver?.code ?? "—"} · seed {p.seed} · simulated from the season table
+            {complete ? `Pole ${poleDriver?.code ?? "—"}` : "Flying laps in progress"} · seed {p.seed} · simulated from the season table
           </p>
         </div>
         <button type="button" className="game-pill" onClick={p.onBack}>Back to setup</button>
       </header>
       <div className="game-quali-summary" role="status">
-        <span className="game-kicker">Session complete</span>
-        <strong>{poleDriver ? `${poleDriver.name} on pole` : "Qualifying complete"}</strong>
+        <span className="game-kicker">{complete ? "Session complete" : `Live session · ${shown}/${p.grid.length} laps`}</span>
+        <strong>{complete ? (poleDriver ? `${poleDriver.name} on pole` : "Qualifying complete") : "Reading the flying laps…"}</strong>
+        <div className="game-quali-progress" aria-hidden="true"><i style={{ width: `${p.grid.length ? (shown / p.grid.length) * 100 : 0}%` }} /></div>
         <span className="dim small">Single flying lap · no Q1/Q2/Q3 split in v1</span>
       </div>
       <div className="game-grid-table">
         <table className="laps game-table">
           <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Lap time</th><th>Gap</th><th>Player</th></tr></thead>
           <tbody>
-            {p.grid.map((row) => {
+            {p.grid.slice(0, shown).map((row) => {
               const driver = p.drivers.find((d) => d.id === row.driverId);
               const best = pole?.time ?? row.time;
               return (
@@ -552,7 +568,7 @@ function GameQuali(p: {
         </table>
       </div>
       <div className="game-actions">
-        <button type="button" className="primary" onClick={p.onContinue}>Continue to grid →</button>
+        <button type="button" className="primary" onClick={p.onContinue} disabled={!complete}>Continue to grid →</button>
         <p className="dim small">The same seeded times are used by the race; skipping qualifying does not randomise a different grid.</p>
       </div>
     </section>
@@ -701,6 +717,7 @@ function GameRace(p: {
               return <span key={id}><i style={{ background: driver?.color }} />P{player} {driver?.code}</span>;
             })}
           </div>
+          <p className="game-hint">Hover a car for position, pace, gap and race mode.</p>
         </div>
         <aside className="game-tower" aria-label="Race order">
           <h3>Order</h3>
@@ -814,7 +831,7 @@ function GameCanvas(p: {
     const rows = [...p.state.rows].reverse();
     for (const row of rows) {
       const driver = p.players.has(row.driverId) ? p.players.get(row.driverId) : null;
-      const pt = sample(row.progress / p.sim.laps);
+      const pt = sample(lapFraction(row.progress));
       const meta = p.drivers.find((d) => d.id === row.driverId);
       const marker = driver ? 7 : 4;
       const px = X(pt.x);

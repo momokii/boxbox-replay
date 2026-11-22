@@ -82,22 +82,40 @@
   color: var(--ink);
   font: 500 0.8rem "Barlow", system-ui, sans-serif;
 }
-.game-check {
-  display: flex !important;
-  align-items: flex-start;
-  gap: 8px !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-  color: var(--ink) !important;
-  font-size: 0.8rem !important;
-  padding-top: 20px;
-}
-.game-check input { margin-top: 2px; accent-color: var(--amber); }
-.game-check small {
-  display: block;
-  margin-top: 2px;
+.game-quali-choice {
+  display: grid;
+  gap: 5px;
   color: var(--dim);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.game-choice-buttons {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel);
+}
+.game-choice-buttons button {
+  flex: 1;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--dim);
+  font: 600 0.72rem "Barlow", system-ui, sans-serif;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+.game-choice-buttons button[aria-pressed="true"] {
+  background: var(--amber);
+  color: #0b0f16;
+}
+.game-quali-choice small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.68rem;
   line-height: 1.25;
 }
 .game-source {
@@ -332,7 +350,7 @@
   .game-head { gap: 10px; }
   .game-lede { font-size: 0.84rem; }
   .game-setup { grid-template-columns: 1fr 1fr; }
-  .game-check { grid-column: 1 / -1; padding-top: 2px; }
+  .game-quali-choice { grid-column: 1 / -1; }
   .game-race-grid { grid-template-columns: 1fr; }
   .game-stage-head { align-items: flex-start; flex-direction: column; }
   .game-table th, .game-table td { padding: 6px 6px; font-size: 0.7rem; }
@@ -353,6 +371,25 @@
   color: var(--ink);
   font-family: "Barlow Condensed", system-ui, sans-serif;
   font-size: 1.2rem;
+}
+.game-quali-progress {
+  width: min(360px, 100%);
+  height: 4px;
+  margin: 4px 0 2px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.game-quali-progress i {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+  transition: width 80ms linear;
+}
+.game-hint {
+  margin: 7px 2px 0;
+  color: var(--dim);
+  font-size: 0.7rem;
 }
 .game-lapstrip {
   display: flex;

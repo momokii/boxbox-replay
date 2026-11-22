@@ -174,6 +174,13 @@ function gaussian(rng: () => number): number {
   return Math.max(-3, Math.min(3, Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)));
 }
 
+/** Fractional circuit position for a lap-based progress value (0…laps). */
+export function lapFraction(progress: number): number {
+  if (!Number.isFinite(progress)) return 0;
+  const value = progress % 1;
+  return value < 0 ? value + 1 : value;
+}
+
 export function simulateQualifying(drivers: GameDriver[], seed: number): QualiRow[] {
   const rng = mulberry32(seed ^ 0xa5a5a5a5);
   return drivers

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGameDrivers,
+  lapFraction,
   mulberry32,
   raceState,
   simulateQualifying,
@@ -39,6 +40,17 @@ describe("buildGameDrivers", () => {
   it("is deterministic and returns an empty field for an empty table", () => {
     expect(buildGameDrivers(standings)).toEqual(buildGameDrivers(standings));
     expect(buildGameDrivers({ ...standings, drivers: [], constructors: [] })).toEqual([]);
+  });
+});
+
+describe("lapFraction", () => {
+  it("maps lap progress back onto one circuit per lap", () => {
+    expect(lapFraction(0)).toBe(0);
+    expect(lapFraction(1)).toBe(0);
+    expect(lapFraction(2.25)).toBeCloseTo(0.25);
+    expect(lapFraction(4.9)).toBeCloseTo(0.9);
+    expect(lapFraction(5)).toBe(0);
+    expect(lapFraction(-0.2)).toBeCloseTo(0.8);
   });
 });
 
