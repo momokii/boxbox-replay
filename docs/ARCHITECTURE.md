@@ -116,7 +116,7 @@ retired cars (result feed, or no fresh laps) are classified last.
 - The 3D view (`Track3D.tsx`) is a lazy-loaded three.js chunk built from the
   same outline and replay positions. V4 uses true relative car/track
   proportions, a low-poly car, kerbs, a checkered start, corner/DRS markers, a
-  recorded-or-schematic pit guide and a minimap. **Follow / Overview / Free**
+  labelled schematic pit guide and a minimap. **Follow / Overview / Free**
   cameras keep the car readable without pretending the whole circuit is
   car-sized. Overview uses markers at true track scale; Follow shows the car.
   Track width is a visual constant (OpenF1 has no lateral placement) and the

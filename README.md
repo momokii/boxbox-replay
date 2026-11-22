@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.0.0` — v4 complete.** V4 rebuilds the 3D replay around truthful scale and camera context, fixes retirement/pit status, and adds **BoxBox Grid**, a local race-weekend game built from real season standings and real circuit shapes. It remains free, open source and non-commercial. See [`docs/V4_CLOSEOUT.md`](docs/V4_CLOSEOUT.md), [`docs/V4_RESEARCH.md`](docs/V4_RESEARCH.md) and [`docs/V4_PLAN.md`](docs/V4_PLAN.md).
+> **Latest release: `v4.1.0` — v4 UI correction.** Fixes the v4.0 Baku pit-overlay confusion, makes the 3D field readable in Free/Overview, and corrects the BoxBox Grid race clock and off-circuit marker offset. V4 still includes the truthful 3D replay, retirement/pit status and the local BoxBox Grid race room. See [`docs/V4_1_CLOSEOUT.md`](docs/V4_1_CLOSEOUT.md), [`docs/V4_CLOSEOUT.md`](docs/V4_CLOSEOUT.md), [`docs/V4_1_UI_FIX_RESEARCH.md`](docs/V4_1_UI_FIX_RESEARCH.md) and [`docs/V4_1_UI_FIX_PLAN.md`](docs/V4_1_UI_FIX_PLAN.md).
+
+## What's new in v4.1
+
+- **Pit overlay, corrected.** The ambiguous recorded pit-transit path is gone. 2D and 3D show a short, solid, **schematic** pit lane beside the start/finish section; it is labelled and never presented as measured geometry.
+- **3D Free/Overview.** Actual 3D cars stay in Follow. Overview and far Free views show car markers so the field is visible at true-circuit scale; Free close-up still shows the car. The duplicate-looking line is removed.
+- **BoxBox Grid race, corrected.** No sideways marker offset; every car stays on the circuit at its actual lap progress. 1× is now roughly 8 seconds per lap (5 laps ≈ 40 s), with 2×/4× available. The stage scrolls to the top when the race starts.
+- **No default/lap change.** The 5-lap default remains; the finish transition now waits for the simulated race distance.
 
 ## What's new in v4.0.0
 
@@ -54,9 +61,13 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 |---|---|
 | ![3D Follow](docs/screenshots/50-3d-follow.png) | ![3D Overview](docs/screenshots/51-3d-overview.png) |
 
-| 3D day theme | 3D on a phone |
+| 3D Free (field markers) | 3D day theme |
 |---|---|
-| ![3D day](docs/screenshots/52-3d-day.png) | ![3D mobile](docs/screenshots/58-3d-mobile.png) |
+| ![3D Free](docs/screenshots/60-3d-free.png) | ![3D day](docs/screenshots/52-3d-day.png) |
+
+| 3D on a phone | |
+|---|---|
+| ![3D mobile](docs/screenshots/58-3d-mobile.png) | |
 
 | BoxBox Grid lobby | 2-player line-up |
 |---|---|
@@ -80,7 +91,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Full-field replay.** All 20+ cars on the circuit at once, moving on the real session clock (lights out to chequered flag). Play, pause, 1×–8×, scrub, or press Space.
 - **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
 - **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
-- **BoxBox Grid (v4).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, run/skip qualifying, seeded grid and race, player badges, live order and a result. The model is explicit on screen; it does not simulate tyres, pit stops, collisions or reliability in v1.
+- **BoxBox Grid (v4.1).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, run/skip qualifying, seeded grid and race, player badges, live order and a result. Cars use their actual lap progress (no sideways marker offset). 1× is about 8 s/lap, with 2×/4× and Skip. The model is explicit on screen; it does not simulate tyres, pit stops, collisions or reliability in v1.
 - **Replay truth (v4).** Retirements are timed from the final result plus last-lap evidence; DNF/DNS/DSQ cars are hidden from that clock and listed in a status rail. The latest race-control message is shown as text. No collision marker is invented.
 - **Battle view.** A live **Battles now** strip lists neighbouring drivers within 1 s at the current frame (click to compare), plus an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
 - **Performance.** Stint timeline with pit-stop notches (hover for compound, tyre age and the gap at the stint start), wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters. Summary definitions: a **stint** is one continuous tyre run; a **stop** is a recorded pit visit; **best stop** is the fastest stationary time (not full pit-lane loss); **overtakes made/lost** are timing-feed counts and may be incomplete.
@@ -95,7 +106,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Selectable windows (v3.8/9).** Telemetry holds a replay lap, a fixed lap or the full session; Battle freezes at a lap snapshot, truncates its history charts to that lap, and returns to replay. Mini-sectors switch between per-tick detail and per-sector overall.
 - **Driver headshots (v3.8).** OpenF1's `headshot_url` is shown with a number fallback; the image is not rehosted.
 - **Duel and Battle comparisons (v3.7).** Duel overlays both full lap traces and compares throttle/brake/gear/DRS at the same lap progress; Battle adds point-in-time inputs for the anchor and challengers.
-- **3D replay (v4).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock. **Follow** tracks the selected/leading car, **Overview** fits the true-scale circuit with car markers, and **Free** enables orbit/zoom. The car is 5.6 m against a 12 m visual track width; OpenF1 does not publish a metric width or lateral position, so the width is a constant and the pit guide is labelled recorded/schematic. 2D stays the default and owns corners, DRS and hover.
+- **3D replay (v4.1).** A `2D · 3D` switch on the Replay map; 3D is a lazy-loaded perspective view of the same cars and clock. **Follow** tracks the selected/leading car, **Overview** fits the true-scale circuit with car markers, and **Free** enables orbit/zoom with markers at far distance and the car at close range. The car is 5.6 m against a 12 m visual track width; OpenF1 does not publish a metric width or lateral position, so the width is a constant and the pit guide is a labelled schematic. 2D stays the default and owns corners, DRS and hover.
 - **Telemetry lab (v3).** Up to three drivers on the same clock: speed traces, throttle/brake/gear/DRS at the cursor, and explicit nulls when a channel is missing. Distance-aligned lap comparison stays in Lap duel.
 - **Driver inputs.** Throttle, brake, gear and DRS for the lap under the playhead, overlaid for every followed driver, with a hover readout at any point on the trace; missing channels print "—" instead of a guess.
 - **Lap duel.** Two laps race the same circuit, aligned by distance around the lap, with a live delta that starts at 0.000 and closes exactly on the official lap-time difference.
@@ -312,7 +323,7 @@ analysis.py          Pure math: corners, deltas, wear, positions, pit model, due
 ai.py                OpenCode Go client: chat, recap, pit explainer, scope guard
 coach.py             Corner-coach prompt + measured fallback
 web/src/game.ts      Pure seeded BoxBox Grid engine (ratings, quali, race)
-web/src/pitlane.ts   Recorded/schematic pit guide + pit-window helper
+web/src/pitlane.ts   Schematic pit guide + pit-window helper
 web/src/retirements.ts  DNF/DNS/DSQ -> replay exit clocks
 web/src/             React SPA: api client, playback store, canvas map,
                      charts, chat, dashboard, panels, modals,
@@ -349,7 +360,7 @@ Known limitations, stated plainly:
   loss you choose.
 - **3D is not a metrically measured circuit.** OpenF1 location is approximate
   with no lateral placement; the ribbon width is a visual constant and the pit
-  guide is recorded-transit-approximate or explicitly schematic.
+  guide is explicitly schematic.
 - **BoxBox Grid is a game model, not a prediction.** It uses final/current
   standings and a seeded model; it does not simulate tyres, pit stops,
   collisions or reliability in v1. Pre-2023 circuits are not in the game.
@@ -374,6 +385,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.1:** [`docs/V4_1_CLOSEOUT.md`](docs/V4_1_CLOSEOUT.md), [`docs/V4_1_UI_FIX_RESEARCH.md`](docs/V4_1_UI_FIX_RESEARCH.md), [`docs/V4_1_UI_FIX_PLAN.md`](docs/V4_1_UI_FIX_PLAN.md)
 - **v4:** [`docs/V4_CLOSEOUT.md`](docs/V4_CLOSEOUT.md), [`docs/V4_RESEARCH.md`](docs/V4_RESEARCH.md), [`docs/V4_PLAN.md`](docs/V4_PLAN.md)
 - **v3:** [`docs/V3_CLOSEOUT.md`](docs/V3_CLOSEOUT.md)
 - **Operations:** [`SECURITY.md`](SECURITY.md), [`CONTRIBUTING.md`](CONTRIBUTING.md)

@@ -649,3 +649,11 @@ ticker; retired cars no longer keep moving in the replay. Added BoxBox Grid:
 laps, run/skip qualifying and a seeded race with player badges. Final tests:
 93 pytest + 93 vitest; browser checks at 1440×900 and 390×844; docs,
 screenshots and state aligned. Source research is in V4_RESEARCH_SOURCES.md.
+
+
+v4.1.0 — v4 UI correction. Replaced the ambiguous recorded pit-transit overlay
+with a short solid schematic lane in 2D/3D; removed the white dashes and the
+duplicate-looking 3D line. Free/Overview now show car markers at true-circuit
+distance. Grid markers use exact track progress (no side stagger) and 1× runs
+at ~8 s/lap, so a 5-lap race remains on lap 2 after 8 s. Baku and Grid browser
+checks clean; 93 pytest + 93 vitest; screenshots 49–60.

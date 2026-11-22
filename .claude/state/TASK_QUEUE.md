@@ -121,6 +121,7 @@ Status: **v3 complete** through `v3.9.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a),
 | V4-3 | BoxBox Grid engine | DONE (`v4.0.0`) | v3.13 | Pure ratings from final/current standings, seeded qualifying, 3/5/10 race snapshots, player uniqueness | 93 vitest incl. game tests; deterministic seed and classifications | Model disclosed |
 | V4-4 | BoxBox Grid UI | DONE (`v4.0.0`) | V4-3 | Setup/draft/grid/race/result, 1–4 players, run/skip quali, real circuit + standings, player badges | 1- and 2-player browser flow; mobile 390; no page errors | No online/accounts |
 | V4-5 | Release close-out | DONE (`v4.0.0`) | V4-1–V4-4 | README/docs/screenshots/state, full verification, tag | CI green; prod healthy; 93 pytest + 93 vitest | No pre-2023 game |
+| V4.1-FIX | Pit overlay / Free visibility / Grid clock correction | DONE (`v4.1.0`) | V4-5 | Remove ambiguous recorded pit path; show schematic lane; Free/Overview markers; remove Grid lateral offset; slow 1× to ~8 s/lap | Baku 2D/3D Free; Grid 1× lap 2/5 at 8 s; 93+93; screenshots 49–60 | UI correction only |
 
 ## Deferred / excluded (unchanged)
 

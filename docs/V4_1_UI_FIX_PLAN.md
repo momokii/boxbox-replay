@@ -65,3 +65,9 @@ result arrives only after 5 laps; 1/2-player and skipped-qualifying flows pass.
 - No pre-2023 Grid circuits.
 - No tyre/pit/collision/reliability game model.
 - No new server endpoint or paid data.
+
+
+## Completion status
+
+Shipped as `v4.1.0`. See [`V4_1_CLOSEOUT.md`](./V4_1_CLOSEOUT.md) for the
+final browser evidence and screenshots 49–60.

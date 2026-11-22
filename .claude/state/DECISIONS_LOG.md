@@ -333,6 +333,26 @@
 **Impact:** v4.0.0; `game.ts`, `GameView`, tests, README/closeout.
 ---
 
+## v4.1 UI correction decisions (2026-11-22)
+
+---
+**Decision:** D25 — Replace the recorded pit-transit overlay with a labelled schematic lane
+**Date:** 2026-11-22
+**Context:** Baku 2D showed white dashes and 3D showed a duplicate-looking line; the recorded path is not a validated lateral pit lane and could read as a second circuit.
+**Rationale:** A short solid schematic lane beside start/finish is honest, unambiguous and labelled. Pit events remain real; no measured width is claimed.
+**Alternatives Rejected:** Keeping the ambiguous recorded path; dropping the pit guide entirely; inventing a measured lane.
+**Impact:** v4.1.0; 2D/3D pit guide and screenshots.
+---
+
+---
+**Decision:** D26 — Grid uses exact track progress and a watchable clock
+**Date:** 2026-11-22
+**Context:** The v4.0 Grid race pushed markers sideways for legibility, making cars look off-circuit, and 1× compressed a lap to 2.3 s.
+**Rationale:** Cars belong on the circuit; the tower is the disambiguation surface. Player rings identify humans. 1× at ~8 s/lap keeps a 5-lap race around 40 s without a false finish.
+**Alternatives Rejected:** Lateral offsets; real 90 s/lap (too slow for a game); keeping 2.3 s/lap.
+**Impact:** v4.1.0; GameCanvas and GameRace; tests/screenshots.
+---
+
 ## Decision Template (copy for every new decision)
 
 ---
