@@ -214,6 +214,7 @@ def test_duel_shape_and_delta_at_the_line(monkeypatch):
         ),
     )
     monkeypatch.setattr(m.data_loader, "get_location", lambda sk, drv: locs[drv])
+    monkeypatch.setattr(m, "_duel_inputs", lambda *args, **kwargs: None)
 
     with TestClient(m.app) as client:
         params = {
@@ -644,6 +645,7 @@ def test_telemetry_endpoint_shapes_and_validation(monkeypatch):
 
 def test_ai_explain_strategy_uses_server_built_facts(monkeypatch):
     monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "_driver_meta", lambda session_key: {1: {"code": "VER", "name": "Max VERSTAPPEN", "team": "Red Bull"}})
     monkeypatch.setattr(
         m,
         "session_strategy",
@@ -703,6 +705,7 @@ def test_ai_explain_rejects_unknown_kind(monkeypatch):
 
 def test_ai_quota_returns_429(monkeypatch):
     monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "_driver_meta", lambda session_key: {1: {"code": "VER"}})
     monkeypatch.setattr(m, "session_strategy", lambda req: {"measurable": True})
     monkeypatch.setattr(
         m.ai,

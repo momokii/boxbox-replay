@@ -1484,6 +1484,8 @@ def ai_explain(req: ExplainRequest) -> dict:
     if not ai.configured():
         raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
     kind = req.kind.strip().lower()
+    if kind not in {"strategy", "compare"}:
+        raise HTTPException(422, "kind must be strategy or compare")
     codes = {n: m["code"] for n, m in _driver_meta(req.session_key).items()}
     if kind == "strategy":
         try:

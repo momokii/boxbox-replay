@@ -40,13 +40,14 @@ earns its place by protecting a behaviour someone could break.
 
 ## Rules for new tests
 
-1. Every bug fix gets one regression test that fails before the fix.
-2. Every endpoint gets one success case and one failure case; no matrix of
+1. Tests must be hermetic: no dependency on the developer `data/cache`, `.env`, or a live feed. CI runs with an empty cache and no API key; patch the data boundary explicitly.
+2. Every bug fix gets one regression test that fails before the fix.
+3. Every endpoint gets one success case and one failure case; no matrix of
    parameter combinations unless the parameters change behaviour.
-3. Prefer invariants ("delta(1) equals the official lap difference") over example
+4. Prefer invariants ("delta(1) equals the official lap difference") over example
    values that will drift.
-4. Mock the network, never the maths.
-5. If a test needs more than ~30 lines of setup, the module under test likely
+5. Mock the network, never the maths.
+6. If a test needs more than ~30 lines of setup, the module under test likely
    needs a better seam — fix that first.
 
 ## Running
