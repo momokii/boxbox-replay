@@ -36,10 +36,23 @@ export class ApiError extends Error {
   }
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new ApiError(`${path} -> ${res.status}`, res.status);
-  return res.json() as Promise<T>;
+async function get<T>(path: string, timeoutMs?: number): Promise<T> {
+  const controller = timeoutMs ? new AbortController() : null;
+  const timer = timeoutMs
+    ? window.setTimeout(() => controller?.abort(), timeoutMs)
+    : null;
+  try {
+    const res = await fetch(`${BASE}${path}`, controller ? { signal: controller.signal } : undefined);
+    if (!res.ok) throw new ApiError(`${path} -> ${res.status}`, res.status);
+    return res.json() as Promise<T>;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError(`${path} -> timeout`, 0);
+    }
+    throw error;
+  } finally {
+    if (timer != null) window.clearTimeout(timer);
+  }
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
@@ -54,7 +67,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 export const api = {
   years: () => get<number[]>("/years"),
-  meetings: (year: number) => get<Meeting[]>(`/meetings?year=${year}`),
+  meetings: (year: number) => get<Meeting[]>(`/meetings?year=${year}`, 15_000),
   sessions: (year: number, meetingKey: number) =>
     get<SessionInfo[]>(`/sessions?year=${year}&meeting_key=${meetingKey}`),
   sessionStatus: (keys: number[]) =>
@@ -219,6 +232,7 @@ export const api = {
   standings: (year: number, round?: number, refresh = false) =>
     get<StandingsPayload>(
       `/standings?year=${year}${round ? `&round=${round}` : ""}${refresh ? "&refresh=1" : ""}`,
+      15_000,
     ),
   standingsProgression: (year: number, round: number, refresh = false) =>
     get<ProgressionPayload>(

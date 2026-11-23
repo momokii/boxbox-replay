@@ -133,3 +133,34 @@ def test_progression_returns_race_context(monkeypatch):
     assert got["races"] == [
         {"round": 1, "race_name": "Australian Grand Prix", "date": "2024-03-10"}
     ]
+
+
+def test_fetch_fails_fast_after_bounded_retries(monkeypatch):
+    """The archive is bounded so the Grid cannot hang for ~100 seconds."""
+    calls = []
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            self.timeout = kwargs.get("timeout")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def get(self, *args, **kwargs):
+            calls.append(1)
+            raise jolpica.httpx.ConnectTimeout("offline")
+
+    monkeypatch.setattr(jolpica.httpx, "Client", FakeClient)
+    monkeypatch.setattr(jolpica.time, "sleep", lambda _: None)
+    try:
+        jolpica._fetch("2026/driverstandings.json", {"limit": 100})
+    except jolpica.JolpicaUnavailable:
+        pass
+    else:
+        raise AssertionError("expected JolpicaUnavailable")
+    assert len(calls) == jolpica.MAX_RETRIES
+    assert jolpica.REQUEST_TIMEOUT_S <= 6
+    assert jolpica.MAX_RETRIES <= 2

@@ -31,7 +31,9 @@ CACHE_TTL_S = int(os.getenv("JOLPICA_CACHE_TTL", "3600"))
 RATE_PER_SEC = float(os.getenv("JOLPICA_RATE_PER_SEC", "4"))
 RATE_PER_MIN = int(os.getenv("JOLPICA_RATE_PER_MIN", "500"))
 RATE_PER_HOUR = int(os.getenv("JOLPICA_RATE_PER_HOUR", "500"))
-MAX_RETRIES = 3
+REQUEST_TIMEOUT_S = float(os.getenv("JOLPICA_TIMEOUT_S", "4"))
+MAX_RETRIES = max(1, int(os.getenv("JOLPICA_MAX_RETRIES", "2")))
+RETRY_BACKOFF_S = float(os.getenv("JOLPICA_RETRY_BACKOFF_S", "0.5"))
 RETRYABLE = {429, 500, 502, 503, 504}
 
 SOURCE = "Jolpica F1"
@@ -95,7 +97,8 @@ def _fetch(path: str, params: dict | None = None) -> dict:
     url = f"{BASE_URL}/{path.lstrip('/')}"
     headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
     last_error: Exception | None = None
-    with httpx.Client(timeout=30.0, headers=headers) as client:
+    timeout = httpx.Timeout(REQUEST_TIMEOUT_S, connect=min(3.0, REQUEST_TIMEOUT_S))
+    with httpx.Client(timeout=timeout, headers=headers) as client:
         for attempt in range(1, MAX_RETRIES + 1):
             _throttle()
             try:
@@ -104,14 +107,14 @@ def _fetch(path: str, params: dict | None = None) -> dict:
                     return {}
                 if resp.status_code in RETRYABLE:
                     last_error = RuntimeError(f"HTTP {resp.status_code}")
-                    time.sleep(2**attempt)
+                    time.sleep(RETRY_BACKOFF_S * attempt)
                     continue
                 resp.raise_for_status()
                 data = resp.json()
                 return data if isinstance(data, dict) else {}
             except (httpx.HTTPError, ValueError) as exc:
                 last_error = exc
-                time.sleep(2**attempt)
+                time.sleep(RETRY_BACKOFF_S * attempt)
     raise JolpicaUnavailable(f"Jolpica did not answer: {url} ({last_error})")
 
 

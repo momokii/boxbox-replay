@@ -65,6 +65,7 @@ export default function GameView({ onClose }: Props) {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
   const [laps, setLaps] = useState<GameLaps>(5);
   const [playerCount, setPlayerCount] = useState(1);
   const [players, setPlayers] = useState<(string | null)[]>([null]);
@@ -123,12 +124,8 @@ export default function GameView({ onClose }: Props) {
     setGrid([]);
     setMessage(null);
     // The calendar and the standings table are independent. A slow Jolpica
-    // response must not hide the Grand Prix picker behind it.
-    let calendarReady = false;
-    let standingsReady = false;
-    const finish = () => {
-      if (live && calendarReady && standingsReady) setLoading(false);
-    };
+    // response must not hide the Grand Prix picker behind it; the roster's
+    // loading state belongs only to the standings request.
     api
       .meetings(year)
       .then((calendar) => {
@@ -145,23 +142,18 @@ export default function GameView({ onClose }: Props) {
             : races[0]?.meeting_key ?? null,
         );
       })
-      .catch(() => live && setMessage("The race calendar did not load."))
-      .finally(() => {
-        calendarReady = true;
-        finish();
-      });
+      .catch(() => live && setMessage("The race calendar did not load. Retry."));
     api
       .standings(year)
       .then((table) => live && setStandings(table))
-      .catch(() => live && setMessage("The season table did not load."))
+      .catch(() => live && setMessage("The season table did not load. Retry or pick another season."))
       .finally(() => {
-        standingsReady = true;
-        finish();
+        if (live) setLoading(false);
       });
     return () => {
       live = false;
     };
-  }, [year]);
+  }, [year, reload]);
 
   const gameDrivers = useMemo(
     () => (standings ? buildGameDrivers(standings) : []),
@@ -309,7 +301,14 @@ export default function GameView({ onClose }: Props) {
           </button>
         </header>
 
-        {message && <p className="game-message" role="status">{message}</p>}
+        {message && (
+          <div className="game-message" role="status">
+            <span>{message}</span>
+            <button type="button" className="game-pill" onClick={() => setReload((value) => value + 1)}>
+              Retry
+            </button>
+          </div>
+        )}
 
         {phase === "setup" && (
           <>
@@ -417,7 +416,7 @@ export default function GameView({ onClose }: Props) {
                   <span className="game-round">{standings?.round != null ? `R${standings.round}` : "Season table"}</span>
                 </header>
                 {loading && <p className="dim small">Loading the table…</p>}
-                {!loading && noDrivers && <p className="dim small">No drivers in this standings table.</p>}
+                {!loading && noDrivers && <p className="dim small">No drivers loaded. Retry the season table or pick another season.</p>}
                 <div className="game-scroll">
                   <table className="laps game-table">
                     <thead>
