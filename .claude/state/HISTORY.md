@@ -707,3 +707,12 @@ the archive to 4 s × 2 attempts (~10.3 s worst case), added a 15 s AbortControl
 for standings/meetings, stopped tying roster loading to the calendar, and added
 an explicit Retry action with an honest empty state. 94 pytest + 105 vitest;
 error and healthy retry verified; screenshot 75.
+
+
+v4.7.0 — Grid identity and live timing. Added OpenF1 headshots/full names/teams
+to identity hovers across setup, qualifying, grid, order and canvas; moved the
+order below the circuit as a full-width timing strip with Gap/Int/Last/Best/
+Mode; replaced the order column with a deterministic live model feed above the
+driver desk; and added winner best/average/laps-led to the result image. 94
+pytest + 106 vitest; 2026 Australia desktop/mobile browser pass; screenshots
+76–79 plus refreshed 56/59/66/67/69/71.

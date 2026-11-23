@@ -137,9 +137,13 @@ retired cars (result feed, or no fresh laps) are classified last.
   client-side 1200×630 result PNG with fastest lap, mover, players and DNFs.
   The model is not a prediction; SC/VSC are stated lap-time losses and crashes
   are seeded retirements, not collision physics or real race control. The
-  VSC/SC slow-down is a playback effect. Jolpica requests are bounded (4 s,
-  two attempts) and the Grid UI has a 15 s request timeout, a retryable error
-  state and no fabricated standings. No tyre/pit/reliability claims.
+  VSC/SC slow-down is a playback effect. The Grid race view also loads optional
+  OpenF1 headshots (number fallback), shows identity cards on hover, a
+  full-width order timing strip with interval/last/best/mode, and a
+  deterministic live model feed; it is labelled as simulation, not race
+  control. Jolpica requests are bounded (4 s, two attempts) and the Grid UI
+  has a 15 s request timeout, a retryable error state and no fabricated
+  standings. No tyre/pit/reliability claims.
 - The page around them subscribes through a **trailing-edge throttle** (~8 Hz).
   A drop-if-too-soon throttle was the cause of the "button stuck on Pause" bug:
   the last event of a burst was discarded, so pause never repainted.

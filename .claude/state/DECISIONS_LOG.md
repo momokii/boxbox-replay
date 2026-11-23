@@ -538,3 +538,30 @@
 **Alternatives Rejected:** Leaving the 30-second retries; an unbounded UI fetch; a fake/empty driver list; hiding the start action without an explanation.
 **Security Implications:** None; timeout is client/server configuration, no new data exposure.
 **Impact:** `jolpica.py`, `web/src/api.ts`, `GameView`, tests, screenshot 75.
+
+---
+**Decision:** D46 — Driver identity hovers use optional OpenF1 headshots.
+**Date:** 2026-11-23
+**Context:** The Grid showed only codes, while the replay already had headshots and full names.
+**Rationale:** Load `drivers(sessionKey)` once with a 15 s bound, match by number then code, and show an identity card on setup/qualifying/grid/order/canvas hover. A failed image or media request falls back to the number; it never blocks the game.
+**Alternatives Rejected:** Rehosting F1 images; showing a wrong photo by name-only match; blocking the roster on media.
+**Security Implications:** External images already allowed by CSP; no new upload or secret.
+**Impact:** `GameView`, `game.css`, media screenshots 76.
+
+---
+**Decision:** D47 — Order becomes a full-width timing strip; live feed takes the side column.
+**Date:** 2026-11-23
+**Context:** The narrow right order showed only gap and left the circuit side visually sparse.
+**Rationale:** Put order below the circuit with Pos/Driver/Team/Gap/Int/Last/Best/Mode/Player derived from the model, and use the right column for a deterministic live feed (current incident + leader/pass/event reports) above the desk. The feed is explicitly labelled SIMULATED.
+**Alternatives Rejected:** A generic card dashboard; invented tyre/speed columns; live race-control claims.
+**Security Implications:** None.
+**Impact:** `game.ts` `buildRaceFeed`, `GameView`, CSS, screenshots 77–79.
+
+---
+**Decision:** D48 — Result card adds winner best/average/laps-led.
+**Date:** 2026-11-23
+**Context:** The richer race view should be reflected in the share artifact.
+**Rationale:** Compute from completed simulated laps and leader boundaries; add a 5-stat strip and winner BEST/AVG context while keeping the top-10 + players table. No unmeasured metric is added.
+**Alternatives Rejected:** All 25 rows; fabricated telemetry; separate PDF.
+**Security Implications:** None; client canvas.
+**Impact:** `gameShareCard.ts`, tests, screenshot 71.

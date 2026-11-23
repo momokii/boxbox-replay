@@ -1,12 +1,12 @@
 ## Project Phase
-v4 shipped as **`v4.6.1`**. It closes the v3 replay work with a truthful
+v4 shipped as **`v4.7.0`**. It closes the v3 replay work with a truthful
 3D/circuit view, retirement/pit status, and the local **BoxBox Grid** race room
 (2023–2026 circuits, real season tables, 1–4 players, 3/5/10 laps, explainer,
-live driver desk/compare, two-run qualifying, per-lap modal, seeded incidents,
-a 20 s/lap viewing pace, VSC playback slowdown, start lights, zoom/pan and a
-downloadable result image).
-v4.6.1 bounds the Grid standings request and adds an explicit retryable failure
-state.
+live driver desk/compare, two-run qualifying, per-lap modal, identity hovers,
+a 20 s/lap viewing pace, VSC playback slowdown, live model feed, full-width
+timing strip below the circuit, zoom/pan and a downloadable result image).
+v4.6.1 bounded the Grid standings request and added retry; v4.7 adds the
+identity/feed/timing interaction without changing that data contract.
 DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Completed
@@ -18,6 +18,7 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] v4.5.0: two-run qualifying best counts, 12 s/lap 1× pace, five-light start, full-width card and 1200×630 result image; screenshots 54–72
 - [x] v4.6.0: 20 s/lap 1× pace, per-lap driver modal, richer result card, visible VSC slowdown, zoom/pan and font/calendar resilience; screenshots 54–74
 - [x] v4.6.1: bounded Jolpica requests (4 s × 2), 15 s frontend timeout, explicit Retry and no stuck roster; screenshot 75
+- [x] v4.7.0: driver identity hovers with headshots, order strip with Int/Last/Best/Mode below circuit, live model feed, richer result card; screenshots 76–79
 - [x] TASK-001 foundation + TASK-002 guardrails (FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, CI/pre-commit)
 - [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
@@ -50,11 +51,11 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - GitHub Releases (tags only), demo prewarm: user-side pending. API key replaced in `.env` and live-verified; rotate again if the pasted key was exposed.
 
 ## Open Questions
-- None blocking implementation; D1–D45 are recorded. Revisit only if a data source or licence posture changes.
+- None blocking implementation; D1–D48 are recorded. Revisit only if a data source or licence posture changes.
 - Staging target none (prod covers staging via `APP_ENV=staging`)
 
 ## Security Notes
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-22: **v4.6.1 — fail-fast Grid standings.** A stuck standings request now returns 503 in ~10.3 s, not ~100 s; the roster shows an explicit error + Retry, and a healthy retry loads drivers. Tests: 94 pytest + 105 vitest; browser error/retry verified; production bundle served.
+2026-11-23: **v4.7.0 — Grid identity and live timing.** Hover cards show OpenF1 headshots/full names/teams; order moved below the circuit with Gap/Int/Last/Best/Mode; the right column is a live model feed + driver desk; result card adds winner best/avg/laps-led. Tests: 94 pytest + 106 vitest; 2026 Australia browser pass; production bundle served.

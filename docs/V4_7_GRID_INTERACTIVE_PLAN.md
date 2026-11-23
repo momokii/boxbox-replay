@@ -100,3 +100,10 @@ Commit this document and the research document before touching code.
 - Result card includes winner best/avg/laps-led.
 - No data request can leave the UI indefinitely loading; E2E proves the
   failure/fallback paths.
+
+## Shipped
+
+`v4.7.0` shipped on 2026-11-23. Evidence and screenshots are in
+[`V4_7_CLOSEOUT.md`](V4_7_CLOSEOUT.md): 94 pytest + 106 vitest, a 2026 Australia
+desktop/mobile browser pass, identity hovers with actual headshots, a live VSC
+feed, order metrics, and a richer 1200×630 result card.

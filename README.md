@@ -8,7 +8,15 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.6.1` — Grid standings recovery.** Fixes the stuck “Loading the table…” state: bounded Jolpica timeouts, a frontend request timeout and an explicit Retry action instead of an indefinite roster load. See [`docs/V4_6_1_CLOSEOUT.md`](docs/V4_6_1_CLOSEOUT.md), [`docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md`](docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md) and [`docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md`](docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md).
+> **Latest release: `v4.7.0` — Grid driver identity and live timing.** Driver hovers now show OpenF1 headshots, full names and teams; the race order is a full-width timing strip below the circuit with interval/last/best/mode; the right column is a live model feed above the driver desk; the result card adds winner best/average/laps-led. See [`docs/V4_7_CLOSEOUT.md`](docs/V4_7_CLOSEOUT.md), [`docs/V4_7_GRID_INTERACTIVE_RESEARCH.md`](docs/V4_7_GRID_INTERACTIVE_RESEARCH.md) and [`docs/V4_7_GRID_INTERACTIVE_PLAN.md`](docs/V4_7_GRID_INTERACTIVE_PLAN.md).
+
+## What's new in v4.7
+
+- **Identity on hover.** Setup, qualifying, grid, order and canvas hovers show the full name, team, player/AI and an OpenF1 headshot with a number fallback.
+- **Race timing strip.** Order moves below the circuit with Gap, Int, Last, Best and Mode, derived only from the seeded model.
+- **Live model feed.** The right column highlights the current incident and recent leader/pass/event reports, clearly labelled as a simulation.
+- **Richer result image.** Winner best/avg/laps-led are added to the existing fastest lap, biggest mover, players, DNF and incident stats.
+- **Data contract retained.** Headshots are optional and bounded; standings keep the v4.6.1 fail-fast error + Retry, with no fake driver list.
 
 ## What's new in v4.6.1
 
@@ -147,6 +155,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 |---|---|
 | ![Grid standings error](docs/screenshots/75-grid-standings-error.png) | Explicit error, no fabricated drivers |
 
+| Driver identity hover | Live model feed |
+|---|---|
+| ![Grid driver hover](docs/screenshots/76-grid-driver-hover.png) | ![Grid live feed](docs/screenshots/77-grid-live-feed.png) |
+
+| Order metrics below circuit | Mobile order strip |
+|---|---|
+| ![Grid order metrics](docs/screenshots/78-grid-order-metrics.png) | ![Grid mobile order](docs/screenshots/79-grid-mobile-order.png) |
+
 | Grid explainer | Grid race-control event |
 |---|---|
 | ![Grid explainer](docs/screenshots/64-grid-how.png) | ![Grid VSC](docs/screenshots/65-grid-event.png) |
@@ -169,7 +185,7 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 - **Full-field replay.** All 20+ cars on the circuit at once, moving on the real session clock (lights out to chequered flag). Play, pause, 1×–8×, scrub, or press Space.
 - **Timing tower.** Classification order with live gaps, position numbers, and retired cars marked DNF/OUT instead of showing a stale gap.
 - **Track map.** Circuit drawn from the session's own telemetry, with corners detected from curvature and DRS zones read from the cars' DRS state.
-- **BoxBox Grid (v4.6).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, two seeded flying laps (best counts) or an explicit skipped grid, seeded race, player badges and result. Setup explains the model and its arithmetic. Hover a car for position, player/AI, lap, pace, gap and race mode (leading/attacking/defending/clear air); click a car or tower row for a live driver desk and A/B comparison; open **Lap by lap** for per-lap times, race time, position, gap and incident. Pace is the honest readout, not a fake km/h. Seeded SC/VSC/crash events interrupt the race; VSC/SC also visibly slow playback, and crashes classify a driver DNF. Every lap crosses the whole circuit (`progress % 1`), 1× is a 20 s/lap viewing pace with a lap strip, and 2×/4× remain. Start race runs five lights before the clock moves. The circuit supports Top/Angle, zoom and drag-pan. The result can be downloaded as a 1200×630 PNG with fastest lap, biggest mover, player and incident counts. The model does not simulate tyres, pit stops, collision physics or reliability; incidents are game events, not real race control.
+- **BoxBox Grid (v4.7).** A full-screen local race room: real season standings, real circuit shape, 1–4 players, one driver each, 3/5/10 laps, two seeded flying laps (best counts) or an explicit skipped grid, seeded race, player badges and result. Setup explains the model and its arithmetic. Hover any driver row for an identity card with OpenF1 headshot, full name, team, position and player/AI; click a row for the live desk and A/B comparison; open **Lap by lap** for per-lap times, race time, position, gap and incident. The race order is a full-width timing strip below the circuit with Gap, Int, Last, Best and Mode; the right column is a live model feed above the desk. Pace is the honest readout, not a fake km/h. Seeded SC/VSC/crash events interrupt the race; VSC/SC visibly slow playback, and crashes classify a driver DNF. Every lap crosses the whole circuit (`progress % 1`), 1× is a 20 s/lap viewing pace with a lap strip, and 2×/4× remain. Start race runs five lights before the clock moves. The circuit supports Top/Angle, zoom and drag-pan. The result downloads as a 1200×630 PNG with fastest lap, biggest mover, winner best/avg/laps-led, players, DNFs and incidents. The model does not simulate tyres, pit stops, collision physics or reliability; incidents are game events, not real race control.
 - **Replay truth (v4).** Retirements are timed from the final result plus last-lap evidence; DNF/DNS/DSQ cars are hidden from that clock and listed in a status rail. The latest race-control message is shown as text. No collision marker is invented.
 - **Battle view.** A live **Battles now** strip lists neighbouring drivers within 1 s at the current frame (click to compare), plus an anchor and up to two challengers: relative gap over the whole session, lap-by-lap pace deltas, pairwise head-to-head, and the overtakes between them.
 - **Performance.** Stint timeline with pit-stop notches (hover for compound, tyre age and the gap at the stint start), wear per stint grouped by driver, lap-time evolution, weather over the race, team radio (audio links), and the full race-control log with search and filters. Summary definitions: a **stint** is one continuous tyre run; a **stop** is a recorded pit visit; **best stop** is the fastest stationary time (not full pit-lane loss); **overtakes made/lost** are timing-feed counts and may be incomplete.
@@ -380,7 +396,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 94 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 105 frontend tests (vitest)
+cd web && npm test           # 106 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
@@ -444,10 +460,12 @@ Known limitations, stated plainly:
   standings and a seeded model; it does not simulate tyres, pit stops,
   collision physics or reliability. SC/VSC are stated lap-time losses and a
   crash is a seeded retirement, not a reconstruction of real race control.
-  VSC/SC playback slowdown is a viewing effect, not field-bunching physics.
-  Two qualifying runs are a game choice, not Q1/Q2/Q3. 1× is a 20 s/lap
-  viewing pace, not real time. The downloaded card shows the top 10 plus any
-  player outside it; the in-app result remains complete. Hover shows pace, not
+  The live feed is model-derived, not real race control. VSC/SC playback
+  slowdown is a viewing effect, not field-bunching physics. Two qualifying runs
+  are a game choice, not Q1/Q2/Q3. 1× is a 20 s/lap viewing pace, not real
+  time. The downloaded card shows the top 10 plus any player outside it; the
+  in-app result remains complete. Headshots are an optional OpenF1
+  enhancement; a failed image falls back to the number. Hover shows pace, not
   a fabricated km/h speed. If the Jolpica archive is unavailable, the Grid
   shows an explicit retryable error; it does not invent standings. Pre-2023
   circuits are not in the game.
@@ -472,6 +490,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.7:** [`docs/V4_7_CLOSEOUT.md`](docs/V4_7_CLOSEOUT.md), [`docs/V4_7_GRID_INTERACTIVE_RESEARCH.md`](docs/V4_7_GRID_INTERACTIVE_RESEARCH.md), [`docs/V4_7_GRID_INTERACTIVE_PLAN.md`](docs/V4_7_GRID_INTERACTIVE_PLAN.md)
 - **v4.6.1:** [`docs/V4_6_1_CLOSEOUT.md`](docs/V4_6_1_CLOSEOUT.md), [`docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md`](docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md), [`docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md`](docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md)
 - **v4.6:** [`docs/V4_6_CLOSEOUT.md`](docs/V4_6_CLOSEOUT.md), [`docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md`](docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md), [`docs/V4_6_GRID_RACE_DEPTH_PLAN.md`](docs/V4_6_GRID_RACE_DEPTH_PLAN.md)
 - **v4.5:** [`docs/V4_5_CLOSEOUT.md`](docs/V4_5_CLOSEOUT.md), [`docs/V4_5_GRID_EXPERIENCE_RESEARCH.md`](docs/V4_5_GRID_EXPERIENCE_RESEARCH.md), [`docs/V4_5_GRID_EXPERIENCE_PLAN.md`](docs/V4_5_GRID_EXPERIENCE_PLAN.md)

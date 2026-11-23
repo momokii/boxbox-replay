@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.6.1 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
+Refreshed against the **v4.7.0 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
@@ -62,23 +62,27 @@ They are referenced from the root README and this page.
 | `53-grid-lobby.png` | BoxBox Grid setup: season, Grand Prix, laps, players, qualifying |
 | `54-grid-lineup.png` | v4.6 Grid table within a scroll window and Start race visible |
 | `55-grid-qualifying.png` | v4.6 two-run qualifying: both attempts, best, full-width facts and progress |
-| `56-grid-race.png` | v4.6 1× race at 20 s/lap with VSC playback slowdown |
+| `56-grid-race.png` | v4.7 race with live feed, VSC playback slowdown and timing strip below the circuit |
 | `57-grid-result.png` | v4.6 result with Download result image and seeded DNF |
 | `58-3d-mobile.png` | v4.1 3D Free at 390 px |
-| `59-grid-mobile.png` | v4.6 BoxBox Grid race at 390 px with the VSC banner |
+| `59-grid-mobile.png` | v4.7 mobile race with live feed and VSC banner |
 | `60-3d-free.png` | v4.1 3D Free with the field visible as markers and no duplicate circuit line |
 | `61-3d-selected.png` | v4.2 3D selected-driver telemetry card |
 | `62-grid-hover.png` | v4.2 Grid hover: pace, gap, mode, player identity |
 | `63-grid-skip.png` | v4.3 explicit “Qualifying skipped” grid state |
 | `64-grid-how.png` | v4.6 setup explainer, five steps, arithmetic and game-model disclosure |
 | `65-grid-event.png` | v4.6 seeded VSC banner with playback slowed |
-| `66-grid-angle.png` | v4.6 Angle view with 150% zoom |
-| `67-grid-driver-desk.png` | v4.6 driver desk with compare, A/B deltas and Lap by lap |
+| `66-grid-angle.png` | v4.7 Angle view with zoom on the new race layout |
+| `67-grid-driver-desk.png` | v4.7 driver desk with headshot, compare, A/B deltas and Lap by lap |
 | `68-grid-mobile-setup.png` | v4.6 setup at 390 px with the two-run and 20 s/lap copy |
-| `69-grid-mobile-desk.png` | v4.6 driver desk at 390 px |
+| `69-grid-mobile-desk.png` | v4.7 driver desk at 390 px |
 | `70-grid-start.png` | v4.6 five-light formation lap before the clock starts |
-| `71-grid-result-card.png` | v4.6 downloaded 1200×630 result PNG with fastest lap, mover, players and DNFs |
+| `71-grid-result-card.png` | v4.7 downloaded 1200×630 result PNG with fastest lap, mover, winner best/avg/laps-led, players and DNFs |
 | `72-grid-mobile-start.png` | v4.6 mobile formation lap |
 | `73-grid-driver-modal.png` | v4.6 per-lap driver modal with best/average, position, gap and incidents |
 | `74-grid-zoom-pan.png` | v4.6 150% zoom and drag-pan on the circuit |
 | `75-grid-standings-error.png` | v4.6.1 bounded archive failure: explicit retry, no loading spinner, no fabricated drivers |
+| `76-grid-driver-hover.png` | v4.7 identity hover: OpenF1 headshot, full name, team, position and player |
+| `77-grid-live-feed.png` | v4.7 live model feed beside the circuit, with current VSC and recent reports |
+| `78-grid-order-metrics.png` | v4.7 full-width order below the circuit with Gap/Int/Last/Best/Mode |
+| `79-grid-mobile-order.png` | v4.7 mobile order strip below the circuit |
