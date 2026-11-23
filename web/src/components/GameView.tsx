@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../api";
 import Modal from "./Modal";
-import type { Geometry, Meeting, SessionInfo, StandingsPayload } from "../types";
+import type { Driver, Geometry, Meeting, SessionInfo, StandingsPayload } from "../types";
 import {
   GAME_MODEL,
   GAME_SECONDS_PER_LAP,
@@ -11,7 +11,9 @@ import {
   driverLapHistory,
   lapFraction,
   buildGameDrivers,
+  buildRaceFeed,
   type GameDriver,
+  type RaceFeedItem,
   type GameLaps,
   type QualiRow,
   type RaceSim,
@@ -29,6 +31,21 @@ interface Props {
 }
 
 type Phase = "setup" | "qualifying" | "grid" | "race" | "result";
+
+type HoverHandler = (
+  driverId: string,
+  event: React.MouseEvent,
+  position?: number | null,
+  player?: number | null,
+) => void;
+
+interface DriverHoverState {
+  driverId: string;
+  position: number | null;
+  player: number | null;
+  x: number;
+  y: number;
+}
 
 function yearLabel(year: number, latest: number | null): string {
   return year === latest ? "Current standings" : "Final standings";
@@ -77,6 +94,8 @@ export default function GameView({ onClose }: Props) {
   const [sim, setSim] = useState<RaceSim | null>(null);
   const [seed, setSeed] = useState(seedNow);
   const [seedText, setSeedText] = useState("");
+  const [driverMedia, setDriverMedia] = useState<Driver[]>([]);
+  const [hoverDriver, setHoverDriver] = useState<DriverHoverState | null>(null);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -97,6 +116,7 @@ export default function GameView({ onClose }: Props) {
   useEffect(() => {
     const view = document.querySelector<HTMLElement>(".game-view");
     if (view) view.scrollTop = 0;
+    setHoverDriver(null);
   }, [phase]);
 
   useEffect(() => {
@@ -184,6 +204,41 @@ export default function GameView({ onClose }: Props) {
     [sessions],
   );
   const selectedMeeting = meetings.find((m) => m.meeting_key === meetingKey) ?? null;
+
+  useEffect(() => {
+    if (!raceSession) {
+      setDriverMedia([]);
+      return;
+    }
+    let live = true;
+    api
+      .drivers(raceSession.session_key)
+      .then((rows) => live && setDriverMedia(rows))
+      .catch(() => {
+        // Photos are an enhancement; the game must work without them.
+        if (live) setDriverMedia([]);
+      });
+    return () => {
+      live = false;
+    };
+  }, [raceSession?.session_key]);
+
+  const mediaFor = (driver: GameDriver): Driver | null => {
+    const number = driver.number == null ? null : Number(driver.number);
+    return (
+      driverMedia.find((row) => number != null && row.driver_number === number) ??
+      driverMedia.find((row) => row.name_acronym === driver.code) ??
+      null
+    );
+  };
+
+  const showHover = useCallback(
+    (driverId: string, event: React.MouseEvent, position: number | null = null, player: number | null = null) => {
+      setHoverDriver({ driverId, position, player, x: event.clientX, y: event.clientY });
+    },
+    [],
+  );
+  const clearHover = useCallback(() => setHoverDriver(null), []);
 
   useEffect(() => {
     setPlayers((current) => {
@@ -433,7 +488,13 @@ export default function GameView({ onClose }: Props) {
                         const owner = players.indexOf(driver.id);
                         const isActive = players[active] === driver.id;
                         return (
-                          <tr key={driver.id} className={isActive ? "on" : owner >= 0 ? "picked" : ""}>
+                          <tr
+                            key={driver.id}
+                            className={isActive ? "on" : owner >= 0 ? "picked" : ""}
+                            onMouseEnter={(event) => showHover(driver.id, event, null, owner >= 0 ? owner + 1 : null)}
+                            onMouseMove={(event) => showHover(driver.id, event, null, owner >= 0 ? owner + 1 : null)}
+                            onMouseLeave={clearHover}
+                          >
                             <td className="mono">{Math.round(driver.overall * 100)}</td>
                             <td>
                               <span className="game-dot" style={{ background: driver.color }} />
@@ -521,6 +582,9 @@ export default function GameView({ onClose }: Props) {
             drivers={gameDrivers}
             meeting={selectedMeeting}
             seed={seed}
+            mediaFor={mediaFor}
+            onHover={showHover}
+            onLeave={clearHover}
             onBack={() => setPhase("setup")}
             onContinue={() => setPhase("grid")}
           />
@@ -535,6 +599,9 @@ export default function GameView({ onClose }: Props) {
             seed={seed}
             quali={quali}
             meeting={selectedMeeting}
+            mediaFor={mediaFor}
+            onHover={showHover}
+            onLeave={clearHover}
             onBack={() => setPhase("setup")}
             onStart={() => setPhase("race")}
           />
@@ -548,6 +615,9 @@ export default function GameView({ onClose }: Props) {
             players={playerLabels}
             drivers={gameDrivers}
             meeting={selectedMeeting}
+            mediaFor={mediaFor}
+            onHover={showHover}
+            onLeave={clearHover}
             onFinish={() => setPhase("result")}
             onNew={newSetup}
           />
@@ -564,11 +634,66 @@ export default function GameView({ onClose }: Props) {
             onNew={newSetup}
           />
         )}
+        {hoverDriver && (
+          <DriverHoverCard
+            key={hoverDriver.driverId}
+            driver={driverById(gameDrivers, hoverDriver.driverId)}
+            media={driverById(gameDrivers, hoverDriver.driverId) ? mediaFor(driverById(gameDrivers, hoverDriver.driverId)!) : null}
+            position={hoverDriver.position}
+            player={hoverDriver.player}
+            x={hoverDriver.x}
+            y={hoverDriver.y}
+          />
+        )}
       </div>
     </div>
   );
 
   return createPortal(body, document.body);
+}
+
+function DriverHoverCard(p: {
+  driver: GameDriver | null;
+  media: Driver | null;
+  position: number | null;
+  player: number | null;
+  x: number;
+  y: number;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+  if (!p.driver) return null;
+  const headshot = p.media?.headshot_url?.trim();
+  const name = p.media?.full_name?.trim() || p.driver.name;
+  const team = p.media?.team_name?.trim() || p.driver.team;
+  const left = Math.max(8, Math.min(p.x + 14, window.innerWidth - 292));
+  const top = Math.max(8, Math.min(p.y + 14, window.innerHeight - 190));
+  return (
+    <div className="game-identity" role="tooltip" style={{ left, top }}>
+      <span className="game-identity-band" style={{ background: p.driver.color }} />
+      <div className="game-identity-photo" style={{ borderColor: p.driver.color }}>
+        {headshot && !imageFailed ? (
+          <img
+            src={headshot}
+            alt=""
+            referrerPolicy="no-referrer"
+            loading="eager"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <span>{p.driver.number ?? p.driver.code}</span>
+        )}
+      </div>
+      <div className="game-identity-copy">
+        <div className="game-identity-meta">
+          <span>{p.media?.name_acronym ?? p.driver.code}</span>
+          {p.position != null && <span>P{p.position}</span>}
+          {p.player != null ? <span className="game-player">PLAYER P{p.player}</span> : <span>AI</span>}
+        </div>
+        <strong>{name}</strong>
+        <span>{team}</span>
+      </div>
+    </div>
+  );
 }
 
 function GameQuali(p: {
@@ -577,6 +702,9 @@ function GameQuali(p: {
   drivers: GameDriver[];
   meeting: Meeting | null;
   seed: number;
+  mediaFor: (driver: GameDriver) => Driver | null;
+  onHover: HoverHandler;
+  onLeave: () => void;
   onBack: () => void;
   onContinue: () => void;
 }) {
@@ -629,7 +757,13 @@ function GameQuali(p: {
               const driver = p.drivers.find((d) => d.id === row.driverId);
               const best = pole?.time ?? row.time;
               return (
-                <tr key={row.driverId} className={p.players.get(row.driverId) ? "on" : ""}>
+                <tr
+                  key={row.driverId}
+                  className={p.players.get(row.driverId) ? "on" : ""}
+                  onMouseEnter={(event) => p.onHover(row.driverId, event, row.position, p.players.get(row.driverId) ?? null)}
+                  onMouseMove={(event) => p.onHover(row.driverId, event, row.position, p.players.get(row.driverId) ?? null)}
+                  onMouseLeave={p.onLeave}
+                >
                   <td className="mono">{row.position}</td>
                   <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code} <span className="dim small">{driver?.name}</span></td>
                   <td className="dim">{driver?.team}</td>
@@ -665,6 +799,9 @@ function GameGrid(p: {
   seed: number;
   quali: boolean;
   meeting: Meeting | null;
+  mediaFor: (driver: GameDriver) => Driver | null;
+  onHover: HoverHandler;
+  onLeave: () => void;
   onBack: () => void;
   onStart: () => void;
 }) {
@@ -686,7 +823,12 @@ function GameGrid(p: {
               const driver = p.drivers.find((d) => d.id === row.driverId);
               const best = p.grid[0]?.time ?? row.time;
               return (
-                <tr key={row.driverId}>
+                <tr
+                  key={row.driverId}
+                  onMouseEnter={(event) => p.onHover(row.driverId, event, row.position, p.players.get(row.driverId) ?? null)}
+                  onMouseMove={(event) => p.onHover(row.driverId, event, row.position, p.players.get(row.driverId) ?? null)}
+                  onMouseLeave={p.onLeave}
+                >
                   <td className="mono">{row.position}</td>
                   <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code}</td>
                   <td className="dim">{driver?.team}</td>
@@ -706,6 +848,48 @@ function GameGrid(p: {
   );
 }
 
+function RaceFeed(p: {
+  items: RaceFeedItem[];
+  event: { kind: string; label: string; lap: number } | null;
+  started: boolean;
+}) {
+  return (
+    <section className="game-live-feed" aria-label="Live model feed">
+      <header>
+        <div>
+          <p className="game-kicker">Live model feed</p>
+          <h3>{p.event ? p.event.kind : "Race control"}</h3>
+        </div>
+        <span className="game-live-badge">SIMULATED</span>
+      </header>
+      <div className={`game-live-current ${p.event ? p.event.kind.toLowerCase() : ""}`} role="status" aria-live="polite">
+        {p.event ? (
+          <>
+            <b>{p.event.kind}</b>
+            <span>{p.event.label}</span>
+            <small>Lap {p.event.lap}</small>
+          </>
+        ) : (
+          <>
+            <b>{p.started ? "GREEN" : "GRID"}</b>
+            <span>{p.started ? "No incidents yet. The model is running clean." : "Formation lap. The clock starts after the lights."}</span>
+          </>
+        )}
+      </div>
+      <ol className="game-live-items">
+        {p.items.length ? p.items.map((item) => (
+          <li key={item.id} className={item.kind}>
+            <span className="game-live-lap">L{item.lap}</span>
+            <span>{item.text}</span>
+            <time>{fmtLap(item.t)}</time>
+          </li>
+        )) : <li className="dim">The first report appears when the race begins.</li>}
+      </ol>
+      <p className="game-live-note">Model-derived feed · not real race control.</p>
+    </section>
+  );
+}
+
 function GameRace(p: {
   sim: RaceSim;
   seed: number;
@@ -713,6 +897,9 @@ function GameRace(p: {
   players: Map<string, number>;
   drivers: GameDriver[];
   meeting: Meeting | null;
+  mediaFor: (driver: GameDriver) => Driver | null;
+  onHover: HoverHandler;
+  onLeave: () => void;
   onFinish: () => void;
   onNew: () => void;
 }) {
@@ -793,6 +980,27 @@ function GameRace(p: {
     state.rows.find((row) => row.driverId !== effectiveSelectedId) ??
     null;
   const progress = Math.min(p.sim.laps, Math.max(1, Math.ceil(elapsed / Math.max(1, p.sim.duration / p.sim.laps))));
+  const feed = buildRaceFeed(p.sim, p.drivers);
+  const visibleFeed = feed.filter((item) => item.t <= elapsed).slice(-4).reverse();
+  const orderRows = state.rows.map((row, index) => {
+    const driver = p.drivers.find((item) => item.id === row.driverId);
+    const simDriver = p.sim.drivers.find((item) => item.id === row.driverId);
+    const completed = row.retired
+      ? Math.max(0, row.lap - 1)
+      : row.finished
+        ? p.sim.laps
+        : Math.max(0, row.lap - 1);
+    const times = simDriver?.lapTimes.slice(0, completed) ?? [];
+    const ahead = state.rows[index - 1];
+    return {
+      row,
+      driver,
+      last: times.length ? times[times.length - 1] : null,
+      best: times.length ? Math.min(...times) : null,
+      interval: ahead ? Math.max(0, row.gap - ahead.gap) : null,
+      mode: raceMode(state.rows, row),
+    };
+  });
   return (
     <section className="game-stage" aria-label="Simulated race">
       <header className="game-stage-head">
@@ -863,16 +1071,21 @@ function GameRace(p: {
               </div>
             </div>
           </div>
-          <GameCanvas geometry={p.geometry} sim={p.sim} state={state} players={p.players} drivers={p.drivers} selectedId={effectiveSelectedId} onSelect={setSelectedId} view={view} zoom={zoom} pan={pan} onZoom={changeZoom} onPan={setPan} />
+          <GameCanvas geometry={p.geometry} sim={p.sim} state={state} players={p.players} drivers={p.drivers} selectedId={effectiveSelectedId} onSelect={setSelectedId} view={view} zoom={zoom} pan={pan} onZoom={changeZoom} onPan={setPan} mediaFor={p.mediaFor} />
           <div className="game-legend">
             {[...p.players.entries()].map(([id, player]) => {
               const driver = p.drivers.find((d) => d.id === id);
               return <span key={id}><i style={{ background: driver?.color }} />P{player} {driver?.code}</span>;
             })}
           </div>
-          <p className="game-hint">Hover for pace; click a car or tower row for live stats. Zoom, then drag the circuit to pan.</p>
+          <p className="game-hint">Hover for identity and pace; click a car or order row for live stats. Zoom, then drag the circuit to pan.</p>
         </div>
-        <aside className="game-tower" aria-label="Race order">
+        <aside className="game-race-side">
+          <RaceFeed
+            items={visibleFeed}
+            event={latestEvent ? { kind: latestEvent.kind, label: latestEvent.label, lap: latestEvent.lap } : null}
+            started={started}
+          />
           <DriverDesk
             state={state}
             sim={p.sim}
@@ -882,14 +1095,19 @@ function GameRace(p: {
             onSelect={setSelectedId}
             onCompare={setCompareId}
             onDetails={setDetailId}
+            mediaFor={p.mediaFor}
           />
-          <h3>Order</h3>
-          <div className="game-tower-scroll">
-            <table className="laps game-table">
-              <thead><tr><th>#</th><th>Driver</th><th>Gap</th></tr></thead>
-              <tbody>
-                {state.rows.map((row) => {
-                const driver = p.drivers.find((d) => d.id === row.driverId);
+        </aside>
+      <section className="game-order-panel" aria-label="Race order">
+        <header>
+          <div><p className="game-kicker">Timing</p><h3>Order</h3></div>
+          <span className="dim small">Click a row to inspect · double-click for lap-by-lap</span>
+        </header>
+        <div className="game-order-scroll">
+          <table className="laps game-table game-order-table">
+            <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Gap</th><th>Int</th><th>Last</th><th>Best</th><th>Mode</th><th>Player</th></tr></thead>
+            <tbody>
+              {orderRows.map(({ row, driver, last, best, interval, mode }) => {
                 const selected = row.driverId === effectiveSelectedId;
                 return (
                   <tr
@@ -898,6 +1116,9 @@ function GameRace(p: {
                     tabIndex={0}
                     onClick={() => setSelectedId(row.driverId)}
                     onDoubleClick={() => setDetailId(row.driverId)}
+                    onMouseEnter={(event) => p.onHover(row.driverId, event, row.position, row.player)}
+                    onMouseMove={(event) => p.onHover(row.driverId, event, row.position, row.player)}
+                    onMouseLeave={p.onLeave}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
@@ -907,16 +1128,24 @@ function GameRace(p: {
                   >
                     <td className="mono">{row.position}</td>
                     <td><span className="game-dot" style={{ background: driver?.color }} />{driver?.code}{row.player ? <span className="game-player">P{row.player}</span> : null}{row.retired ? <span className="game-dnf">DNF</span> : null}</td>
+                    <td className="dim">{driver?.team ?? "—"}</td>
                     <td className="mono">{row.retired ? "DNF" : row.position === 1 ? "—" : `+${row.gap.toFixed(1)}`}</td>
+                    <td className="mono">{row.retired ? "—" : interval == null ? "—" : `+${interval.toFixed(1)}`}</td>
+                    <td className="mono">{last != null ? fmtLap(last) : "—"}</td>
+                    <td className="mono">{best != null ? fmtLap(best) : "—"}</td>
+                    <td className="game-mode-cell">{row.retired ? "DNF" : mode}</td>
+                    <td>{row.player ? <span className="game-player">P{row.player}</span> : <span className="dim">AI</span>}</td>
                   </tr>
                 );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="dim small game-progress">Clock {Math.min(p.sim.laps, progress)}/{p.sim.laps} · {elapsed.toFixed(0)}s</p>
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="game-order-foot">
+          <span className="dim small game-progress">Clock {Math.min(p.sim.laps, progress)}/{p.sim.laps} · {elapsed.toFixed(0)}s</span>
           <button type="button" className="game-pill" onClick={p.onNew}>Abandon session</button>
-        </aside>
+        </div>
+      </section>
       </div>
       <DriverLapModal
         sim={p.sim}
@@ -939,10 +1168,12 @@ function DriverDesk(p: {
   onSelect: (id: string) => void;
   onCompare: (id: string) => void;
   onDetails: (id: string) => void;
+  mediaFor: (driver: GameDriver) => Driver | null;
 }) {
   const selected = p.state.rows.find((row) => row.driverId === p.selectedId) ?? null;
   const compare = p.state.rows.find((row) => row.driverId === p.compareId) ?? null;
   const selectedMeta = p.drivers.find((driver) => driver.id === selected?.driverId) ?? null;
+  const selectedMedia = selectedMeta ? p.mediaFor(selectedMeta) : null;
   const compareMeta = p.drivers.find((driver) => driver.id === compare?.driverId) ?? null;
   const selectedSim = p.sim.drivers.find((driver) => driver.id === selected?.driverId) ?? null;
   const compareSim = p.sim.drivers.find((driver) => driver.id === compare?.driverId) ?? null;
@@ -971,7 +1202,15 @@ function DriverDesk(p: {
       <div className="game-desk-grid">
         <div className="game-desk-driver" style={{ borderColor: selectedMeta?.color }}>
           <span className="game-player">{selected.player ? `P${selected.player} · player` : "AI"}</span>
-          <strong style={{ color: selectedMeta?.color }}>{selectedMeta?.code} <span>{selectedMeta?.name}</span></strong>
+          <div className="game-desk-identity">
+            <span className="game-desk-avatar" style={{ borderColor: selectedMeta?.color }}>
+              {selectedMedia?.headshot_url ? (
+                <img src={selectedMedia.headshot_url} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.hidden = true; }} />
+              ) : null}
+              <i>{selectedMeta?.number ?? selectedMeta?.code}</i>
+            </span>
+            <strong style={{ color: selectedMeta?.color }}>{selectedMeta?.code} <span>{selectedMeta?.name}</span></strong>
+          </div>
           <div><b>P{selected.position}</b><span>{selected.retired ? "DNF" : `Lap ${selected.lap}/${p.sim.laps}`}</span><span>{selected.position === 1 ? "leader" : `+${selected.gap.toFixed(1)}s`}</span></div>
           <div><b>Pace</b><span>{fmtLap(pace)}</span><span>{last != null ? `last ${fmtLap(last)}` : "no previous lap"}</span></div>
           <div><b>Mode</b><span>{mode}</span><span>{selectedMeta?.team}</span></div>
@@ -1069,6 +1308,7 @@ function GameCanvas(p: {
   pan: { x: number; y: number };
   onZoom: (zoom: number) => void;
   onPan: (pan: { x: number; y: number }) => void;
+  mediaFor: (driver: GameDriver) => Driver | null;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const screen = useRef(new Map<string, { x: number; y: number }>());
@@ -1078,6 +1318,7 @@ function GameCanvas(p: {
   const hoverRow = hover ? p.state.rows.find((row) => row.driverId === hover.id) : null;
   const hoverDriver = hover ? p.drivers.find((d) => d.id === hover.id) : null;
   const hoverSim = hover ? p.sim.drivers.find((d) => d.id === hover.id) : null;
+  const hoverMedia = hoverDriver ? p.mediaFor(hoverDriver) : null;
   const hoverLap = hoverSim && hoverRow ? hoverSim.lapTimes[Math.min(hoverSim.lapTimes.length - 1, Math.max(0, hoverRow.lap - 1))] : null;
   const hoverMode = hoverRow ? raceMode(p.state.rows, hoverRow) : null;
   useEffect(() => {
@@ -1312,11 +1553,28 @@ function GameCanvas(p: {
           className="game-hover"
           role="tooltip"
           style={{
-            left: Math.min(hover.x + 12, (ref.current?.clientWidth ?? 390) - 190),
+            left: Math.min(hover.x + 12, (ref.current?.clientWidth ?? 390) - 260),
             top: Math.max(8, hover.y - 12),
           }}
         >
-          <b style={{ color: hoverDriver?.color }}>{hoverDriver?.code ?? hoverRow.driverId}</b>
+          <div className="game-hover-identity">
+            <span className="game-hover-avatar" style={{ borderColor: hoverDriver?.color }}>
+              {hoverMedia?.headshot_url ? (
+                <img
+                  src={hoverMedia.headshot_url}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  onError={(event) => { event.currentTarget.hidden = true; }}
+                />
+              ) : null}
+              <i>{hoverDriver?.number ?? hoverDriver?.code}</i>
+            </span>
+            <div>
+              <b style={{ color: hoverDriver?.color }}>{hoverDriver?.code ?? hoverRow.driverId}</b>
+              <strong>{hoverMedia?.full_name ?? hoverDriver?.name ?? "Driver"}</strong>
+              <small>{hoverMedia?.team_name ?? hoverDriver?.team ?? "—"}</small>
+            </div>
+          </div>
           {hoverRow.player ? <span className="game-player">P{hoverRow.player}</span> : <span className="dim small">AI</span>}
           <span>P{hoverRow.position} · {hoverRow.finished ? "finished" : `lap ${hoverRow.lap}`}</span>
           <span>{hoverMode}</span>

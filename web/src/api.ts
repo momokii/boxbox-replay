@@ -72,7 +72,7 @@ export const api = {
     get<SessionInfo[]>(`/sessions?year=${year}&meeting_key=${meetingKey}`),
   sessionStatus: (keys: number[]) =>
     get<Record<string, string>>(`/sessions/status?keys=${keys.join(",")}`),
-  drivers: (sessionKey: number) => get<Driver[]>(`/drivers?session_key=${sessionKey}`),
+  drivers: (sessionKey: number) => get<Driver[]>(`/drivers?session_key=${sessionKey}`, 15_000),
   laps: (sessionKey: number, driver?: number) =>
     get<Lap[]>(`/laps?session_key=${sessionKey}${driver ? `&driver_number=${driver}` : ""}`),
   lapWindow: (sessionKey: number, driver: number, lap: number) =>

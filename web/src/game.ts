@@ -282,6 +282,88 @@ export function driverLapHistory(sim: RaceSim, driverId: string): DriverLapStat[
   return rows;
 }
 
+export interface RaceFeedItem {
+  id: string;
+  t: number;
+  lap: number;
+  kind: "leader" | "move" | "event" | "finish";
+  text: string;
+}
+
+/** Deterministic race highlights for the Grid live feed. Model-derived only. */
+export function buildRaceFeed(sim: RaceSim, drivers: GameDriver[]): RaceFeedItem[] {
+  const names = new Map(drivers.map((driver) => [driver.id, driver.code]));
+  const items: RaceFeedItem[] = [];
+  const pole = sim.grid[0];
+  if (pole) {
+    items.push({
+      id: `start-${pole.driverId}`,
+      t: 0.1,
+      lap: 1,
+      kind: "leader",
+      text: `${names.get(pole.driverId) ?? "Pole"} starts from pole`,
+    });
+  }
+  let previousLeader: string | null = null;
+  let previousPositions = new Map<string, number>();
+  for (let lap = 1; lap <= sim.laps; lap += 1) {
+    const t = Math.min(sim.duration, lap * sim.baseLap);
+    const state = raceState(sim, t);
+    const active = state.rows.filter((row) => !row.retired);
+    if (state.leaderId && state.leaderId !== previousLeader) {
+      items.push({
+        id: `leader-${lap}`,
+        t,
+        lap,
+        kind: "leader",
+        text: `${names.get(state.leaderId) ?? "Leader"} takes the lead`,
+      });
+    }
+    previousLeader = state.leaderId;
+    let biggest: { code: string; from: number; to: number } | null = null;
+    for (const row of active) {
+      const from = previousPositions.get(row.driverId);
+      if (from == null) continue;
+      if (row.position < from) {
+        const gained = from - row.position;
+        if (!biggest || gained > biggest.from - biggest.to) {
+          biggest = { code: names.get(row.driverId) ?? row.driverId, from, to: row.position };
+        }
+      }
+    }
+    if (biggest && lap > 1) {
+      items.push({
+        id: `move-${lap}-${biggest.code}`,
+        t,
+        lap,
+        kind: "move",
+        text: `${biggest.code} passes into P${biggest.to} (from P${biggest.from})`,
+      });
+    }
+    previousPositions = new Map(active.map((row) => [row.driverId, row.position]));
+  }
+  for (const event of sim.events) {
+    items.push({
+      id: `event-${event.id}`,
+      t: event.t,
+      lap: event.lap,
+      kind: "event",
+      text: event.label,
+    });
+  }
+  const winner = sim.preview.find((row) => !row.retired);
+  if (winner) {
+    items.push({
+      id: `finish-${winner.driverId}`,
+      t: sim.duration,
+      lap: sim.laps,
+      kind: "finish",
+      text: `${names.get(winner.driverId) ?? "Winner"} wins`,
+    });
+  }
+  return items.sort((a, b) => a.t - b.t || a.id.localeCompare(b.id));
+}
+
 /** Visual playback factor after an incident; never changes model results. */
 export function incidentPlaybackFactor(
   kind: RaceEventKind | null,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGameDrivers,
+  buildRaceFeed,
   driverLapHistory,
   gameClockScale,
   incidentPlaybackFactor,
@@ -128,6 +129,20 @@ describe("driver lap history", () => {
       return;
     }
     throw new Error("no seeded crash found");
+  });
+});
+
+describe("race feed", () => {
+  it("builds a deterministic feed with leader, incidents and finish", () => {
+    const drivers = buildGameDrivers(standings);
+    const sim = simulateRace(drivers, simulateQualifying(drivers, 8), 5, 8);
+    const feed = buildRaceFeed(sim, drivers);
+    expect(feed).toEqual(buildRaceFeed(sim, drivers));
+    expect(feed.some((item) => item.kind === "leader")).toBe(true);
+    expect(feed.some((item) => item.kind === "finish")).toBe(true);
+    expect(feed.some((item) => item.kind === "event")).toBe(true);
+    expect(feed.every((item) => item.t >= 0 && item.t <= sim.duration)).toBe(true);
+    expect(feed.map((item) => item.t)).toEqual([...feed.map((item) => item.t)].sort((a, b) => a - b));
   });
 });
 

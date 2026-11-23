@@ -5,7 +5,7 @@
  * The result image is a share artifact, never a substitute for the in-app table.
  */
 
-import type { GameDriver, RaceSim } from "./game";
+import { raceState, type GameDriver, type RaceSim } from "./game";
 
 export const GAME_CARD_W = 1200;
 export const GAME_CARD_H = 630;
@@ -31,6 +31,9 @@ export interface GameCardData {
   winner: GameCardRow | null;
   fastestLap: { code: string; time: number; lap: number } | null;
   biggestMover: { code: string; from: number; to: number } | null;
+  winnerBestLap: number | null;
+  winnerAverageLap: number | null;
+  lapsLed: number;
   players: number;
   dnf: number;
   events: { kind: string; lap: number }[];
@@ -78,6 +81,22 @@ export function buildGameCardData(
       }
     }
   }
+  const winner = all.find((row) => !row.retired) ?? null;
+  const winnerDriver = winner ? sim.drivers.find((driver) => driver.id === winner.driverId) : null;
+  const winnerTimes = winnerDriver
+    ? winnerDriver.lapTimes.slice(0, sim.laps).filter((time) => time > 0)
+    : [];
+  const winnerBestLap = winnerTimes.length ? Math.min(...winnerTimes) : null;
+  const winnerAverageLap = winnerTimes.length
+    ? winnerTimes.reduce((sum, time) => sum + time, 0) / winnerTimes.length
+    : null;
+  let lapsLed = 0;
+  if (winner) {
+    for (let lap = 1; lap <= sim.laps; lap += 1) {
+      const state = raceState(sim, lap * sim.baseLap);
+      if (state.leaderId === winner.driverId) lapsLed += 1;
+    }
+  }
   const gridPositions = new Map(sim.grid.map((row) => [row.driverId, row.position]));
   let biggestMover: GameCardData["biggestMover"] = null;
   for (const row of all) {
@@ -95,9 +114,12 @@ export function buildGameCardData(
     seed,
     rows: selectGameCardRows(all),
     totalRows: all.length,
-    winner: all.find((row) => !row.retired) ?? null,
+    winner,
     fastestLap,
     biggestMover,
+    winnerBestLap,
+    winnerAverageLap,
+    lapsLed,
     players: all.filter((row) => row.player != null).length,
     dnf: all.filter((row) => row.retired).length,
     events: sim.events.map((event) => ({ kind: event.kind, lap: event.lap })),
@@ -164,6 +186,18 @@ function draw(ctx: CanvasRenderingContext2D, data: GameCardData): void {
     48,
     203,
   );
+  if (data.winnerBestLap != null || data.winnerAverageLap != null) {
+    ctx.fillStyle = amber;
+    ctx.font = "500 13px 'JetBrains Mono', monospace";
+    ctx.fillText(
+      [
+        data.winnerBestLap != null ? `BEST ${fmtLap(data.winnerBestLap)}` : null,
+        data.winnerAverageLap != null ? `AVG ${fmtLap(data.winnerAverageLap)}` : null,
+      ].filter(Boolean).join("  ·  "),
+      48,
+      222,
+    );
+  }
 
   if (data.winner) {
     ctx.fillStyle = data.winner.color;
@@ -182,12 +216,13 @@ function draw(ctx: CanvasRenderingContext2D, data: GameCardData): void {
     ctx.textAlign = "left";
   }
 
-  const statY = 222;
+  const statY = 242;
   const statH = 48;
-  const statW = (width - 96 - 30) / 4;
+  const statW = (width - 96 - 40) / 5;
   const stats = [
     ["FASTEST LAP", data.fastestLap ? `${data.fastestLap.code} ${fmtLap(data.fastestLap.time)}` : "—"],
     ["BIGGEST MOVER", data.biggestMover ? `${data.biggestMover.code} +${data.biggestMover.from - data.biggestMover.to}` : "—"],
+    ["LAPS LED", `${data.lapsLed} / ${data.laps}`],
     ["PLAYERS", `${data.players} / ${data.totalRows}`],
     ["INCIDENTS", data.events.length ? `${data.events.length} · ${data.dnf} DNF` : `0 · ${data.dnf} DNF`],
   ] as const;
@@ -203,8 +238,8 @@ function draw(ctx: CanvasRenderingContext2D, data: GameCardData): void {
     ctx.fillText(value, x + 10, statY + 37);
   });
 
-  const tableTop = 282;
-  const rowHeight = 18;
+  const tableTop = 296;
+  const rowHeight = 17;
   const columns = [48, 96, 300, 700, 850];
   ctx.fillStyle = dim;
   ctx.font = "600 11px 'JetBrains Mono', monospace";
