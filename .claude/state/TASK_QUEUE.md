@@ -129,6 +129,7 @@ Status: **v3 complete** through `v3.9.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a),
 | V4.6-UX | 20 s/lap Grid pace, per-lap modal, richer result image, VSC slowdown and zoom | DONE (`v4.6.0`) | V4.5-UX | 20 s/lap; driver lap history modal; result stats; incident playback factor; zoom/pan; calendar/font resilience | Modal DNF/null; VSC slowed; PNG 1200×630 stats; zoom/pan; 105 vitest; screenshots 54–74 | Viewing pace and playback effect, not real time/field physics |
 | V4.6.1 | Fail-fast Grid standings + retry | DONE (`v4.6.1`) | V4.6-UX | Bound Jolpica requests, add frontend timeout, explicit error/retry, remove loading dependency on calendar | 503 ~10.3 s; no stuck loading; retry loads 21 drivers; 94 pytest; screenshot 75 | No fabricated standings when archive unavailable |
 | V4.7-UX | Identity hovers, timing strip and live model feed | DONE (`v4.7.0`) | V4.6.1 | Headshots/full names/team hover; order below circuit with Int/Last/Best/Mode; live feed; richer result card | Hover card; feed VSC/leader; order 9 columns; mobile no overflow; 106 vitest; screenshots 76–79 | Model feed labelled simulated; no fake speed/tyres |
+| V4.7.1 | Current-clock modal, order placement, tooltips, incident spotlight | DONE (`v4.7.1`) | V4.7-UX | Filter lap history by clock; order directly below circuit; Info on all metric headers; draw SC/VSC/crash on canvas | Lap 1 modal 0 rows; Mode tooltip; no blank column; 107 vitest; screenshots 80/81 | Modal never reveals future state |
 
 ## Deferred / excluded (unchanged)
 

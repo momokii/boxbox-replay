@@ -47,3 +47,9 @@
 - Column explanations are available on hover/focus.
 - Incidents are visible on the circuit, not only in a red text banner.
 - All existing tests/build/CI pass.
+
+## Shipped
+
+`v4.7.1` shipped on 2026-11-23. Evidence: 94 pytest + 107 vitest, a 2026
+Australia desktop/mobile pass, Lap 1 modal with zero future rows, Mode header
+tooltip, order below circuit, and VSC track overlay; screenshots 80/81 added.

@@ -565,3 +565,21 @@
 **Alternatives Rejected:** All 25 rows; fabricated telemetry; separate PDF.
 **Security Implications:** None; client canvas.
 **Impact:** `gameShareCard.ts`, tests, screenshot 71.
+
+---
+**Decision:** D49 — Driver lap history is current-clock filtered.
+**Date:** 2026-11-23
+**Context:** Opening the lap modal at Lap 1 showed all five simulated laps and Finished status.
+**Rationale:** Add an elapsed cutoff to `driverLapHistory`; the modal passes the live clock, shows only completed rows, and derives Running/DNF/Finished from the current clock. At Lap 1 it says no completed laps yet.
+**Alternatives Rejected:** Showing future laps dimmed (still leaks results); hiding the modal (loses useful history).
+**Security Implications:** None.
+**Impact:** `game.ts`, `GameView`, tests, screenshot 80.
+
+---
+**Decision:** D50 — Order sits inside the circuit column; metric headers use Info; incidents get a canvas spotlight.
+**Date:** 2026-11-23
+**Context:** The order after the taller side column left a large blank left band, rain headers had no explanations, and incidents were only text.
+**Rationale:** Place order immediately under the canvas, use the existing accessible Info component for every metric header, and draw SC/VSC amber overlays or a crash ring at the last modeled car position. The feed remains the detailed history.
+**Alternatives Rejected:** Filling the gap with decorative content; native title-only tooltips; fake 3D incident geometry.
+**Security Implications:** None.
+**Impact:** `GameView`, `game.css`, docs/state, screenshots 77/78/81.

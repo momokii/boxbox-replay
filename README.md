@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.7.0` — Grid driver identity and live timing.** Driver hovers now show OpenF1 headshots, full names and teams; the race order is a full-width timing strip below the circuit with interval/last/best/mode; the right column is a live model feed above the driver desk; the result card adds winner best/average/laps-led. See [`docs/V4_7_CLOSEOUT.md`](docs/V4_7_CLOSEOUT.md), [`docs/V4_7_GRID_INTERACTIVE_RESEARCH.md`](docs/V4_7_GRID_INTERACTIVE_RESEARCH.md) and [`docs/V4_7_GRID_INTERACTIVE_PLAN.md`](docs/V4_7_GRID_INTERACTIVE_PLAN.md).
+> **Latest release: `v4.7.1` — Grid refinement.** The order now sits directly under the circuit (no blank column), the lap-by-lap modal only shows laps completed by the current clock, every race column has an accessible explanation, and SC/VSC/crash events are visible on the circuit. See [`docs/V4_7_1_CLOSEOUT.md`](docs/V4_7_1_CLOSEOUT.md), [`docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md`](docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md) and [`docs/V4_7_1_GRID_REFINEMENT_PLAN.md`](docs/V4_7_1_GRID_REFINEMENT_PLAN.md).
+
+## What's new in v4.7.1
+
+- **No future laps.** At Lap 1 the modal says no completed laps yet; it shows only laps completed by the current clock and `Running`/`DNF`/`Finished` status, never a future classification.
+- **Order under the circuit.** The timing strip starts directly below the canvas; the blank left column is gone and mobile order comes before the feed/desk.
+- **Column tooltips.** Every setup/qualifying/grid/order header explains its value, including the four Mode states and their 1 s rule.
+- **Incident on the circuit.** SC/VSC add an amber track overlay; a crash adds a red ring at the last modeled position, alongside the feed.
 
 ## What's new in v4.7
 
@@ -162,6 +169,10 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 | Order metrics below circuit | Mobile order strip |
 |---|---|
 | ![Grid order metrics](docs/screenshots/78-grid-order-metrics.png) | ![Grid mobile order](docs/screenshots/79-grid-mobile-order.png) |
+
+| Current-clock lap modal | Column explanation |
+|---|---|
+| ![Grid current lap modal](docs/screenshots/80-grid-lap-modal-current.png) | ![Grid column tooltip](docs/screenshots/81-grid-column-tooltip.png) |
 
 | Grid explainer | Grid race-control event |
 |---|---|
@@ -396,7 +407,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 94 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 106 frontend tests (vitest)
+cd web && npm test           # 107 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
@@ -490,6 +501,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.7.1:** [`docs/V4_7_1_CLOSEOUT.md`](docs/V4_7_1_CLOSEOUT.md), [`docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md`](docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md), [`docs/V4_7_1_GRID_REFINEMENT_PLAN.md`](docs/V4_7_1_GRID_REFINEMENT_PLAN.md)
 - **v4.7:** [`docs/V4_7_CLOSEOUT.md`](docs/V4_7_CLOSEOUT.md), [`docs/V4_7_GRID_INTERACTIVE_RESEARCH.md`](docs/V4_7_GRID_INTERACTIVE_RESEARCH.md), [`docs/V4_7_GRID_INTERACTIVE_PLAN.md`](docs/V4_7_GRID_INTERACTIVE_PLAN.md)
 - **v4.6.1:** [`docs/V4_6_1_CLOSEOUT.md`](docs/V4_6_1_CLOSEOUT.md), [`docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md`](docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md), [`docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md`](docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md)
 - **v4.6:** [`docs/V4_6_CLOSEOUT.md`](docs/V4_6_CLOSEOUT.md), [`docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md`](docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md), [`docs/V4_6_GRID_RACE_DEPTH_PLAN.md`](docs/V4_6_GRID_RACE_DEPTH_PLAN.md)

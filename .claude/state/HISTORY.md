@@ -716,3 +716,11 @@ Mode; replaced the order column with a deterministic live model feed above the
 driver desk; and added winner best/average/laps-led to the result image. 94
 pytest + 106 vitest; 2026 Australia desktop/mobile browser pass; screenshots
 76–79 plus refreshed 56/59/66/67/69/71.
+
+
+v4.7.1 — Grid refinement. Fixed the modal revealing all five laps at Lap 1
+(now current-clock filtered, Laps 0/5, Running), moved the order inside the
+circuit column so the blank left area is gone, added accessible Info tooltips
+to every setup/qualifying/grid/order header, and drew SC/VSC/crash incidents on
+the circuit. 94 pytest + 107 vitest; screenshots 80/81; 2026 Australia browser
+pass.

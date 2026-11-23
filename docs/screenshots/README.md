@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.7.0 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
+Refreshed against the **v4.7.1 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
@@ -83,6 +83,8 @@ They are referenced from the root README and this page.
 | `74-grid-zoom-pan.png` | v4.6 150% zoom and drag-pan on the circuit |
 | `75-grid-standings-error.png` | v4.6.1 bounded archive failure: explicit retry, no loading spinner, no fabricated drivers |
 | `76-grid-driver-hover.png` | v4.7 identity hover: OpenF1 headshot, full name, team, position and player |
-| `77-grid-live-feed.png` | v4.7 live model feed beside the circuit, with current VSC and recent reports |
-| `78-grid-order-metrics.png` | v4.7 full-width order below the circuit with Gap/Int/Last/Best/Mode |
+| `77-grid-live-feed.png` | v4.7.1 live model feed beside the circuit, with VSC track overlay and recent reports |
+| `78-grid-order-metrics.png` | v4.7.1 order directly below the circuit with Gap/Int/Last/Best/Mode |
 | `79-grid-mobile-order.png` | v4.7 mobile order strip below the circuit |
+| `80-grid-lap-modal-current.png` | v4.7.1 Lap 1 modal: no future laps, 0/5 completed, Running |
+| `81-grid-column-tooltip.png` | v4.7.1 Mode header explanation and 1 s rule |
