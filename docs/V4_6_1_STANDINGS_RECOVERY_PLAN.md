@@ -55,8 +55,9 @@
 
 ## Shipped
 
-`v4.6.1` shipped on 2026-11-22. The backend returns 503 after ~10.3 s instead
+`v4.6.1` shipped on 2026-11-22. The backend returns 503 after 2.7–10.3 s instead
 of ~100 s; the roster shows an explicit error + Retry, an actual hard restart
 no longer stalls indefinitely, and a healthy retry loads the driver table.
 Evidence: 94 pytest + 105 vitest, browser error/retry check at 1440×900, and
-`docs/screenshots/75-grid-standings-error.png`.
+`docs/screenshots/75-grid-standings-error.png`. Main and tags were pushed; CI
+completed successfully.

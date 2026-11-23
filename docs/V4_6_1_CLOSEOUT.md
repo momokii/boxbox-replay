@@ -54,7 +54,7 @@ reload.
 | Lint | `.venv/bin/python -m ruff check .` → all checks passed |
 | Types | `npx tsc -b` → exit 0 |
 | Build | `npm run build` → exit 0 |
-| Actual offline archive | `GET /api/standings?year=2026` → **503 in 10.3 s** (was ~90 s+) |
+| Actual offline archive | `GET /api/standings?year=2026` → **503 in 2.7–10.3 s** (was ~90 s+) |
 | Error state | after the timeout: message + **Retry**, loading text gone, start disabled, no fabricated drivers |
 | Healthy retry | 21 drivers loaded after Retry; loading cleared; start control available after picking a driver |
 | Browser errors | none |
@@ -74,6 +74,9 @@ reload.
 A fast 503 is still a failure: without a reachable Jolpica archive or a cached
 table, the game cannot build truthful driver ratings. The UI now says so and
 lets the user retry or choose another season; it does not invent standings.
-The production container was updated from the verified dist because the Docker
-registry remained unreachable; GitHub push/tag also remained blocked in this
-environment.
+
+The web image was rebuilt from the Dockerfile after the registry recovered.
+The API Dockerfile build failed while installing Python dependencies; the
+running API container was updated with the verified `jolpica.py` and committed
+locally as `boxbox-replay-api:stable`. Main and both tags were pushed; CI
+completed successfully.
