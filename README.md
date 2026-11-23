@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.6.0` — deeper Grid viewing.** Slows 1× to 20 s/lap, adds a per-lap driver modal, a richer result image, visible VSC playback slowdown, zoom/pan and a clearer angle view. Two seeded qualifying runs, start lights and the result download remain. See [`docs/V4_6_CLOSEOUT.md`](docs/V4_6_CLOSEOUT.md), [`docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md`](docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md) and [`docs/V4_6_GRID_RACE_DEPTH_PLAN.md`](docs/V4_6_GRID_RACE_DEPTH_PLAN.md).
+> **Latest release: `v4.6.1` — Grid standings recovery.** Fixes the stuck “Loading the table…” state: bounded Jolpica timeouts, a frontend request timeout and an explicit Retry action instead of an indefinite roster load. See [`docs/V4_6_1_CLOSEOUT.md`](docs/V4_6_1_CLOSEOUT.md), [`docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md`](docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md) and [`docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md`](docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md).
+
+## What's new in v4.6.1
+
+- **No endless loading.** An archive request now fails in about 10 s, not ~100 s; the roster stops loading and says the season table did not load.
+- **Retry without reloading.** The error state has a Retry action; a healthy response loads the drivers and clears the error.
+- **No fabricated table.** Until real drivers arrive the start button stays disabled; the empty state says no drivers loaded rather than implying an empty championship.
+- **Calendar independence.** The Grand Prix picker still loads even when standings are slow.
 
 ## What's new in v4.6
 
@@ -135,6 +142,10 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 | Grid zoom and pan | Downloaded result image |
 |---|---|
 | ![Grid zoom](docs/screenshots/74-grid-zoom-pan.png) | ![Grid result image](docs/screenshots/71-grid-result-card.png) |
+
+| Standings unavailable | Retry state |
+|---|---|
+| ![Grid standings error](docs/screenshots/75-grid-standings-error.png) | Explicit error, no fabricated drivers |
 
 | Grid explainer | Grid race-control event |
 |---|---|
@@ -367,7 +378,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ## Quality gates
 
 ```bash
-pytest                       # 93 Python tests, all HTTP mocked
+pytest                       # 94 Python tests, all HTTP mocked
 ruff check .                 # lint
 cd web && npm test           # 105 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
@@ -437,7 +448,9 @@ Known limitations, stated plainly:
   Two qualifying runs are a game choice, not Q1/Q2/Q3. 1× is a 20 s/lap
   viewing pace, not real time. The downloaded card shows the top 10 plus any
   player outside it; the in-app result remains complete. Hover shows pace, not
-  a fabricated km/h speed. Pre-2023 circuits are not in the game.
+  a fabricated km/h speed. If the Jolpica archive is unavailable, the Grid
+  shows an explicit retryable error; it does not invent standings. Pre-2023
+  circuits are not in the game.
 - **Retirement clocks are last-lap evidence**, not an official retirement
   timestamp; the feed does not provide one.
 - **No live timing.** Historical sessions only (a day behind at the earliest),
@@ -459,6 +472,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.6.1:** [`docs/V4_6_1_CLOSEOUT.md`](docs/V4_6_1_CLOSEOUT.md), [`docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md`](docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md), [`docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md`](docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md)
 - **v4.6:** [`docs/V4_6_CLOSEOUT.md`](docs/V4_6_CLOSEOUT.md), [`docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md`](docs/V4_6_GRID_RACE_DEPTH_RESEARCH.md), [`docs/V4_6_GRID_RACE_DEPTH_PLAN.md`](docs/V4_6_GRID_RACE_DEPTH_PLAN.md)
 - **v4.5:** [`docs/V4_5_CLOSEOUT.md`](docs/V4_5_CLOSEOUT.md), [`docs/V4_5_GRID_EXPERIENCE_RESEARCH.md`](docs/V4_5_GRID_EXPERIENCE_RESEARCH.md), [`docs/V4_5_GRID_EXPERIENCE_PLAN.md`](docs/V4_5_GRID_EXPERIENCE_PLAN.md)
 - **v4.4:** [`docs/V4_4_CLOSEOUT.md`](docs/V4_4_CLOSEOUT.md), [`docs/V4_4_GRID_RACE_RESEARCH.md`](docs/V4_4_GRID_RACE_RESEARCH.md), [`docs/V4_4_GRID_RACE_PLAN.md`](docs/V4_4_GRID_RACE_PLAN.md)

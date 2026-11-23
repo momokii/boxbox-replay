@@ -529,3 +529,12 @@
 **Alternatives Rejected:** Removing web fonts; a blocking font stylesheet; a backend timeout-only fix.
 **Security Implications:** None.
 **Impact:** `GameView`, `index.html`, `main.tsx`.
+
+---
+**Decision:** D45 — Bound archive loading and make failure retryable.
+**Date:** 2026-11-22
+**Context:** A hard restart still showed “Loading the table…” because Jolpica used three 30-second attempts plus backoff, and the frontend had no timeout/retry.
+**Rationale:** Use a 4-second archive timeout, two attempts and short backoff; use a 15-second AbortController for standings/meetings; clear roster loading when standings settles; show an explicit Retry action. Never fabricate a standings table when the archive is unavailable.
+**Alternatives Rejected:** Leaving the 30-second retries; an unbounded UI fetch; a fake/empty driver list; hiding the start action without an explanation.
+**Security Implications:** None; timeout is client/server configuration, no new data exposure.
+**Impact:** `jolpica.py`, `web/src/api.ts`, `GameView`, tests, screenshot 75.

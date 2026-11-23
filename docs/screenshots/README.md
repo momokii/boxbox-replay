@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.6.0 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
+Refreshed against the **v4.6.1 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
@@ -81,3 +81,4 @@ They are referenced from the root README and this page.
 | `72-grid-mobile-start.png` | v4.6 mobile formation lap |
 | `73-grid-driver-modal.png` | v4.6 per-lap driver modal with best/average, position, gap and incidents |
 | `74-grid-zoom-pan.png` | v4.6 150% zoom and drag-pan on the circuit |
+| `75-grid-standings-error.png` | v4.6.1 bounded archive failure: explicit retry, no loading spinner, no fabricated drivers |

@@ -699,3 +699,11 @@ SC/VSC with an explicit PLAYBACK SLOWED label, added circuit zoom plus drag-pan
 and a more distinct angle, and fixed two E2E resilience issues: the calendar no
 longer waits for standings and an unreachable font CDN no longer blocks the
 app. 93 pytest + 105 vitest; Baku 2024 browser pass; screenshots 54–74.
+
+
+v4.6.1 — fail-fast Grid standings. Reproduced “Loading the table…” after a hard
+restart: Jolpica used 3×30 s attempts and the frontend had no timeout. Bounded
+the archive to 4 s × 2 attempts (~10.3 s worst case), added a 15 s AbortController
+for standings/meetings, stopped tying roster loading to the calendar, and added
+an explicit Retry action with an honest empty state. 94 pytest + 105 vitest;
+error and healthy retry verified; screenshot 75.

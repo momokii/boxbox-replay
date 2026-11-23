@@ -52,3 +52,11 @@
 - Unavailable standings produce a clear, retryable error.
 - Retry and normal loading both work on desktop and mobile.
 - Existing game features and tests remain intact.
+
+## Shipped
+
+`v4.6.1` shipped on 2026-11-22. The backend returns 503 after ~10.3 s instead
+of ~100 s; the roster shows an explicit error + Retry, an actual hard restart
+no longer stalls indefinitely, and a healthy retry loads the driver table.
+Evidence: 94 pytest + 105 vitest, browser error/retry check at 1440×900, and
+`docs/screenshots/75-grid-standings-error.png`.
