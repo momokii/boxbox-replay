@@ -254,9 +254,14 @@ export function gameClockScale(duration: number, laps: number): number {
  * retirement lap and carries a null lap time rather than pretending the
  * partial lap was completed.
  */
-export function driverLapHistory(sim: RaceSim, driverId: string): DriverLapStat[] {
+export function driverLapHistory(
+  sim: RaceSim,
+  driverId: string,
+  elapsed: number = sim.duration,
+): DriverLapStat[] {
   const driver = sim.drivers.find((item) => item.id === driverId);
   if (!driver) return [];
+  const cutoff = Math.min(sim.duration, Math.max(0, elapsed));
   const lastLap = driver.retiredLap ?? sim.laps;
   const rows: DriverLapStat[] = [];
   let raceTime = driver.startDelay;
@@ -264,6 +269,7 @@ export function driverLapHistory(sim: RaceSim, driverId: string): DriverLapStat[
     const retirementLap = driver.retiredLap === lap;
     const lapTime = driver.lapTimes[lap - 1] ?? 0;
     raceTime += retirementLap ? lapTime * 0.9 : lapTime;
+    if (raceTime > cutoff + 1e-6) break;
     const state = raceState(sim, raceTime);
     const row = state.rows.find((item) => item.driverId === driverId);
     const event = sim.events.find(

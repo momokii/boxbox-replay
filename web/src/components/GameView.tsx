@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../api";
+import Info from "./Info";
 import Modal from "./Modal";
 import type { Driver, Geometry, Meeting, SessionInfo, StandingsPayload } from "../types";
 import {
@@ -16,6 +17,7 @@ import {
   type RaceFeedItem,
   type GameLaps,
   type QualiRow,
+  type RaceEvent,
   type RaceSim,
   raceState,
   QUALI_ATTEMPTS,
@@ -476,10 +478,10 @@ export default function GameView({ onClose }: Props) {
                   <table className="laps game-table">
                     <thead>
                       <tr>
-                        <th>OVR</th>
-                        <th>Driver</th>
-                        <th>Team</th>
-                        <th>Pts</th>
+                        <th><Info label="OVR" tip="Overall first: 64% driver form (58% points + 42% championship position) + 36% team form, with seeded variation. Not a prediction." /></th>
+                        <th><Info label="Driver" tip="Code, full name and team. Hover a row for the identity card and headshot." /></th>
+                        <th><Info label="Team" tip="Constructor from the season standings table." /></th>
+                        <th><Info label="Pts" tip="Championship points in the season table used to build the game field." /></th>
                         <th><span className="sr-only">Pick</span></th>
                       </tr>
                     </thead>
@@ -751,7 +753,15 @@ function GameQuali(p: {
       </div>
       <div className="game-grid-table">
         <table className="laps game-table game-quali-table">
-          <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Best</th><th>Runs</th><th>Gap</th><th>Player</th></tr></thead>
+          <thead><tr>
+            <th><Info label="Pos" tip="Grid position after the best of the two seeded flying laps." /></th>
+            <th><Info label="Driver" tip="Hover a row for full name, team and headshot." /></th>
+            <th><Info label="Team" tip="Constructor from the season standings table." /></th>
+            <th><Info label="Best" tip="Best of the two seeded flying laps; this time sets the grid." /></th>
+            <th><Info label="Runs" tip="Both seeded attempt times, run 1 then run 2." /></th>
+            <th><Info label="Gap" tip="Gap to pole using the best lap. The pole has no gap." /></th>
+            <th><Info label="Player" tip="Player badge, or AI for the rest of the field." /></th>
+          </tr></thead>
           <tbody>
             {p.grid.slice(0, shown).map((row) => {
               const driver = p.drivers.find((d) => d.id === row.driverId);
@@ -817,7 +827,13 @@ function GameGrid(p: {
       </header>
       <div className="game-grid-table game-grid-scroll">
         <table className="laps game-table">
-          <thead><tr><th>Grid</th><th>Driver</th><th>Team</th><th>Gap</th><th>Player</th></tr></thead>
+          <thead><tr>
+            <th><Info label="Grid" tip="Starting position set by qualifying. Skipping qualifying uses the same seeded best-lap grid." /></th>
+            <th><Info label="Driver" tip="Hover a row for full name, team and headshot." /></th>
+            <th><Info label="Team" tip="Constructor from the season standings table." /></th>
+            <th><Info label="Gap" tip="Gap to the pole time. The pole has no gap." /></th>
+            <th><Info label="Player" tip="Player badge, or AI for the rest of the field." /></th>
+          </tr></thead>
           <tbody>
             {p.grid.map((row) => {
               const driver = p.drivers.find((d) => d.id === row.driverId);
@@ -1071,7 +1087,7 @@ function GameRace(p: {
               </div>
             </div>
           </div>
-          <GameCanvas geometry={p.geometry} sim={p.sim} state={state} players={p.players} drivers={p.drivers} selectedId={effectiveSelectedId} onSelect={setSelectedId} view={view} zoom={zoom} pan={pan} onZoom={changeZoom} onPan={setPan} mediaFor={p.mediaFor} />
+          <GameCanvas geometry={p.geometry} sim={p.sim} state={state} players={p.players} drivers={p.drivers} selectedId={effectiveSelectedId} onSelect={setSelectedId} view={view} zoom={zoom} pan={pan} onZoom={changeZoom} onPan={setPan} mediaFor={p.mediaFor} incident={latestEvent} elapsed={elapsed} />
           <div className="game-legend">
             {[...p.players.entries()].map(([id, player]) => {
               const driver = p.drivers.find((d) => d.id === id);
@@ -1079,33 +1095,24 @@ function GameRace(p: {
             })}
           </div>
           <p className="game-hint">Hover for identity and pace; click a car or order row for live stats. Zoom, then drag the circuit to pan.</p>
-        </div>
-        <aside className="game-race-side">
-          <RaceFeed
-            items={visibleFeed}
-            event={latestEvent ? { kind: latestEvent.kind, label: latestEvent.label, lap: latestEvent.lap } : null}
-            started={started}
-          />
-          <DriverDesk
-            state={state}
-            sim={p.sim}
-            drivers={p.drivers}
-            selectedId={effectiveSelectedId}
-            compareId={compareRow?.driverId ?? null}
-            onSelect={setSelectedId}
-            onCompare={setCompareId}
-            onDetails={setDetailId}
-            mediaFor={p.mediaFor}
-          />
-        </aside>
-      <section className="game-order-panel" aria-label="Race order">
+                <section className="game-order-panel" aria-label="Race order">
         <header>
           <div><p className="game-kicker">Timing</p><h3>Order</h3></div>
           <span className="dim small">Click a row to inspect · double-click for lap-by-lap</span>
         </header>
         <div className="game-order-scroll">
           <table className="laps game-table game-order-table">
-            <thead><tr><th>Pos</th><th>Driver</th><th>Team</th><th>Gap</th><th>Int</th><th>Last</th><th>Best</th><th>Mode</th><th>Player</th></tr></thead>
+            <thead><tr>
+              <th><Info label="Pos" tip="Running classification position at the current race clock." /></th>
+              <th><Info label="Driver" tip="Three-letter timing code. Hover the row for full name, team and headshot." /></th>
+              <th><Info label="Team" tip="Constructor from the season standings table." /></th>
+              <th><Info label="Gap" tip="Seconds behind the leader at the current clock. DNF when retired." /></th>
+              <th><Info label="Int" tip="Interval to the car directly ahead. The leader has no interval." /></th>
+              <th><Info label="Last" tip="Last completed simulated lap; — until the first lap is complete." /></th>
+              <th><Info label="Best" tip="Best completed simulated lap up to the current lap. Future laps are never shown." /></th>
+              <th><Info label="Mode" tip="Model race state: Leading = P1; Attacking = within 1 s of the car ahead; Defending = within 1 s of the car behind; Clear air = neither." /></th>
+              <th><Info label="Player" tip="Player badge, or AI for the rest of the field." /></th>
+            </tr></thead>
             <tbody>
               {orderRows.map(({ row, driver, last, best, interval, mode }) => {
                 const selected = row.driverId === effectiveSelectedId;
@@ -1146,6 +1153,26 @@ function GameRace(p: {
           <button type="button" className="game-pill" onClick={p.onNew}>Abandon session</button>
         </div>
       </section>
+        </div>
+        <aside className="game-race-side">
+          <RaceFeed
+            items={visibleFeed}
+            event={latestEvent ? { kind: latestEvent.kind, label: latestEvent.label, lap: latestEvent.lap } : null}
+            started={started}
+          />
+          <DriverDesk
+            state={state}
+            sim={p.sim}
+            drivers={p.drivers}
+            selectedId={effectiveSelectedId}
+            compareId={compareRow?.driverId ?? null}
+            onSelect={setSelectedId}
+            onCompare={setCompareId}
+            onDetails={setDetailId}
+            mediaFor={p.mediaFor}
+          />
+        </aside>
+
       </div>
       <DriverLapModal
         sim={p.sim}
@@ -1153,6 +1180,7 @@ function GameRace(p: {
         driverId={detailId}
         seed={p.seed}
         player={detailId ? p.players.get(detailId) ?? null : null}
+        elapsed={elapsed}
         onClose={closeDetails}
       />
     </section>
@@ -1245,15 +1273,19 @@ function DriverLapModal(p: {
   driverId: string | null;
   seed: number;
   player: number | null;
+  elapsed: number;
   onClose: () => void;
 }) {
   const driver = p.drivers.find((item) => item.id === p.driverId) ?? null;
-  const laps = driver ? driverLapHistory(p.sim, driver.id) : [];
+  const laps = driver ? driverLapHistory(p.sim, driver.id, p.elapsed) : [];
+  const simDriver = driver ? p.sim.drivers.find((item) => item.id === driver.id) : null;
   const times = laps.flatMap((lap) => (lap.time == null ? [] : [lap.time]));
   const best = times.length ? Math.min(...times) : null;
   const average = times.length ? times.reduce((sum, time) => sum + time, 0) / times.length : null;
   const grid = driver ? p.sim.grid.find((row) => row.driverId === driver.id)?.position : null;
-  const finished = laps.length > 0 && laps.every((lap) => lap.status !== "DNF");
+  const retiredNow = simDriver?.retiredAt != null && p.elapsed >= simDriver.retiredAt;
+  const status = retiredNow ? "DNF" : p.elapsed >= p.sim.duration ? "Finished" : "Running";
+  const currentLap = Math.min(p.sim.laps, Math.max(1, Math.floor(p.elapsed / p.sim.baseLap) + 1));
   return (
     <Modal
       open={driver != null}
@@ -1269,12 +1301,15 @@ function DriverLapModal(p: {
             <div><span>Average lap</span><b>{average != null ? fmtLap(average) : "—"}</b></div>
             <div><span>Laps</span><b>{laps.length}/{p.sim.laps}</b></div>
             <div><span>Grid</span><b>{grid != null ? `P${grid}` : "—"}</b></div>
-            <div><span>Status</span><b>{finished ? "Finished" : "DNF"}</b></div>
+            <div><span>Status</span><b>{status}</b></div>
           </div>
           <div className="game-lap-table-wrap">
             <table className="laps game-table game-lap-table">
               <thead><tr><th>Lap</th><th>Lap time</th><th>Race time</th><th>Pos</th><th>Gap</th><th>Note</th></tr></thead>
               <tbody>
+                {laps.length === 0 && (
+                  <tr><td colSpan={6} className="dim">No completed laps yet. Lap {currentLap} is in progress.</td></tr>
+                )}
                 {laps.map((lap) => (
                   <tr key={lap.lap} className={lap.time === best ? "best" : lap.status === "DNF" ? "retired" : ""}>
                     <td className="mono">L{lap.lap}</td>
@@ -1309,6 +1344,8 @@ function GameCanvas(p: {
   onZoom: (zoom: number) => void;
   onPan: (pan: { x: number; y: number }) => void;
   mediaFor: (driver: GameDriver) => Driver | null;
+  incident: RaceEvent | null;
+  elapsed: number;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const screen = useRef(new Map<string, { x: number; y: number }>());
@@ -1409,6 +1446,40 @@ function GameCanvas(p: {
     ctx.strokeStyle = "rgba(232,237,243,0.42)";
     ctx.lineWidth = 1.5;
     ctx.stroke();
+    if (p.incident) {
+      if (p.incident.kind === "SC" || p.incident.kind === "VSC") {
+        ctx.save();
+        ctx.strokeStyle = p.incident.kind === "SC" ? "#ffb224" : "#f6c453";
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        outline.forEach(([x, y], i) => {
+          const point = project(x, y);
+          if (i) ctx.lineTo(point.x, point.y);
+          else ctx.moveTo(point.x, point.y);
+        });
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+      const incidentRow = p.incident.driverId
+        ? p.state.rows.find((row) => row.driverId === p.incident?.driverId)
+        : null;
+      if (incidentRow) {
+        const lastPoint = sample(lapFraction(incidentRow.progress));
+        const point = project(lastPoint.x, lastPoint.y);
+        ctx.save();
+        ctx.strokeStyle = "#ff6b6b";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 14, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#ff6b6b";
+        ctx.font = "700 9px 'Barlow Condensed', system-ui, sans-serif";
+        ctx.fillText("CRASH", point.x + 17, point.y - 10);
+        ctx.restore();
+      }
+    }
     const start = project(outline[0][0], outline[0][1]);
     ctx.fillStyle = "#ffb224";
     ctx.fillRect(start.x - 7, start.y - 7, 14, 14);
@@ -1465,7 +1536,7 @@ function GameCanvas(p: {
         ctx.fillText(`P${driver}`, px, py - 12);
       }
     }
-  }, [p.geometry, p.sim, p.state, p.players, p.view, p.selectedId, p.zoom, p.pan]);
+  }, [p.geometry, p.sim, p.state, p.players, p.view, p.selectedId, p.zoom, p.pan, p.incident]);
   const onClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (dragMoved.current) {
       dragMoved.current = false;

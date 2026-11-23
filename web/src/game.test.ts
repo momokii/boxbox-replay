@@ -115,6 +115,17 @@ describe("driver lap history", () => {
     expect(laps.every((lap) => lap.position > 0)).toBe(true);
   });
 
+  it("does not reveal future laps at an early clock", () => {
+    const drivers = buildGameDrivers(standings);
+    const sim = simulateRace(drivers, simulateQualifying(drivers, 8), 5, 8);
+    const finisher = sim.drivers.find((driver) => driver.retiredLap == null);
+    expect(finisher).toBeTruthy();
+    const early = driverLapHistory(sim, finisher!.id, 1);
+    expect(early).toHaveLength(0);
+    const firstLap = driverLapHistory(sim, finisher!.id, sim.baseLap);
+    expect(firstLap.length).toBeLessThanOrEqual(1);
+  });
+
   it("marks a retirement lap as DNF and does not invent a lap time", () => {
     const drivers = buildGameDrivers(standings);
     for (let seed = 1; seed <= 500; seed += 1) {
