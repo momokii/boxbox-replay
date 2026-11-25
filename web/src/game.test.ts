@@ -71,6 +71,8 @@ describe("driver media matching", () => {
     };
     expect(matchDriverMedia(driver, [wrongNumber])).toBeNull();
     expect(matchDriverMedia(driver, [wrongNumber, right])).toEqual(right);
+    const championNumber = { ...right, driver_number: 1 };
+    expect(matchDriverMedia(driver, [championNumber])).toEqual(championNumber);
   });
 });
 

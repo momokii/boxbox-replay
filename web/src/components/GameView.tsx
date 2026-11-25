@@ -1221,6 +1221,7 @@ function GameRace(p: {
         seed={p.seed}
         player={detailId ? p.players.get(detailId) ?? null : null}
         elapsed={elapsed}
+        mediaFor={p.mediaFor}
         onClose={closeDetails}
       />
       <RaceFeedModal
@@ -1250,6 +1251,7 @@ function DriverDesk(p: {
   const selectedMeta = p.drivers.find((driver) => driver.id === selected?.driverId) ?? null;
   const selectedMedia = selectedMeta ? p.mediaFor(selectedMeta) : null;
   const compareMeta = p.drivers.find((driver) => driver.id === compare?.driverId) ?? null;
+  const compareMedia = compareMeta ? p.mediaFor(compareMeta) : null;
   const selectedSim = p.sim.drivers.find((driver) => driver.id === selected?.driverId) ?? null;
   const compareSim = p.sim.drivers.find((driver) => driver.id === compare?.driverId) ?? null;
   if (!selected || !selectedSim) return null;
@@ -1302,7 +1304,15 @@ function DriverDesk(p: {
                 <span>pace {comparePace != null ? (pace - comparePace >= 0 ? "+" : "") + (pace - comparePace).toFixed(2) : "—"}s</span>
               </div>
               <div className="game-desk-driver compact">
-                <strong style={{ color: compareMeta.color }}>{compareMeta.code} <span>{compareMeta.name}</span></strong>{compare.player ? <span className="game-player">P{compare.player}</span> : null}
+                <div className="game-desk-compact-head">
+                  <span className="game-desk-avatar mini" style={{ borderColor: compareMeta.color }}>
+                    {compareMedia?.headshot_url ? (
+                      <img key={compareMedia.headshot_url} src={compareMedia.headshot_url} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.hidden = true; }} />
+                    ) : null}
+                    <i>{compareMeta.number ?? compareMeta.code}</i>
+                  </span>
+                  <strong style={{ color: compareMeta.color }}>{compareMeta.code} <span>{compareMeta.name}</span></strong>{compare.player ? <span className="game-player">P{compare.player}</span> : null}
+                </div>
                 <div><b>P{compare.position}</b><span>{compare.retired ? "DNF" : `Lap ${compare.lap}/${p.sim.laps}`}</span><span>{compare.position === 1 ? "leader" : `+${compare.gap.toFixed(1)}s`}</span></div>
                 <div><b>Pace</b><span>{comparePace != null ? fmtLap(comparePace) : "—"}</span><span>{compareMeta.team}</span></div>
               </div>
@@ -1321,9 +1331,11 @@ function DriverLapModal(p: {
   seed: number;
   player: number | null;
   elapsed: number;
+  mediaFor: (driver: GameDriver) => Driver | null;
   onClose: () => void;
 }) {
   const driver = p.drivers.find((item) => item.id === p.driverId) ?? null;
+  const media = driver ? p.mediaFor(driver) : null;
   const laps = driver ? driverLapHistory(p.sim, driver.id, p.elapsed) : [];
   const simDriver = driver ? p.sim.drivers.find((item) => item.id === driver.id) : null;
   const times = laps.flatMap((lap) => (lap.time == null ? [] : [lap.time]));
@@ -1343,6 +1355,13 @@ function DriverLapModal(p: {
     >
       {driver && (
         <div className="game-lap-modal">
+          <div className="game-lap-identity">
+            <span className="game-desk-avatar" style={{ borderColor: driver.color }}>
+              {media?.headshot_url ? <img key={media.headshot_url} src={media.headshot_url} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.hidden = true; }} /> : null}
+              <i>{driver.number ?? driver.code}</i>
+            </span>
+            <div><strong>{driver.name}</strong><span>{driver.team}</span></div>
+          </div>
           <div className="game-lap-summary">
             <div><span>Best lap</span><b>{best != null ? fmtLap(best) : "—"}</b></div>
             <div><span>Average lap</span><b>{average != null ? fmtLap(average) : "—"}</b></div>

@@ -4134,3 +4134,29 @@ tr.driver-marked td {
   color: var(--amber);
   margin: 6px 0 2px;
 }
+
+/* App-wide themed scrollbars: the Grid, tables and long panels should not fall
+   back to the browser's bright native track/arrows on the night surface. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--dim) 55%, transparent) var(--panel);
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--panel);
+}
+*::-webkit-scrollbar-thumb {
+  min-height: 28px;
+  border: 2px solid var(--panel);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dim) 58%, transparent);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--amber);
+}
+*::-webkit-scrollbar-corner {
+  background: var(--panel);
+}

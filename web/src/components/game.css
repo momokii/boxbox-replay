@@ -1241,3 +1241,25 @@
   .game-feed-history li { grid-template-columns: 34px minmax(0, 1fr); }
   .game-feed-history time { grid-column: 2; }
 }
+
+.game-desk-compact-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.game-desk-avatar.mini {
+  flex-basis: 26px;
+  width: 26px;
+  height: 26px;
+  font-size: 0.5rem;
+}
+.game-lap-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+.game-lap-identity > div { display: grid; gap: 1px; }
+.game-lap-identity strong { color: var(--ink); font: 700 1.05rem "Barlow Condensed", system-ui, sans-serif; }
+.game-lap-identity span { color: var(--dim); font-size: 0.72rem; }
