@@ -1207,3 +1207,37 @@
   .game-loading-bar span, .game-skeleton i { animation: none; }
   .game-loading-bar span { width: 100%; opacity: 0.55; }
 }
+
+.game-live-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.game-live-head-actions .game-pill { padding: 4px 7px; font-size: 0.62rem; }
+.game-feed-history {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.game-feed-history li {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 9px 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+.game-feed-history li.event { border-left: 2px solid var(--amber); padding-left: 9px; }
+.game-feed-history li.finish { color: var(--amber); }
+.game-feed-history-lap { color: var(--dim); font: 600 0.66rem "JetBrains Mono", monospace; }
+.game-feed-history time { color: var(--dim); font: 500 0.68rem "JetBrains Mono", monospace; }
+@media (max-width: 640px) {
+  .game-feed-history li { grid-template-columns: 34px minmax(0, 1fr); }
+  .game-feed-history time { grid-column: 2; }
+}

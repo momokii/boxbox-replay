@@ -10,6 +10,7 @@ import {
   gameClockScale,
   incidentPlaybackFactor,
   driverLapHistory,
+  matchDriverMedia,
   lapFraction,
   buildGameDrivers,
   buildRaceFeed,
@@ -226,14 +227,7 @@ export default function GameView({ onClose }: Props) {
     };
   }, [raceSession?.session_key]);
 
-  const mediaFor = (driver: GameDriver): Driver | null => {
-    const number = driver.number == null ? null : Number(driver.number);
-    return (
-      driverMedia.find((row) => number != null && row.driver_number === number) ??
-      driverMedia.find((row) => row.name_acronym === driver.code) ??
-      null
-    );
-  };
+  const mediaFor = (driver: GameDriver): Driver | null => matchDriverMedia(driver, driverMedia);
 
   const showHover = useCallback(
     (driverId: string, event: React.MouseEvent, position: number | null = null, player: number | null = null) => {
@@ -679,8 +673,8 @@ function DriverHoverCard(p: {
   const [imageFailed, setImageFailed] = useState(false);
   if (!p.driver) return null;
   const headshot = p.media?.headshot_url?.trim();
-  const name = p.media?.full_name?.trim() || p.driver.name;
-  const team = p.media?.team_name?.trim() || p.driver.team;
+  const name = p.driver.name;
+  const team = p.driver.team;
   const left = Math.max(8, Math.min(p.x + 14, window.innerWidth - 292));
   const top = Math.max(8, Math.min(p.y + 14, window.innerHeight - 190));
   return (
@@ -689,6 +683,7 @@ function DriverHoverCard(p: {
       <div className="game-identity-photo" style={{ borderColor: p.driver.color }}>
         {headshot && !imageFailed ? (
           <img
+            key={headshot}
             src={headshot}
             alt=""
             referrerPolicy="no-referrer"
@@ -701,7 +696,7 @@ function DriverHoverCard(p: {
       </div>
       <div className="game-identity-copy">
         <div className="game-identity-meta">
-          <span>{p.media?.name_acronym ?? p.driver.code}</span>
+          <span>{p.driver.code}</span>
           {p.position != null && <span>P{p.position}</span>}
           {p.player != null ? <span className="game-player">PLAYER P{p.player}</span> : <span>AI</span>}
         </div>
@@ -882,6 +877,7 @@ function RaceFeed(p: {
   items: RaceFeedItem[];
   event: { kind: string; label: string; lap: number } | null;
   started: boolean;
+  onShowAll: () => void;
 }) {
   return (
     <section className="game-live-feed" aria-label="Live model feed">
@@ -890,7 +886,10 @@ function RaceFeed(p: {
           <p className="game-kicker">Live model feed</p>
           <h3>{p.event ? p.event.kind : "Race control"}</h3>
         </div>
-        <span className="game-live-badge">SIMULATED</span>
+        <div className="game-live-head-actions">
+          <span className="game-live-badge">SIMULATED</span>
+          <button type="button" className="game-pill" onClick={p.onShowAll}>All events</button>
+        </div>
       </header>
       <div className={`game-live-current ${p.event ? p.event.kind.toLowerCase() : ""}`} role="status" aria-live="polite">
         {p.event ? (
@@ -920,6 +919,33 @@ function RaceFeed(p: {
   );
 }
 
+function RaceFeedModal(p: {
+  open: boolean;
+  items: RaceFeedItem[];
+  title: string;
+  subtitle: string;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open={p.open} title={p.title} subtitle={p.subtitle} onClose={p.onClose} size="wide">
+      {p.items.length ? (
+        <ol className="game-feed-history">
+          {[...p.items].reverse().map((item) => (
+            <li key={item.id} className={item.kind}>
+              <span className="game-feed-history-lap">L{item.lap}</span>
+              <span>{item.text}</span>
+              <time>{fmtLap(item.t)}</time>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="dim">No race events have happened yet.</p>
+      )}
+      <p className="dim small game-live-note">Model-derived race feed · not real race control.</p>
+    </Modal>
+  );
+}
+
 function GameRace(p: {
   sim: RaceSim;
   seed: number;
@@ -942,6 +968,7 @@ function GameRace(p: {
   const [started, setStarted] = useState(false);
   const [lightStep, setLightStep] = useState(0);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [feedOpen, setFeedOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const closeDetails = useCallback(() => setDetailId(null), []);
@@ -1171,6 +1198,7 @@ function GameRace(p: {
             items={visibleFeed}
             event={latestEvent ? { kind: latestEvent.kind, label: latestEvent.label, lap: latestEvent.lap } : null}
             started={started}
+            onShowAll={() => setFeedOpen(true)}
           />
           <DriverDesk
             state={state}
@@ -1194,6 +1222,13 @@ function GameRace(p: {
         player={detailId ? p.players.get(detailId) ?? null : null}
         elapsed={elapsed}
         onClose={closeDetails}
+      />
+      <RaceFeedModal
+        open={feedOpen}
+        items={feed.filter((item) => item.t <= elapsed)}
+        title="Race events so far"
+        subtitle={`${p.meeting?.meeting_name ?? "Local race"} · seed ${p.seed}`}
+        onClose={() => setFeedOpen(false)}
       />
     </section>
   );
@@ -1245,7 +1280,7 @@ function DriverDesk(p: {
           <div className="game-desk-identity">
             <span className="game-desk-avatar" style={{ borderColor: selectedMeta?.color }}>
               {selectedMedia?.headshot_url ? (
-                <img src={selectedMedia.headshot_url} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.hidden = true; }} />
+                <img key={selectedMedia.headshot_url} src={selectedMedia.headshot_url} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.hidden = true; }} />
               ) : null}
               <i>{selectedMeta?.number ?? selectedMeta?.code}</i>
             </span>
@@ -1644,6 +1679,7 @@ function GameCanvas(p: {
             <span className="game-hover-avatar" style={{ borderColor: hoverDriver?.color }}>
               {hoverMedia?.headshot_url ? (
                 <img
+                  key={hoverMedia.headshot_url}
                   src={hoverMedia.headshot_url}
                   alt=""
                   referrerPolicy="no-referrer"
@@ -1654,8 +1690,8 @@ function GameCanvas(p: {
             </span>
             <div>
               <b style={{ color: hoverDriver?.color }}>{hoverDriver?.code ?? hoverRow.driverId}</b>
-              <strong>{hoverMedia?.full_name ?? hoverDriver?.name ?? "Driver"}</strong>
-              <small>{hoverMedia?.team_name ?? hoverDriver?.team ?? "—"}</small>
+              <strong>{hoverDriver?.name ?? "Driver"}</strong>
+              <small>{hoverDriver?.team ?? "—"}</small>
             </div>
           </div>
           {hoverRow.player ? <span className="game-player">P{hoverRow.player}</span> : <span className="dim small">AI</span>}
@@ -1691,6 +1727,8 @@ function GameResult(p: {
   const winner = p.drivers.find((d) => d.id === p.sim.preview[0]?.driverId);
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [eventsOpen, setEventsOpen] = useState(false);
+  const feed = buildRaceFeed(p.sim, p.drivers);
   const download = async () => {
     setSharing(true);
     setShareError(null);
@@ -1717,6 +1755,7 @@ function GameResult(p: {
           <button type="button" className="game-pill" onClick={download} disabled={sharing}>
             {sharing ? "Preparing image…" : "Download result image"}
           </button>
+          <button type="button" className="game-pill" onClick={() => setEventsOpen(true)}>View all events</button>
           <button type="button" className="game-pill" onClick={p.onNew}>New setup</button>
         </div>
       </header>
@@ -1744,6 +1783,13 @@ function GameResult(p: {
         Local time-based model: form + seeded variation, plus SC / VSC / crash events. No tyre or pit-stop simulation.
         {p.sim.events.length > 0 ? ` Incidents: ${p.sim.events.map((e) => `${e.kind} L${e.lap}`).join(" · ")}.` : ""}
       </p>
+      <RaceFeedModal
+        open={eventsOpen}
+        items={feed}
+        title="Race events · full distance"
+        subtitle={`${p.meeting?.meeting_name ?? "Local race"} · ${p.sim.laps} laps · seed ${p.seed}`}
+        onClose={() => setEventsOpen(false)}
+      />
     </section>
   );
 }

@@ -7,6 +7,7 @@ import {
   driverLapHistory,
   gameClockScale,
   incidentPlaybackFactor,
+  matchDriverMedia,
   GAME_SECONDS_PER_LAP,
   lapFraction,
   mulberry32,
@@ -49,6 +50,27 @@ describe("buildGameDrivers", () => {
   it("is deterministic and returns an empty field for an empty table", () => {
     expect(buildGameDrivers(standings)).toEqual(buildGameDrivers(standings));
     expect(buildGameDrivers({ ...standings, drivers: [], constructors: [] })).toEqual([]);
+  });
+});
+
+describe("driver media matching", () => {
+  it("requires the timing code to agree with the number", () => {
+    const driver = { ...buildGameDrivers(standings)[0], number: "3", code: "AAA" };
+    const wrongNumber = {
+      driver_number: 3,
+      name_acronym: "BBB",
+      team_name: "Other",
+      team_colour: "ffffff",
+    };
+    const right = {
+      driver_number: 3,
+      name_acronym: "AAA",
+      team_name: "Team One",
+      team_colour: "ffffff",
+      headshot_url: "https://example.test/aaa.png",
+    };
+    expect(matchDriverMedia(driver, [wrongNumber])).toBeNull();
+    expect(matchDriverMedia(driver, [wrongNumber, right])).toEqual(right);
   });
 });
 

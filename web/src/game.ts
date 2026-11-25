@@ -1,4 +1,4 @@
-import type { StandingsConstructor, StandingsDriver, StandingsPayload } from "./types";
+import type { Driver, StandingsConstructor, StandingsDriver, StandingsPayload } from "./types";
 
 export type GameLaps = 3 | 5 | 10;
 
@@ -198,6 +198,22 @@ export function buildGameDrivers(standings: StandingsPayload): GameDriver[] {
       };
     })
     .sort((a, b) => b.overall - a.overall || a.position - b.position);
+}
+
+/** Match an OpenF1 media row to a game driver without stealing another photo. */
+export function matchDriverMedia(driver: GameDriver, media: Driver[]): Driver | null {
+  const number = driver.number == null ? null : Number(driver.number);
+  const code = driver.code.trim().toUpperCase();
+  const exact = media.find(
+    (row) =>
+      (number == null || row.driver_number === number) &&
+      (row.name_acronym ?? "").trim().toUpperCase() === code,
+  );
+  if (exact) return exact;
+  if (number == null) {
+    return media.find((row) => (row.name_acronym ?? "").trim().toUpperCase() === code) ?? null;
+  }
+  return null;
 }
 
 /** Small deterministic PRNG; no Math.random anywhere in the game engine. */
