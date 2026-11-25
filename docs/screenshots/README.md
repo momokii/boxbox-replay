@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.7.2 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
+Refreshed against the **v4.7.3 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
@@ -91,3 +91,5 @@ They are referenced from the root README and this page.
 | `82-grid-loading.png` | v4.7.2 Grid loading: top bar, spinner and skeleton rows |
 | `83-grid-event-active.png` | v4.7.2 active VSC: banner, feed and orange track overlay |
 | `84-grid-event-cleared.png` | v4.7.2 incident cleared: no banner/overlay, history retained |
+| `85-grid-all-events.png` | v4.7.3 live **All events** modal with every event reached so far |
+| `86-grid-result-events.png` | v4.7.3 result **View all events** full-distance history |

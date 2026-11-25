@@ -731,3 +731,11 @@ after 12/8/6 model seconds; the current feed returns to a green state while the
 report history remains. Added a sticky loading bar, spinner and skeleton rows;
 delayed-standings E2E showed the loading state and then cleared to 25 drivers.
 94 pytest + 108 vitest; screenshots 82–84.
+
+
+v4.7.3 — identity integrity and full event history. Hover media is now matched
+only when OpenF1 number and timing code agree; text always comes from the game
+driver and the portrait is keyed by URL, preventing the VER/RIC mismatch. Added
+All events to the live feed and View all events to the result, both using the
+full model feed. 94 pytest + 109 vitest; VER/SAI/NOR portrait check; screenshots
+85/86.

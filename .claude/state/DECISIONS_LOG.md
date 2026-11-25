@@ -601,3 +601,21 @@
 **Alternatives Rejected:** A percentage fake progress bar; a blocking full-screen modal; text-only loading.
 **Security Implications:** None.
 **Impact:** `GameView`, `game.css`, screenshot 82.
+
+---
+**Decision:** D53 — Driver portraits require number + timing code.
+**Date:** 2026-11-23
+**Context:** A number-only OpenF1 match produced a Ricciardo portrait/name for a Verstappen hover; a reused image could also lag behind the new identity.
+**Rationale:** `matchDriverMedia` requires number and name_acronym agreement (code-only when number is missing) and never borrows a portrait. Text uses canonical `GameDriver` values; images are keyed by URL.
+**Alternatives Rejected:** Number-only matching; trusting media full_name; hiding all photos.
+**Security Implications:** None.
+**Impact:** `game.ts`, `GameView`, test, screenshot 76.
+
+---
+**Decision:** D54 — Full event history is reachable live and after the flag.
+**Date:** 2026-11-23
+**Context:** The live feed intentionally showed four latest reports, but the user needs the whole race history.
+**Rationale:** Add a shared `RaceFeedModal` behind **All events** (events reached so far) and **View all events** on the result (full distance). History remains explicitly model-derived.
+**Alternatives Rejected:** Expanding the side panel indefinitely; showing only four with no escape hatch; exposing future events live.
+**Security Implications:** None.
+**Impact:** `GameView`, `game.css`, screenshots 85/86.

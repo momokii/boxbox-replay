@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.7.2` — incident expiry and loading feedback.** SC/VSC/crash visuals now expire after their active window while the model history remains; Grid shows an animated loading bar, spinner and skeleton while data is pending. See [`docs/V4_7_2_CLOSEOUT.md`](docs/V4_7_2_CLOSEOUT.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md) and [`docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md).
+> **Latest release: `v4.7.3` — identity integrity and full event history.** Hover/portrait matching now requires number + timing code so a driver can never inherit another driver's photo; **All events** is available live and **View all events** after the flag. See [`docs/V4_7_3_CLOSEOUT.md`](docs/V4_7_3_CLOSEOUT.md), [`docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md`](docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md) and [`docs/V4_7_3_IDENTITY_HISTORY_PLAN.md`](docs/V4_7_3_IDENTITY_HISTORY_PLAN.md).
+
+## What's new in v4.7.3
+
+- **Identity cannot be borrowed.** Media matching requires the driver number and timing code; canonical game-driver names/teams are used and the image is keyed by URL. A collision falls back to the number, not another driver’s portrait.
+- **All events live.** The feed’s **All events** button opens every event reached so far, not just the latest four.
+- **All events after the flag.** The result screen has **View all events** with the full-distance history.
+- Existing incident expiry, loading skeletons and standings retry remain.
 
 ## What's new in v4.7.2
 
@@ -180,6 +187,10 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 | Incident cleared, history retained | |
 |---|---|
 | ![Grid incident cleared](docs/screenshots/84-grid-event-cleared.png) | |
+
+| All race events | Result event history |
+|---|---|
+| ![Grid all events](docs/screenshots/85-grid-all-events.png) | ![Grid result events](docs/screenshots/86-grid-result-events.png) |
 
 | Order metrics below circuit | Mobile order strip |
 |---|---|
@@ -422,7 +433,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 94 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 108 frontend tests (vitest)
+cd web && npm test           # 109 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
@@ -517,6 +528,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.7.3:** [`docs/V4_7_3_CLOSEOUT.md`](docs/V4_7_3_CLOSEOUT.md), [`docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md`](docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md), [`docs/V4_7_3_IDENTITY_HISTORY_PLAN.md`](docs/V4_7_3_IDENTITY_HISTORY_PLAN.md)
 - **v4.7.2:** [`docs/V4_7_2_CLOSEOUT.md`](docs/V4_7_2_CLOSEOUT.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md)
 - **v4.7.1:** [`docs/V4_7_1_CLOSEOUT.md`](docs/V4_7_1_CLOSEOUT.md), [`docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md`](docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md), [`docs/V4_7_1_GRID_REFINEMENT_PLAN.md`](docs/V4_7_1_GRID_REFINEMENT_PLAN.md)
 - **v4.7:** [`docs/V4_7_CLOSEOUT.md`](docs/V4_7_CLOSEOUT.md), [`docs/V4_7_GRID_INTERACTIVE_RESEARCH.md`](docs/V4_7_GRID_INTERACTIVE_RESEARCH.md), [`docs/V4_7_GRID_INTERACTIVE_PLAN.md`](docs/V4_7_GRID_INTERACTIVE_PLAN.md)

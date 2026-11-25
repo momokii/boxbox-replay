@@ -139,10 +139,12 @@ retired cars (result feed, or no fresh laps) are classified last.
   are seeded retirements, not collision physics or real race control. The
   VSC/SC slow-down is a playback effect. Incident visuals have bounded active
   windows (SC 12 s, VSC 8 s, crash 6 s) while the model feed keeps the history.
-  The Grid race view also loads optional OpenF1 headshots (number fallback),
-  shows identity cards on hover, a full-width order timing strip with
-  interval/last/best/mode, and a deterministic live model feed; it is labelled
-  as simulation, not race control. Pending Grid data uses an indeterminate bar,
+  The Grid race view also loads optional OpenF1 headshots, matched by number
+  **and** timing code with a number fallback, shows identity cards on hover, a
+  full-width order timing strip with interval/last/best/mode, and a
+  deterministic live model feed; live **All events** and result **View all
+  events** expose the full model history. It is labelled as simulation, not
+  race control. Pending Grid data uses an indeterminate bar,
   spinner and skeleton rather than text alone. Jolpica requests are bounded (4 s, two attempts) and the Grid UI
   has a 15 s request timeout, a retryable error state and no fabricated
   standings. No tyre/pit/reliability claims.
