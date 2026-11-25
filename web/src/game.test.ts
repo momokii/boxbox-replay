@@ -3,6 +3,7 @@ import {
   buildGameDrivers,
   buildRaceFeed,
   activeRaceEvent,
+  visibleRaceEvent,
   RACE_EVENT_ACTIVE_SECONDS,
   driverLapHistory,
   gameClockScale,
@@ -192,6 +193,8 @@ describe("active incident window", () => {
       if (!event) continue;
       expect(activeRaceEvent(sim.events, event.t)).toEqual(event);
       expect(activeRaceEvent(sim.events, event.t + RACE_EVENT_ACTIVE_SECONDS[event.kind] + 0.1)).toBeNull();
+      expect(visibleRaceEvent(sim.events, event.t, sim.duration)).toEqual(event);
+      expect(visibleRaceEvent(sim.events, sim.duration, sim.duration)).toBeNull();
       return;
     }
     throw new Error("no seeded incident found");

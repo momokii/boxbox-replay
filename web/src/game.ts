@@ -402,6 +402,16 @@ export function activeRaceEvent(events: RaceEvent[], elapsed: number): RaceEvent
     .sort((a, b) => b.t - a.t)[0] ?? null;
 }
 
+/** An incident is visible only while active and before the chequered flag. */
+export function visibleRaceEvent(
+  events: RaceEvent[],
+  elapsed: number,
+  duration: number,
+): RaceEvent | null {
+  if (elapsed >= duration - 0.25) return null;
+  return activeRaceEvent(events, elapsed);
+}
+
 /** Visual playback factor after an incident; never changes model results. */
 export function incidentPlaybackFactor(
   kind: RaceEventKind | null,

@@ -14,7 +14,7 @@ import {
   lapFraction,
   buildGameDrivers,
   buildRaceFeed,
-  activeRaceEvent,
+  visibleRaceEvent,
   type GameDriver,
   type RaceFeedItem,
   type GameLaps,
@@ -983,7 +983,7 @@ function GameRace(p: {
   const finishTimer = useRef<number | null>(null);
   const finishRef = useRef(p.onFinish);
   finishRef.current = p.onFinish;
-  const latestEvent = activeRaceEvent(p.sim.events, elapsed);
+  const latestEvent = visibleRaceEvent(p.sim.events, elapsed, p.sim.duration);
   const eventFactor = latestEvent
     ? incidentPlaybackFactor(latestEvent.kind, elapsed - latestEvent.t)
     : 1;
@@ -1035,7 +1035,7 @@ function GameRace(p: {
     state.rows.find((row) => row.driverId !== effectiveSelectedId) ??
     null;
   const progress = Math.min(p.sim.laps, Math.max(1, Math.ceil(elapsed / Math.max(1, p.sim.duration / p.sim.laps))));
-  const feed = buildRaceFeed(p.sim, p.drivers);
+  const feed = useMemo(() => buildRaceFeed(p.sim, p.drivers), [p.sim, p.drivers]);
   const visibleFeed = feed.filter((item) => item.t <= elapsed).slice(-4).reverse();
   const orderRows = state.rows.map((row, index) => {
     const driver = p.drivers.find((item) => item.id === row.driverId);
@@ -1747,7 +1747,7 @@ function GameResult(p: {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [eventsOpen, setEventsOpen] = useState(false);
-  const feed = buildRaceFeed(p.sim, p.drivers);
+  const feed = useMemo(() => buildRaceFeed(p.sim, p.drivers), [p.sim, p.drivers]);
   const download = async () => {
     setSharing(true);
     setShareError(null);
