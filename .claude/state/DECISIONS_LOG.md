@@ -655,3 +655,12 @@
 **Alternatives Rejected:** Styling one Game container (leaves other old scrollbars); hiding scrollbars (loses affordance).
 **Security Implications:** None.
 **Impact:** `index.css`, screenshot 87.
+
+---
+**Decision:** D57 — Memoize the Grid feed and clear incident visuals at the flag.
+**Date:** 2026-11-23
+**Context:** The final audit found `buildRaceFeed` recomputing on every animation frame and an incident window still visible during the result transition.
+**Rationale:** Use `useMemo` for race/result feeds and `visibleRaceEvent` to return no decoration once the model reaches the finish. The event remains in history for the result modal.
+**Alternatives Rejected:** Recomputing feed every frame (wasted work); removing late incidents from history (loses the record).
+**Security Implications:** None.
+**Impact:** `GameView`, `game.ts`, test.

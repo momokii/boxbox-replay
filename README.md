@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.7.4` — themed scrollbars and correct portraits.** Every scroll surface now uses the pit-wall scrollbar theme, and OpenF1 portraits are matched by timing code first so champion-number differences no longer hide a correct driver image. See [`docs/V4_7_4_CLOSEOUT.md`](docs/V4_7_4_CLOSEOUT.md), [`docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md`](docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md) and [`docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md`](docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md).
+> **Latest release: `v4.7.5` — final v4 audit.** The race feed is memoized, an incident cannot decorate the chequered-flag transition, and the v4 replay/Grid/data surfaces passed a final end-to-end audit. See [`docs/V4_7_5_FINAL_AUDIT.md`](docs/V4_7_5_FINAL_AUDIT.md).
+
+## What's new in v4.7.5
+
+- **Race feed memoized.** The event feed is computed only when the simulation changes instead of on every animation frame.
+- **No incident at the finish.** `visibleRaceEvent` clears the banner/track overlay at the chequered flag; history remains available.
+- **Final v4 audit.** Replay, 3D, Archive, Grid setup/race/result, identity portraits, loading, event expiry, all-events history, scrollbars, mobile and data-failure paths rechecked.
+- **All prior v4.7 fixes retained:** loading feedback, event windows, identity validation, full history, themed scrollbars.
 
 ## What's new in v4.7.4
 
@@ -539,6 +546,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.7.5:** [`docs/V4_7_5_FINAL_AUDIT.md`](docs/V4_7_5_FINAL_AUDIT.md)
 - **v4.7.4:** [`docs/V4_7_4_CLOSEOUT.md`](docs/V4_7_4_CLOSEOUT.md), [`docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md`](docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md), [`docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md`](docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md)
 - **v4.7.3:** [`docs/V4_7_3_CLOSEOUT.md`](docs/V4_7_3_CLOSEOUT.md), [`docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md`](docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md), [`docs/V4_7_3_IDENTITY_HISTORY_PLAN.md`](docs/V4_7_3_IDENTITY_HISTORY_PLAN.md)
 - **v4.7.2:** [`docs/V4_7_2_CLOSEOUT.md`](docs/V4_7_2_CLOSEOUT.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md)

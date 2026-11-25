@@ -133,6 +133,7 @@ Status: **v3 complete** through `v3.9.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a),
 | V4.7.2 | Expire incident visuals + dynamic loading | DONE (`v4.7.2`) | V4.7.1 | Per-kind active windows; clear banner/overlay/ring; top loading bar, spinner, skeleton | Active VSC then cleared; history retained; loading cleared; 108 vitest; screenshots 82–84 | Incident windows are model playback choices |
 | V4.7.3 | Driver media integrity + full event history | DONE (`v4.7.3`) | V4.7.2 | Require number+code for portraits; canonical text; All events live/result | No collision portrait; 109 vitest; screenshots 85/86 | History is model-derived |
 | V4.7.4 | Themed scrollbars + code-first portraits | DONE (`v4.7.4`) | V4.7.3 | Global themed scrollbars; code-first media match; champion-number fallback | 2024 VER/RIC/PER/SAI portraits; themed scroll computed; screenshot 87 | No wrong portrait; missing image → number |
+| V4.7.5 | Final v4 audit + feed performance | DONE (`v4.7.5`) | V4.7.4 | Memoize feeds; clear incident at finish; replay/3D/archive/Grid E2E | 94 pytest + 109 vitest; no page errors; v4 surfaces checked | No remaining spec gaps found |
 
 ## Deferred / excluded (unchanged)
 

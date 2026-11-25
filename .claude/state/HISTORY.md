@@ -746,3 +746,10 @@ thumb/amber scrollbars with no native arrows. Changed media matching to timing
 code first so Verstappen’s 2024 Jolpica #3 vs OpenF1 #1 still resolves to his
 portrait, while a wrong-code number collision remains null. 94 pytest + 109
 vitest; 2024 VER/RIC/PER/SAI portrait URLs verified; screenshot 87.
+
+
+v4.7.5 — final v4 audit. Memoized the Grid race/result feeds, added
+visibleRaceEvent to clear incident visuals at the chequered flag while keeping
+history, and rechecked replay/3D/Archive, Grid setup/race/result, portraits,
+loading, event expiry, all-events, scrollbars and mobile. 94 pytest + 109 vitest;
+no browser errors; production bundle served.
