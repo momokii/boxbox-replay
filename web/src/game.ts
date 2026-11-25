@@ -36,6 +36,12 @@ export type RaceEventKind = "SC" | "VSC" | "CRASH";
 
 export const RACE_EVENT_LOSS: Record<"SC" | "VSC", number> = { SC: 12, VSC: 4.5 };
 
+export const RACE_EVENT_ACTIVE_SECONDS: Record<RaceEventKind, number> = {
+  SC: 12,
+  VSC: 8,
+  CRASH: 6,
+};
+
 export interface RaceEvent {
   id: string;
   t: number;
@@ -368,6 +374,13 @@ export function buildRaceFeed(sim: RaceSim, drivers: GameDriver[]): RaceFeedItem
     });
   }
   return items.sort((a, b) => a.t - b.t || a.id.localeCompare(b.id));
+}
+
+/** Latest incident that is still visibly active at this model clock. */
+export function activeRaceEvent(events: RaceEvent[], elapsed: number): RaceEvent | null {
+  return [...events]
+    .filter((event) => event.t <= elapsed && elapsed - event.t <= RACE_EVENT_ACTIVE_SECONDS[event.kind])
+    .sort((a, b) => b.t - a.t)[0] ?? null;
 }
 
 /** Visual playback factor after an incident; never changes model results. */

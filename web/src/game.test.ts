@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildGameDrivers,
   buildRaceFeed,
+  activeRaceEvent,
+  RACE_EVENT_ACTIVE_SECONDS,
   driverLapHistory,
   gameClockScale,
   incidentPlaybackFactor,
@@ -154,6 +156,21 @@ describe("race feed", () => {
     expect(feed.some((item) => item.kind === "event")).toBe(true);
     expect(feed.every((item) => item.t >= 0 && item.t <= sim.duration)).toBe(true);
     expect(feed.map((item) => item.t)).toEqual([...feed.map((item) => item.t)].sort((a, b) => a - b));
+  });
+});
+
+describe("active incident window", () => {
+  it("expires the visual incident after its active window", () => {
+    const drivers = buildGameDrivers(standings);
+    for (let seed = 1; seed <= 500; seed += 1) {
+      const sim = simulateRace(drivers, simulateQualifying(drivers, seed), 5, seed);
+      const event = sim.events.find((item) => item.kind !== "CRASH") ?? sim.events[0];
+      if (!event) continue;
+      expect(activeRaceEvent(sim.events, event.t)).toEqual(event);
+      expect(activeRaceEvent(sim.events, event.t + RACE_EVENT_ACTIVE_SECONDS[event.kind] + 0.1)).toBeNull();
+      return;
+    }
+    throw new Error("no seeded incident found");
   });
 });
 

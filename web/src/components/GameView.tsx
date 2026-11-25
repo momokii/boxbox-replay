@@ -13,6 +13,7 @@ import {
   lapFraction,
   buildGameDrivers,
   buildRaceFeed,
+  activeRaceEvent,
   type GameDriver,
   type RaceFeedItem,
   type GameLaps,
@@ -358,6 +359,12 @@ export default function GameView({ onClose }: Props) {
           </button>
         </header>
 
+        {(loading || loadingSessions || preparing) && (
+          <div className="game-loading-bar" role="progressbar" aria-label="Loading Grid data">
+            <span />
+          </div>
+        )}
+
         {message && (
           <div className="game-message" role="status">
             <span>{message}</span>
@@ -472,7 +479,14 @@ export default function GameView({ onClose }: Props) {
                   </div>
                   <span className="game-round">{standings?.round != null ? `R${standings.round}` : "Season table"}</span>
                 </header>
-                {loading && <p className="dim small">Loading the table…</p>}
+                {loading && (
+                  <div className="game-loading-state" role="status">
+                    <span className="spinner" aria-hidden="true" />
+                    <span>Loading the driver table…</span>
+                    <div className="loading-bar"><span /></div>
+                    <div className="game-skeleton" aria-hidden="true"><i /><i /><i /><i /></div>
+                  </div>
+                )}
                 {!loading && noDrivers && <p className="dim small">No drivers loaded. Retry the season table or pick another season.</p>}
                 <div className="game-scroll">
                   <table className="laps game-table">
@@ -563,7 +577,7 @@ export default function GameView({ onClose }: Props) {
                   />
                 </label>
                 <button type="button" className="primary game-start" disabled={startDisabled} onClick={begin}>
-                  {preparing ? "Building circuit…" : quali ? "Run qualifying →" : "Set the seeded grid →"}
+                  {preparing ? <><span className="spinner" aria-hidden="true" />Building circuit…</> : quali ? "Run qualifying →" : "Set the seeded grid →"}
                 </button>
                 {preparing && (
                   <p className="dim small" role="status">
@@ -888,7 +902,7 @@ function RaceFeed(p: {
         ) : (
           <>
             <b>{p.started ? "GREEN" : "GRID"}</b>
-            <span>{p.started ? "No incidents yet. The model is running clean." : "Formation lap. The clock starts after the lights."}</span>
+            <span>{p.started ? "No active incident. Recent reports remain below." : "Formation lap. The clock starts after the lights."}</span>
           </>
         )}
       </div>
@@ -942,9 +956,7 @@ function GameRace(p: {
   const finishTimer = useRef<number | null>(null);
   const finishRef = useRef(p.onFinish);
   finishRef.current = p.onFinish;
-  const latestEvent = [...p.sim.events]
-    .filter((event) => event.t <= elapsed)
-    .sort((a, b) => b.t - a.t)[0] ?? null;
+  const latestEvent = activeRaceEvent(p.sim.events, elapsed);
   const eventFactor = latestEvent
     ? incidentPlaybackFactor(latestEvent.kind, elapsed - latestEvent.t)
     : 1;
