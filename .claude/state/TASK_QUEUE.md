@@ -132,6 +132,7 @@ Status: **v3 complete** through `v3.9.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a),
 | V4.7.1 | Current-clock modal, order placement, tooltips, incident spotlight | DONE (`v4.7.1`) | V4.7-UX | Filter lap history by clock; order directly below circuit; Info on all metric headers; draw SC/VSC/crash on canvas | Lap 1 modal 0 rows; Mode tooltip; no blank column; 107 vitest; screenshots 80/81 | Modal never reveals future state |
 | V4.7.2 | Expire incident visuals + dynamic loading | DONE (`v4.7.2`) | V4.7.1 | Per-kind active windows; clear banner/overlay/ring; top loading bar, spinner, skeleton | Active VSC then cleared; history retained; loading cleared; 108 vitest; screenshots 82–84 | Incident windows are model playback choices |
 | V4.7.3 | Driver media integrity + full event history | DONE (`v4.7.3`) | V4.7.2 | Require number+code for portraits; canonical text; All events live/result | No collision portrait; 109 vitest; screenshots 85/86 | History is model-derived |
+| V4.7.4 | Themed scrollbars + code-first portraits | DONE (`v4.7.4`) | V4.7.3 | Global themed scrollbars; code-first media match; champion-number fallback | 2024 VER/RIC/PER/SAI portraits; themed scroll computed; screenshot 87 | No wrong portrait; missing image → number |
 
 ## Deferred / excluded (unchanged)
 

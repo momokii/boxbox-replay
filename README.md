@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.7.3` — identity integrity and full event history.** Hover/portrait matching now requires number + timing code so a driver can never inherit another driver's photo; **All events** is available live and **View all events** after the flag. See [`docs/V4_7_3_CLOSEOUT.md`](docs/V4_7_3_CLOSEOUT.md), [`docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md`](docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md) and [`docs/V4_7_3_IDENTITY_HISTORY_PLAN.md`](docs/V4_7_3_IDENTITY_HISTORY_PLAN.md).
+> **Latest release: `v4.7.4` — themed scrollbars and correct portraits.** Every scroll surface now uses the pit-wall scrollbar theme, and OpenF1 portraits are matched by timing code first so champion-number differences no longer hide a correct driver image. See [`docs/V4_7_4_CLOSEOUT.md`](docs/V4_7_4_CLOSEOUT.md), [`docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md`](docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md) and [`docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md`](docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md).
+
+## What's new in v4.7.4
+
+- **Scrollbars match the app.** Thin panel tracks, rounded muted thumbs and amber hover across the Grid order, modals and long surfaces; no native arrow buttons.
+- **Portraits are back for champion-number drivers.** Media matching is timing-code-first, so VER 2024 gets Max’s portrait even though Jolpica says #3 and OpenF1 says #1.
+- **No borrowed portraits.** A number collision without a code match still returns no media; the number fallback is safe.
+- **All existing controls remain:** loading feedback, incident expiry, all-events history and standings retry.
 
 ## What's new in v4.7.3
 
@@ -191,6 +198,10 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 | All race events | Result event history |
 |---|---|
 | ![Grid all events](docs/screenshots/85-grid-all-events.png) | ![Grid result events](docs/screenshots/86-grid-result-events.png) |
+
+| Themed scrollbars | |
+|---|---|
+| ![Grid themed scrollbars](docs/screenshots/87-grid-themed-scrollbars.png) | |
 
 | Order metrics below circuit | Mobile order strip |
 |---|---|
@@ -528,6 +539,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.7.4:** [`docs/V4_7_4_CLOSEOUT.md`](docs/V4_7_4_CLOSEOUT.md), [`docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md`](docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md), [`docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md`](docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md)
 - **v4.7.3:** [`docs/V4_7_3_CLOSEOUT.md`](docs/V4_7_3_CLOSEOUT.md), [`docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md`](docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md), [`docs/V4_7_3_IDENTITY_HISTORY_PLAN.md`](docs/V4_7_3_IDENTITY_HISTORY_PLAN.md)
 - **v4.7.2:** [`docs/V4_7_2_CLOSEOUT.md`](docs/V4_7_2_CLOSEOUT.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md)
 - **v4.7.1:** [`docs/V4_7_1_CLOSEOUT.md`](docs/V4_7_1_CLOSEOUT.md), [`docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md`](docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md), [`docs/V4_7_1_GRID_REFINEMENT_PLAN.md`](docs/V4_7_1_GRID_REFINEMENT_PLAN.md)

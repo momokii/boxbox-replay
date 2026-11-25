@@ -739,3 +739,10 @@ driver and the portrait is keyed by URL, preventing the VER/RIC mismatch. Added
 All events to the live feed and View all events to the result, both using the
 full model feed. 94 pytest + 109 vitest; VER/SAI/NOR portrait check; screenshots
 85/86.
+
+
+v4.7.4 — themed scrollbars and correct portraits. Added app-wide thin panel/
+thumb/amber scrollbars with no native arrows. Changed media matching to timing
+code first so Verstappen’s 2024 Jolpica #3 vs OpenF1 #1 still resolves to his
+portrait, while a wrong-code number collision remains null. 94 pytest + 109
+vitest; 2024 VER/RIC/PER/SAI portrait URLs verified; screenshot 87.

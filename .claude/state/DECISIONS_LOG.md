@@ -619,3 +619,39 @@
 **Alternatives Rejected:** Expanding the side panel indefinitely; showing only four with no escape hatch; exposing future events live.
 **Security Implications:** None.
 **Impact:** `GameView`, `game.css`, screenshots 85/86.
+
+---
+**Decision:** D55 — Driver media is matched by timing code first.
+**Date:** 2026-11-23
+**Context:** Requiring number+code hid Max’s 2024 portrait because Jolpica stores #3 and OpenF1 uses champion #1; the earlier number-first matcher could attach Ricciardo’s #3 photo.
+**Rationale:** The timing code is stable within a session. Match by code first; use number+full-name only if code is absent. Canonical game text and URL-keyed images remain.
+**Alternatives Rejected:** Number-first matching (wrong portraits); dropping images (user-visible regression); showing a generated portrait.
+**Security Implications:** None.
+**Impact:** `game.ts`, test, 2024 portrait verification.
+
+---
+**Decision:** D56 — App-wide themed scrollbars.
+**Date:** 2026-11-23
+**Context:** Native scrollbar tracks/arrows looked unstyled against the pit-wall UI.
+**Rationale:** Global thin scrollbar tokens for Firefox and Chromium: panel track, muted thumb, amber hover, no arrows. Applies to Grid order, modals and all long surfaces.
+**Alternatives Rejected:** Styling one Game container (leaves other old scrollbars); hiding scrollbars (loses affordance).
+**Security Implications:** None.
+**Impact:** `index.css`, screenshot 87.
+
+---
+**Decision:** D55 — Driver media is matched by timing code first.
+**Date:** 2026-11-23
+**Context:** Requiring number+code hid Max’s 2024 portrait because Jolpica stores #3 and OpenF1 uses champion #1; the earlier number-first matcher could attach Ricciardo’s #3 photo.
+**Rationale:** The timing code is stable within a session. Match by code first; use number+full-name only if code is absent. Canonical game text and URL-keyed images remain.
+**Alternatives Rejected:** Number-first matching (wrong portraits); dropping images (user-visible regression); showing a generated portrait.
+**Security Implications:** None.
+**Impact:** `game.ts`, test, 2024 portrait verification.
+
+---
+**Decision:** D56 — App-wide themed scrollbars.
+**Date:** 2026-11-23
+**Context:** Native scrollbar tracks/arrows looked unstyled against the pit-wall UI.
+**Rationale:** Global thin scrollbar tokens for Firefox and Chromium: panel track, muted thumb, amber hover, no arrows. Applies to Grid order, modals and all long surfaces.
+**Alternatives Rejected:** Styling one Game container (leaves other old scrollbars); hiding scrollbars (loses affordance).
+**Security Implications:** None.
+**Impact:** `index.css`, screenshot 87.
