@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.7.1 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
+Refreshed against the **v4.7.2 build** on 2026-11-22. Baku 2024 game captures. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
@@ -88,3 +88,6 @@ They are referenced from the root README and this page.
 | `79-grid-mobile-order.png` | v4.7 mobile order strip below the circuit |
 | `80-grid-lap-modal-current.png` | v4.7.1 Lap 1 modal: no future laps, 0/5 completed, Running |
 | `81-grid-column-tooltip.png` | v4.7.1 Mode header explanation and 1 s rule |
+| `82-grid-loading.png` | v4.7.2 Grid loading: top bar, spinner and skeleton rows |
+| `83-grid-event-active.png` | v4.7.2 active VSC: banner, feed and orange track overlay |
+| `84-grid-event-cleared.png` | v4.7.2 incident cleared: no banner/overlay, history retained |

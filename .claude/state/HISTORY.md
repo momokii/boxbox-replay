@@ -724,3 +724,10 @@ circuit column so the blank left area is gone, added accessible Info tooltips
 to every setup/qualifying/grid/order header, and drew SC/VSC/crash incidents on
 the circuit. 94 pytest + 107 vitest; screenshots 80/81; 2026 Australia browser
 pass.
+
+
+v4.7.2 — incident expiry and loading feedback. SC/VSC/crash visuals now expire
+after 12/8/6 model seconds; the current feed returns to a green state while the
+report history remains. Added a sticky loading bar, spinner and skeleton rows;
+delayed-standings E2E showed the loading state and then cleared to 25 drivers.
+94 pytest + 108 vitest; screenshots 82–84.

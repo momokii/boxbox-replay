@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.7.1` — Grid refinement.** The order now sits directly under the circuit (no blank column), the lap-by-lap modal only shows laps completed by the current clock, every race column has an accessible explanation, and SC/VSC/crash events are visible on the circuit. See [`docs/V4_7_1_CLOSEOUT.md`](docs/V4_7_1_CLOSEOUT.md), [`docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md`](docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md) and [`docs/V4_7_1_GRID_REFINEMENT_PLAN.md`](docs/V4_7_1_GRID_REFINEMENT_PLAN.md).
+> **Latest release: `v4.7.2` — incident expiry and loading feedback.** SC/VSC/crash visuals now expire after their active window while the model history remains; Grid shows an animated loading bar, spinner and skeleton while data is pending. See [`docs/V4_7_2_CLOSEOUT.md`](docs/V4_7_2_CLOSEOUT.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md) and [`docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md).
+
+## What's new in v4.7.2
+
+- **Incidents no longer stick forever.** SC shows for 12 model seconds, VSC for 8 and a crash ring for 6; the banner and circuit decoration clear, while the live-feed history keeps the report.
+- **No stale race-control state at the finish.** The current feed returns to “No active incident”; a race cannot end with an old SC still painted on the track.
+- **Dynamic loading.** A sticky progress bar, spinner and skeleton rows cover pending standings; **Building circuit…** has its own spinner. Reduced-motion users get a static indicator.
+- **The existing fail-fast error + Retry** for unavailable standings remains in place.
 
 ## What's new in v4.7.1
 
@@ -165,6 +172,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 | Driver identity hover | Live model feed |
 |---|---|
 | ![Grid driver hover](docs/screenshots/76-grid-driver-hover.png) | ![Grid live feed](docs/screenshots/77-grid-live-feed.png) |
+
+| Grid loading state | Incident active |
+|---|---|
+| ![Grid loading](docs/screenshots/82-grid-loading.png) | ![Grid incident](docs/screenshots/83-grid-event-active.png) |
+
+| Incident cleared, history retained | |
+|---|---|
+| ![Grid incident cleared](docs/screenshots/84-grid-event-cleared.png) | |
 
 | Order metrics below circuit | Mobile order strip |
 |---|---|
@@ -407,7 +422,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ```bash
 pytest                       # 94 Python tests, all HTTP mocked
 ruff check .                 # lint
-cd web && npm test           # 107 frontend tests (vitest)
+cd web && npm test           # 108 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
 docker compose build         # image build
 ```
@@ -472,7 +487,8 @@ Known limitations, stated plainly:
   collision physics or reliability. SC/VSC are stated lap-time losses and a
   crash is a seeded retirement, not a reconstruction of real race control.
   The live feed is model-derived, not real race control. VSC/SC playback
-  slowdown is a viewing effect, not field-bunching physics. Two qualifying runs
+  slowdown and incident visibility windows are viewing effects, not
+  field-bunching physics. Two qualifying runs
   are a game choice, not Q1/Q2/Q3. 1× is a 20 s/lap viewing pace, not real
   time. The downloaded card shows the top 10 plus any player outside it; the
   in-app result remains complete. Headshots are an optional OpenF1
@@ -501,6 +517,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.7.2:** [`docs/V4_7_2_CLOSEOUT.md`](docs/V4_7_2_CLOSEOUT.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_RESEARCH.md), [`docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md`](docs/V4_7_2_INCIDENT_LIFECYCLE_PLAN.md)
 - **v4.7.1:** [`docs/V4_7_1_CLOSEOUT.md`](docs/V4_7_1_CLOSEOUT.md), [`docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md`](docs/V4_7_1_GRID_REFINEMENT_RESEARCH.md), [`docs/V4_7_1_GRID_REFINEMENT_PLAN.md`](docs/V4_7_1_GRID_REFINEMENT_PLAN.md)
 - **v4.7:** [`docs/V4_7_CLOSEOUT.md`](docs/V4_7_CLOSEOUT.md), [`docs/V4_7_GRID_INTERACTIVE_RESEARCH.md`](docs/V4_7_GRID_INTERACTIVE_RESEARCH.md), [`docs/V4_7_GRID_INTERACTIVE_PLAN.md`](docs/V4_7_GRID_INTERACTIVE_PLAN.md)
 - **v4.6.1:** [`docs/V4_6_1_CLOSEOUT.md`](docs/V4_6_1_CLOSEOUT.md), [`docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md`](docs/V4_6_1_STANDINGS_RECOVERY_RESEARCH.md), [`docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md`](docs/V4_6_1_STANDINGS_RECOVERY_PLAN.md)

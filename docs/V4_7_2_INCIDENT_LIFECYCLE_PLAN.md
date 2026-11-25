@@ -36,3 +36,9 @@
 - No incident visual persists beyond its active window; history remains.
 - Grid loading has visible motion and an accessible status.
 - Existing data failure/retry behavior and all features stay green.
+
+## Shipped
+
+`v4.7.2` shipped on 2026-11-23. Evidence: 94 pytest + 108 vitest, delayed
+standings loading skeleton, active VSC spotlight, cleared event after its
+window with history retained, and no page errors; screenshots 82/83/84 added.

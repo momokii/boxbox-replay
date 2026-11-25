@@ -583,3 +583,21 @@
 **Alternatives Rejected:** Filling the gap with decorative content; native title-only tooltips; fake 3D incident geometry.
 **Security Implications:** None.
 **Impact:** `GameView`, `game.css`, docs/state, screenshots 77/78/81.
+
+---
+**Decision:** D51 — Incident visuals have explicit active windows.
+**Date:** 2026-11-23
+**Context:** Crash rings and SC/VSC track overlays persisted until the next event, even at the finish.
+**Rationale:** SC 12, VSC 8 and crash 6 model seconds; `activeRaceEvent` drives banner, feed current card, canvas spotlight and playback factor. Historical reports remain in `buildRaceFeed`.
+**Alternatives Rejected:** Clearing on next event (stale at the finish); permanent overlays (misleading); deleting history (loses the report).
+**Security Implications:** None.
+**Impact:** `game.ts`, `GameView`, tests, screenshots 83/84.
+
+---
+**Decision:** D52 — Grid loading uses bar + spinner + skeleton.
+**Date:** 2026-11-23
+**Context:** Long standings/session waits showed text-only loading, easily mistaken for a stuck page.
+**Rationale:** Add a sticky indeterminate bar for any Grid load, spinner/skeleton rows for the driver table, and a spinner in Building circuit. Respect reduced motion with static indicators.
+**Alternatives Rejected:** A percentage fake progress bar; a blocking full-screen modal; text-only loading.
+**Security Implications:** None.
+**Impact:** `GameView`, `game.css`, screenshot 82.

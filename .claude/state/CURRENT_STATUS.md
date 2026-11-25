@@ -1,12 +1,12 @@
 ## Project Phase
-v4 shipped as **`v4.7.1`**. It closes the v3 replay work with a truthful
+v4 shipped as **`v4.7.2`**. It closes the v3 replay work with a truthful
 3D/circuit view, retirement/pit status, and the local **BoxBox Grid** race room
 (2023–2026 circuits, real season tables, 1–4 players, 3/5/10 laps, explainer,
 live driver desk/compare, two-run qualifying, per-lap modal, identity hovers,
 a 20 s/lap viewing pace, VSC playback slowdown, live model feed, order directly
 below the circuit, zoom/pan and a downloadable result image).
-v4.7.1 makes the modal current-clock truthful, adds column explanations and
-incident spotlights, and removes the empty left column.
+v4.7.1 made the modal current-clock truthful and removed the empty column;
+v4.7.2 expires incident visuals and adds dynamic loading feedback.
 DEPLOYED prod, healthy at http://localhost:8501.
 
 ## Completed
@@ -20,6 +20,7 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - [x] v4.6.1: bounded Jolpica requests (4 s × 2), 15 s frontend timeout, explicit Retry and no stuck roster; screenshot 75
 - [x] v4.7.0: driver identity hovers with headshots, order strip with Int/Last/Best/Mode below circuit, live model feed, richer result card; screenshots 76–79
 - [x] v4.7.1: current-clock lap modal (no future laps), order placement, column tooltips and on-track incident spotlight; screenshot 80/81
+- [x] v4.7.2: incident active windows (no stale SC/crash), loading bar/spinner/skeleton; screenshots 82–84
 - [x] TASK-001 foundation + TASK-002 guardrails (FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, CI/pre-commit)
 - [x] M0–M7 (superseded) and R0–R4 revamp; v2 shipped V2.1–V2.22 (duel/inputs/Battles now, stints/share, grounded Ask/AI, coach, tags v1.0.0–v2.13.1)
 - [x] v3 research validated; overview + end-to-end core plan **reviewed and locked**; V3.0 D1–D6 recorded (`V3_CORE_IMPLEMENTATION_PLAN.md`)
@@ -52,11 +53,11 @@ DEPLOYED prod, healthy at http://localhost:8501.
 - GitHub Releases (tags only), demo prewarm: user-side pending. API key replaced in `.env` and live-verified; rotate again if the pasted key was exposed.
 
 ## Open Questions
-- None blocking implementation; D1–D50 are recorded. Revisit only if a data source or licence posture changes.
+- None blocking implementation; D1–D52 are recorded. Revisit only if a data source or licence posture changes.
 - Staging target none (prod covers staging via `APP_ENV=staging`)
 
 ## Security Notes
 - Core data: OpenF1 historical (free, non-commercial, 3 req/s + 30 req/min, cached/single-flight). Jolpica results/standings are non-commercial CC BY-NC-SA 4.0 with attribution and a 1-hour cache. No secrets in repo/client; AI key server-only.
 
 ## Last Updated
-2026-11-23: **v4.7.1 — Grid refinement.** Current-clock modal no longer reveals future laps; order sits directly under the circuit; all metric headers have tooltips; SC/VSC/crash get on-track spotlights. Tests: 94 pytest + 107 vitest; 2026 Australia browser pass; production bundle served.
+2026-11-23: **v4.7.2 — incident expiry and loading feedback.** SC/VSC/crash visuals expire after their active windows while feed history remains; Grid loading has a top bar, spinner and skeleton. Tests: 94 pytest + 108 vitest; browser active/cleared event and loading checks; production bundle served.
