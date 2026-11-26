@@ -20,7 +20,9 @@ portfolio app and has no bug bounty.
   gitignored). The browser never receives a key. AI answers are generated only
   server-side and are bounded by a rate limit and token cap.
 - The optional AI endpoint can consume provider quota. Treat a public deployment
-  as cost-bearing and keep `AI_RATE_PER_MIN`/`AI_MAX_TOKENS` bounded.
+  as cost-bearing and keep the shared `AI_RATE_PER_MIN` (1/s, 6/min), the
+  per-client 3/min + 20/hour windows and `AI_MAX_TOKENS` bounded. Chat bodies
+  are schema-capped and nginx rejects request bodies over 256 KB.
 - Browser security headers are set by `web/nginx.conf`: a same-origin CSP,
   `nosniff`, `DENY` framing, strict referrer policy and a restrictive
   permissions policy. External images are limited to F1’s media host; team-radio
@@ -38,4 +40,4 @@ they are not rehosted.
 
 ## Supported version
 
-Security fixes target the current `main` and the latest `v3.13.x` tag.
+Security fixes target the current `main` and the latest `v4.7.x` tag.

@@ -8,7 +8,14 @@ Free, no account, no live-timing subscription. Data comes from public archives a
 
 <sub>Canadian Grand Prix 2026, lap 58. Timing tower on the left, circuit and playback in the middle, driver card with headshot and race engineer on the right.</sub>
 
-> **Latest release: `v4.7.5` — final v4 audit.** The race feed is memoized, an incident cannot decorate the chequered-flag transition, and the v4 replay/Grid/data surfaces passed a final end-to-end audit. See [`docs/V4_7_5_FINAL_AUDIT.md`](docs/V4_7_5_FINAL_AUDIT.md).
+> **Latest release: `v4.7.6` — final v4 production candidate.** AI calls now have a non-blocking shared budget plus per-client limits and bounded request bodies; the full v4 replay/3D/Grid/data surface is audited and ready for use. See [`docs/V4_7_6_WRAPUP.md`](docs/V4_7_6_WRAPUP.md).
+
+## What's new in v4.7.6
+
+- **AI cannot be monopolised.** Shared provider calls are 1/s + 6/min and reject with 429 instead of queueing; each client gets 3/min + 20/hour with `Retry-After`.
+- **Bounded requests.** Chat turns are capped at 1,600 chars / 10 turns, questions at 400 chars, and nginx rejects bodies over 256 KB.
+- **Final wrap-up.** Replay, 3D, Archive, Grid, loading/error states, identity portraits, event history, scrollbars, mobile and data-failure paths were rechecked; no hard standards or missing spec findings remain.
+- **Repository hygiene.** Generated caches/build output are ignored; versioned research and close-out docs remain; the large `GameView` extraction is recorded as a follow-up refactor, not a release blocker.
 
 ## What's new in v4.7.5
 
@@ -400,7 +407,9 @@ cd web && npm install && npm run dev                    # SPA on :5173, proxies 
 | `OPENCODE_API_KEY` | empty | AI key; server-only, never exposed to the browser |
 | `OPENCODE_MODEL` | `deepseek-v4.1-flash` | Model id used for answers |
 | `AI_MAX_TOKENS` | `1200` | Answer budget (reasoning tokens count) |
-| `AI_RATE_PER_MIN` | `6` | Server-side AI budget |
+| `AI_RATE_PER_MIN` | `6` | Shared server-side AI calls per minute (non-blocking) |
+| `AI_CLIENT_RATE_PER_MIN` | `3` | Per-client AI calls per minute |
+| `AI_CLIENT_RATE_PER_HOUR` | `20` | Per-client AI calls per rolling hour |
 | `JOLPICA_BASE_URL` | `https://api.jolpi.ca/ergast/f1` | Archive/standings base URL |
 | `JOLPICA_CACHE_TTL` | `3600` | Seconds before an archive response is refetched |
 | `JOLPICA_RATE_PER_SEC` / `_PER_HOUR` | `4` / `500` | Jolpica free-tier budget |
@@ -449,7 +458,7 @@ Every variable is documented with a placeholder in [`.env.example`](.env.example
 ## Quality gates
 
 ```bash
-pytest                       # 94 Python tests, all HTTP mocked
+pytest                       # 97 Python tests, all HTTP mocked
 ruff check .                 # lint
 cd web && npm test           # 109 frontend tests (vitest)
 cd web && npm run build      # tsc type check + bundle
@@ -467,7 +476,7 @@ and `vite build` — plus a secret scan (gitleaks), dependency audits (`pip-audi
 ```
 api/main.py          FastAPI: endpoints, JSON serialisation, AI facts
 data_loader.py       OpenF1 client: fetch, retry, clamp, parquet cache
-ratelimit.py         Sliding-window request budget (3/s + 30/min)
+ratelimit.py         OpenF1 budget + per-client AI sliding window
 analysis.py          Pure math: corners, deltas, wear, positions, pit model, duels
 ai.py                OpenCode Go client: chat, recap, pit explainer, scope guard
 coach.py             Corner-coach prompt + measured fallback
@@ -500,7 +509,7 @@ Known limitations, stated plainly:
 
 - **First open of a race takes ~1 minute** (dozens of telemetry requests), then
   it is served from cache. Popular sessions can be pre-warmed by opening them.
-- **AI quota.** OpenCode Go has a monthly allowance; when it runs out the AI returns a clear "usage limit reached" message (HTTP 429) and every non-AI panel keeps working.
+- **AI quota and abuse limits.** OpenCode Go has a monthly allowance; when it runs out the AI returns a clear "usage limit reached" message (HTTP 429) and every non-AI panel keeps working. A shared 6/min server budget and per-client 3/min + 20/hour windows return `429` with `Retry-After`; no request waits in a queue. Chat bodies are bounded and nginx caps request bodies at 256 KB.
 - **OpenF1 availability.** If the feed rate-limits or blocks a client, uncached
   sessions show a clear message and cached ones keep working. If it begins
   requiring credentials, set `OPENF1_API_KEY`.
@@ -546,6 +555,7 @@ Data belongs to its sources; see the credits above.
 
 ## Close-out documentation
 
+- **v4.7.6:** [`docs/V4_7_6_WRAPUP.md`](docs/V4_7_6_WRAPUP.md), [`docs/V4_7_6_AI_RATE_LIMIT_RESEARCH.md`](docs/V4_7_6_AI_RATE_LIMIT_RESEARCH.md), [`docs/V4_7_6_AI_RATE_LIMIT_PLAN.md`](docs/V4_7_6_AI_RATE_LIMIT_PLAN.md)
 - **v4.7.5:** [`docs/V4_7_5_FINAL_AUDIT.md`](docs/V4_7_5_FINAL_AUDIT.md)
 - **v4.7.4:** [`docs/V4_7_4_CLOSEOUT.md`](docs/V4_7_4_CLOSEOUT.md), [`docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md`](docs/V4_7_4_SCROLLBARS_IMAGES_RESEARCH.md), [`docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md`](docs/V4_7_4_SCROLLBARS_IMAGES_PLAN.md)
 - **v4.7.3:** [`docs/V4_7_3_CLOSEOUT.md`](docs/V4_7_3_CLOSEOUT.md), [`docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md`](docs/V4_7_3_IDENTITY_HISTORY_RESEARCH.md), [`docs/V4_7_3_IDENTITY_HISTORY_PLAN.md`](docs/V4_7_3_IDENTITY_HISTORY_PLAN.md)

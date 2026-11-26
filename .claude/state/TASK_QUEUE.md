@@ -134,6 +134,7 @@ Status: **v3 complete** through `v3.9.0` — V3.1–V3.4e + V3.4a/c, 3D (V3.5a),
 | V4.7.3 | Driver media integrity + full event history | DONE (`v4.7.3`) | V4.7.2 | Require number+code for portraits; canonical text; All events live/result | No collision portrait; 109 vitest; screenshots 85/86 | History is model-derived |
 | V4.7.4 | Themed scrollbars + code-first portraits | DONE (`v4.7.4`) | V4.7.3 | Global themed scrollbars; code-first media match; champion-number fallback | 2024 VER/RIC/PER/SAI portraits; themed scroll computed; screenshot 87 | No wrong portrait; missing image → number |
 | V4.7.5 | Final v4 audit + feed performance | DONE (`v4.7.5`) | V4.7.4 | Memoize feeds; clear incident at finish; replay/3D/archive/Grid E2E | 94 pytest + 109 vitest; no page errors; v4 surfaces checked | No remaining spec gaps found |
+| V4.7.6 | AI abuse controls + v4 repo wrap-up | DONE (`v4.7.6`) | V4.7.5 | Non-blocking shared AI budget, per-client 3/min + 20/hour, 429/Retry-After, body/schema caps | 97 pytest + 109 vitest; rate tests; v4 E2E; docs/README/state updated | Public release chores remain user-side |
 
 ## Deferred / excluded (unchanged)
 

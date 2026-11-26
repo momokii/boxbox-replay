@@ -6,9 +6,9 @@
 
 ## Project Snapshot
 
-BoxBox Replay: F1 telemetry viz, React SPA + FastAPI, v4.7.5. Replay, lap duel,
+BoxBox Replay: F1 telemetry viz, React SPA + FastAPI, v4.7.6. Replay, lap duel,
 inputs, pit wall, AI Ask, Battles, standings, results archive, a truthful
-3D/circuit view and the local **BoxBox Grid** race room are live; 94 pytest +
+3D/circuit view and the local **BoxBox Grid** race room are live; 97 pytest +
 109 vitest. V4 adds retirement/pit status, true-scale 3D cameras, a live
 qualifying phase, Grid explainer/driver desk/compare, seeded SC/VSC/crash
 events, Top/Angle circuit view, two-run qualifying, 20 s/lap viewing pace,
@@ -44,8 +44,8 @@ Stack: FastAPI/Python 3.12 + React/Vite/TS, Docker Compose, OpenCode Go for AI.
 
 | Purpose      | Command           | Status          |
 |--------------|-------------------|-----------------|
-| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | v4.7.5 verified |
-| Test (API)   | `.venv/bin/python -m pytest` | 94 pass |
+| Run / dev    | `./scripts/setup.sh` (docker: api + web, port 8501) | v4.7.6 verified |
+| Test (API)   | `.venv/bin/python -m pytest` | 97 pass |
 | Test (web)   | `cd web && npm test` (vitest) | 109 pass |
 | Lint (API)   | `.venv/bin/python -m ruff check .` | clean |
 | Build (web)  | `cd web && npm run build` | verified |

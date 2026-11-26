@@ -753,3 +753,10 @@ visibleRaceEvent to clear incident visuals at the chequered flag while keeping
 history, and rechecked replay/3D/Archive, Grid setup/race/result, portraits,
 loading, event expiry, all-events, scrollbars and mobile. 94 pytest + 109 vitest;
 no browser errors; production bundle served.
+
+
+v4.7.6 — AI abuse controls and v4 wrap-up. The shared AI budget now rejects
+rather than sleeps; per-client 3/min + 20/hour windows cover every AI route,
+chat bodies are schema-capped and nginx caps bodies at 256 KB. Recorded the
+final standards/spec audit and repository hygiene. 97 pytest + 109 vitest; v4
+E2E rechecked; production healthy.

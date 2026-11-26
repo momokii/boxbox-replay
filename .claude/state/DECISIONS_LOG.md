@@ -664,3 +664,12 @@
 **Alternatives Rejected:** Recomputing feed every frame (wasted work); removing late incidents from history (loses the record).
 **Security Implications:** None.
 **Impact:** `GameView`, `game.ts`, test.
+
+---
+**Decision:** D58 — AI rate limits reject, are per-client, and bodies are capped.
+**Date:** 2026-11-23
+**Context:** The shared AI budget slept instead of rejecting, so a burst could tie up API threads; one client could consume the whole allowance, and chat bodies were only trimmed after parsing.
+**Rationale:** Shared 1/s + 6/min non-blocking budget; per-client 3/min + 20/hour keyed by nginx X-Real-IP; 429 + Retry-After on overflow; schema caps (10 turns × 1,600 chars) and nginx 256 KB body limit. All AI routes share the guard.
+**Alternatives Rejected:** Queueing/sleeping (thread/cost abuse); no per-client limit (monopoly); body trimming after parse (memory pressure).
+**Security Implications:** Cost protection and request-size hardening; no key exposure. Per-IP limits are best-effort against IP rotation.
+**Impact:** `ai.py`, `ratelimit.py`, `api/main.py`, `nginx.conf`, tests, docs.

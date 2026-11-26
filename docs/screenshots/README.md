@@ -1,6 +1,6 @@
 # Screenshots
 
-Refreshed against the **v4.7.4 build** on 2026-11-23. Baku 2024 game captures. New captures use 1440×900,
+Refreshed against the **v4.7.4 build**, verified through **v4.7.6** on 2026-11-23. Baku 2024 game captures. New captures use 1440×900,
 with phone captures at 390×844; older v3 images remain as reference.
 They are referenced from the root README and this page.
 
