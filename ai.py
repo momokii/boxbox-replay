@@ -74,6 +74,10 @@ class AIQuotaExceeded(RuntimeError):
     """The provider's monthly usage allowance is exhausted. Not retryable."""
 
 
+class AIRateLimited(RuntimeError):
+    """The local shared AI budget is full; retry shortly, do not queue."""
+
+
 def configured() -> bool:
     return bool(API_KEY)
 
@@ -94,23 +98,30 @@ CACHE_MAX = 64
 
 
 def _budget() -> None:
-    """At most RATE_PER_MIN requests per rolling minute, one per second."""
+    """Reserve one shared AI call per second and RATE_PER_MIN per rolling minute.
+
+    Reject instead of sleeping: a burst must not queue threads or consume the
+    shared provider budget indefinitely. Callers map AIRateLimited to 429.
+    """
     global _last_call
     with _budget_lock:
-        while True:
-            now = time.monotonic()
-            while _call_stamps and now - _call_stamps[0] >= 60:
-                _call_stamps.pop(0)
-            wait = 0.0
-            if _last_call and now - _last_call < 1.0:
-                wait = 1.0 - (now - _last_call)
-            if len(_call_stamps) >= RATE_PER_MIN:
-                wait = max(wait, 60 - (now - _call_stamps[0]))
-            if wait <= 0:
-                _last_call = now
-                _call_stamps.append(now)
-                return
-            time.sleep(wait)
+        now = time.monotonic()
+        while _call_stamps and now - _call_stamps[0] >= 60:
+            _call_stamps.pop(0)
+        if _last_call and now - _last_call < 1.0:
+            raise AIRateLimited("AI requests are limited to one per second")
+        if len(_call_stamps) >= RATE_PER_MIN:
+            raise AIRateLimited("shared AI minute budget is exhausted")
+        _last_call = now
+        _call_stamps.append(now)
+
+
+def reset_budget() -> None:
+    """Test/ops hook: clear the in-process shared AI budget."""
+    global _last_call
+    with _budget_lock:
+        _last_call = 0.0
+        _call_stamps.clear()
 
 
 def _key(kind: str, session_key: int, extra: str) -> str:

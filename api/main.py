@@ -6,22 +6,56 @@ Empty datasets serialize as [] (the UI renders empty states, never crashes).
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import ai
 import analysis
 import coach
 import data_loader
 import jolpica
+import ratelimit
 import strategy
 
 app = FastAPI(title="BoxBox Replay API")
+
+# A single client gets a smaller allowance than the shared provider budget, so
+# one browser cannot drain the portfolio deployment's whole AI quota.
+_AI_CLIENT_LIMITS = [
+    (max(1, int(os.getenv("AI_CLIENT_RATE_PER_MIN", "3"))), 60.0),
+    (max(1, int(os.getenv("AI_CLIENT_RATE_PER_HOUR", "20"))), 3600.0),
+]
+_ai_client_limiter = ratelimit.SlidingWindowLimiter(_AI_CLIENT_LIMITS)
+
+
+def _ai_client_key(request: Request) -> str:
+    # nginx sets X-Real-IP; the API port is not exposed in production.
+    real = request.headers.get("x-real-ip", "").strip()
+    if real:
+        return real
+    forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+    if forwarded:
+        return forwarded
+    return request.client.host if request.client else "unknown"
+
+
+def _guard_ai_client(request: Request) -> None:
+    key = _ai_client_key(request)
+    if _ai_client_limiter.allow(key):
+        return
+    retry = _ai_client_limiter.retry_after(key)
+    raise HTTPException(
+        429,
+        "AI request limit reached; try again shortly",
+        headers={"Retry-After": str(max(1, retry))},
+    )
 
 
 @app.exception_handler(data_loader.FeedAuthRequired)
@@ -821,7 +855,7 @@ def pit_call(req: PitCallRequest) -> dict:
 
 
 @app.post("/coach/ask")
-def coach_ask(req: CoachRequest) -> dict:
+def coach_ask(req: CoachRequest, request: Request) -> dict:
     prompt = coach.build_prompt(
         req.driver, req.lap, req.ref_driver, req.ref_lap, req.corner, req.loss_s, req.lap_delta_s
     )
@@ -829,9 +863,15 @@ def coach_ask(req: CoachRequest) -> dict:
     basis = f"based on lap {req.lap} vs ref {req.ref_lap}"
     answer: str | None = None
     if ai.configured() and req.session_key:
+        _guard_ai_client(request)
         try:
             facts, _ = _ai_facts(req.session_key)
             answer = ai.answer_corner(req.session_key, facts, prompt) or None
+        except ai.AIRateLimited as exc:
+            raise HTTPException(
+                429, "AI request limit reached; try again shortly",
+                headers={"Retry-After": "60"},
+            ) from exc
         except ai.AIQuotaExceeded as exc:
             raise HTTPException(
                 429, "AI usage limit reached; it resets automatically"
@@ -1479,10 +1519,11 @@ def _telemetry_facts(result: dict, codes: dict[int, str]) -> str:
 
 
 @app.post("/ai/explain")
-def ai_explain(req: ExplainRequest) -> dict:
+def ai_explain(req: ExplainRequest, request: Request) -> dict:
     """Explain a computed result. The facts are built here, never sent by the client."""
     if not ai.configured():
         raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    _guard_ai_client(request)
     kind = req.kind.strip().lower()
     if kind not in {"strategy", "compare"}:
         raise HTTPException(422, "kind must be strategy or compare")
@@ -1539,6 +1580,12 @@ def ai_explain(req: ExplainRequest) -> dict:
         text = ai.explain(req.session_key, facts, prompt)
     except ai.AINotConfigured as exc:
         raise HTTPException(503, str(exc)) from exc
+    except ai.AIRateLimited as exc:
+        raise HTTPException(
+            429,
+            "AI request limit reached; try again shortly",
+            headers={"Retry-After": "60"},
+        ) from exc
     except ai.AIQuotaExceeded as exc:
         raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
     except ai.AIError as exc:
@@ -1605,13 +1652,13 @@ def session_strategy(req: StrategyRequest) -> dict:
 
 
 class ChatTurn(BaseModel):
-    role: str
-    content: str
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=1600)
 
 
 class ChatRequest(BaseModel):
-    session_key: int
-    messages: list[ChatTurn]
+    session_key: int = Field(ge=1)
+    messages: list[ChatTurn] = Field(min_length=1, max_length=10)
 
 
 class PitExplainRequest(PitCallRequest):
@@ -1628,10 +1675,11 @@ def ai_status() -> dict:
 
 
 @app.post("/ai/chat")
-def ai_chat(body: ChatRequest) -> dict:
+def ai_chat(body: ChatRequest, request: Request) -> dict:
     """Answer the last turn with bounded conversation context."""
     if not ai.configured():
         raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    _guard_ai_client(request)
     history: list[dict] = []
     for turn in body.messages[-10:]:
         if turn.role not in ("user", "assistant"):
@@ -1652,6 +1700,12 @@ def ai_chat(body: ChatRequest) -> dict:
         text = ai.chat(body.session_key, facts, history)
     except ai.AINotConfigured as exc:
         raise HTTPException(503, str(exc)) from exc
+    except ai.AIRateLimited as exc:
+        raise HTTPException(
+            429,
+            "AI request limit reached; try again shortly",
+            headers={"Retry-After": "60"},
+        ) from exc
     except ai.AIQuotaExceeded as exc:
         raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
     except ai.AIError as exc:
@@ -1660,10 +1714,11 @@ def ai_chat(body: ChatRequest) -> dict:
 
 
 @app.post("/ai/pit")
-def ai_pit_explain(body: PitExplainRequest) -> dict:
+def ai_pit_explain(body: PitExplainRequest, request: Request) -> dict:
     """Explain a pit call that the deterministic model already computed."""
     if not ai.configured():
         raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    _guard_ai_client(request)
     call = analysis.pit_toy_model(
         body.base_pace_s,
         body.fresh_pace_s,
@@ -1700,6 +1755,12 @@ def ai_pit_explain(body: PitExplainRequest) -> dict:
         text = ai.explain_pit(body.session_key, notes)
     except ai.AINotConfigured as exc:
         raise HTTPException(503, str(exc)) from exc
+    except ai.AIRateLimited as exc:
+        raise HTTPException(
+            429,
+            "AI request limit reached; try again shortly",
+            headers={"Retry-After": "60"},
+        ) from exc
     except ai.AIQuotaExceeded as exc:
         raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
     except ai.AIError as exc:
@@ -1708,15 +1769,22 @@ def ai_pit_explain(body: PitExplainRequest) -> dict:
 
 
 @app.post("/ai/report")
-def ai_report(body: RecapRequest) -> dict:
+def ai_report(body: RecapRequest, request: Request) -> dict:
     """Three-part analytical report grounded in the same session facts."""
     if not ai.configured():
         raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    _guard_ai_client(request)
     facts, used = _ai_facts(body.session_key)
     try:
         text = ai.report_insight(body.session_key, facts)
     except ai.AINotConfigured as exc:
         raise HTTPException(503, str(exc)) from exc
+    except ai.AIRateLimited as exc:
+        raise HTTPException(
+            429,
+            "AI request limit reached; try again shortly",
+            headers={"Retry-After": "60"},
+        ) from exc
     except ai.AIQuotaExceeded as exc:
         raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
     except ai.AIError as exc:
@@ -1725,14 +1793,21 @@ def ai_report(body: RecapRequest) -> dict:
 
 
 @app.post("/ai/recap")
-def ai_recap(body: RecapRequest) -> dict:
+def ai_recap(body: RecapRequest, request: Request) -> dict:
     if not ai.configured():
         raise HTTPException(503, "AI is not configured: set OPENCODE_API_KEY on the server")
+    _guard_ai_client(request)
     facts, used = _ai_facts(body.session_key)
     try:
         text = ai.recap(body.session_key, facts)
     except ai.AINotConfigured as exc:
         raise HTTPException(503, str(exc)) from exc
+    except ai.AIRateLimited as exc:
+        raise HTTPException(
+            429,
+            "AI request limit reached; try again shortly",
+            headers={"Retry-After": "60"},
+        ) from exc
     except ai.AIQuotaExceeded as exc:
         raise HTTPException(429, "AI usage limit reached; it resets automatically") from exc
     except ai.AIError as exc:

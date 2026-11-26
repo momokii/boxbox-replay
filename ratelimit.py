@@ -61,3 +61,58 @@ class TokenBucket:
                     self._stamps.append(now)
                     return
                 self._sleep(wait)
+
+
+class SlidingWindowLimiter:
+    """Per-key request limiter that rejects instead of sleeping.
+
+    Used at the AI boundary: one client must not queue enough work to consume
+    the shared provider budget or tie up API threads. Multiple windows are
+    checked together (for example 3/min and 20/hour).
+    """
+
+    def __init__(
+        self,
+        limits: list[tuple[int, float]],
+        *,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        if not limits or any(limit <= 0 or window <= 0 for limit, window in limits):
+            raise ValueError("limits and windows must be positive")
+        self._limits = tuple((int(limit), float(window)) for limit, window in limits)
+        self._clock = clock
+        self._events: dict[str, deque[float]] = {}
+        self._lock = threading.Lock()
+
+    def _prune(self, events: deque[float], now: float) -> None:
+        oldest = max(window for _, window in self._limits)
+        while events and now - events[0] >= oldest:
+            events.popleft()
+
+    def allow(self, key: str) -> bool:
+        now = self._clock()
+        with self._lock:
+            events = self._events.setdefault(key, deque())
+            self._prune(events, now)
+            for limit, window in self._limits:
+                if sum(1 for stamp in events if now - stamp < window) >= limit:
+                    return False
+            events.append(now)
+            return True
+
+    def retry_after(self, key: str) -> int:
+        now = self._clock()
+        with self._lock:
+            events = self._events.get(key)
+            if not events:
+                return 0
+            waits: list[float] = []
+            for limit, window in self._limits:
+                recent = [stamp for stamp in events if now - stamp < window]
+                if len(recent) >= limit:
+                    waits.append(max(1.0, window - (now - recent[0])))
+            return int(max(waits, default=0) + 0.999)
+
+    def reset(self) -> None:
+        with self._lock:
+            self._events.clear()

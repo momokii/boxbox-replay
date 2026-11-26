@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from ratelimit import TokenBucket
+from ratelimit import SlidingWindowLimiter, TokenBucket
 
 
 class FakeTime:
@@ -71,3 +71,17 @@ def test_sponsor_tier_limits_can_be_raised():
     for _ in range(60):
         bucket.acquire()
     assert fake.sleeps == []
+
+
+def test_client_limiter_rejects_and_reports_retry():
+    fake = FakeTime()
+    limiter = SlidingWindowLimiter([(2, 60), (3, 3600)], clock=fake.monotonic)
+    assert limiter.allow("a")
+    assert limiter.allow("a")
+    assert not limiter.allow("a")
+    assert limiter.retry_after("a") >= 60
+    assert limiter.allow("b")
+    fake.now += 61
+    assert limiter.allow("a")
+    limiter.reset()
+    assert limiter.allow("a")

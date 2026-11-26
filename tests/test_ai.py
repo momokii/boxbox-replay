@@ -199,3 +199,15 @@ def test_quota_429_is_not_retried(monkeypatch):
     with pytest.raises(ai.AIQuotaExceeded):
         ai._complete(1, "prompt")
     assert calls["n"] == 1
+
+
+def test_shared_budget_rejects_a_second_call(monkeypatch):
+    monkeypatch.setattr(ai, "_last_call", 0.0)
+    monkeypatch.setattr(ai, "_call_stamps", [])
+    monkeypatch.setattr(ai, "RATE_PER_MIN", 3)
+    ai.reset_budget()
+    ai._budget()
+    with pytest.raises(ai.AIRateLimited):
+        ai._budget()
+    ai.reset_budget()
+    assert ai._last_call == 0.0

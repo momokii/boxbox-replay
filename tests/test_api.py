@@ -13,6 +13,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import api.main as m  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _reset_ai_limits():
+    m.ai.reset_budget()
+    m._ai_client_limiter.reset()
+    yield
+    m.ai.reset_budget()
+    m._ai_client_limiter.reset()
+
+
 def _frame(rows: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
@@ -850,3 +859,30 @@ def test_replay_cancel_route(monkeypatch):
         got = client.post("/session/replay/cancel", params={"session_key": 1})
         assert got.status_code == 200
         assert got.json() == {"cancelled": True}
+
+
+def test_ai_client_rate_limit_returns_429(monkeypatch):
+    monkeypatch.setattr(m.ai, "configured", lambda: True)
+    monkeypatch.setattr(m, "_ai_facts", lambda sk: ("facts", ["session"]))
+    monkeypatch.setattr(m.ai, "chat", lambda *a, **k: "answer")
+    with TestClient(m.app) as client:
+        for _ in range(3):
+            assert (
+                client.post(
+                    "/ai/chat",
+                    json={
+                        "session_key": 1,
+                        "messages": [{"role": "user", "content": "Who won?"}],
+                    },
+                ).status_code
+                == 200
+            )
+        blocked = client.post(
+            "/ai/chat",
+            json={
+                "session_key": 1,
+                "messages": [{"role": "user", "content": "Who won?"}],
+            },
+        )
+    assert blocked.status_code == 429
+    assert blocked.headers["Retry-After"]
