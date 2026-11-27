@@ -23,6 +23,11 @@ This matters because the API's per-client AI limiter keys on `X-Real-IP`. Withou
 this, every Cloudflare visitor reaches nginx as `172.23.0.1` and shares one
 3/min + 20/hour bucket.
 
+The CSP also allows Cloudflare Web Analytics (`static.cloudflareinsights.com`
+for the beacon and `cloudflareinsights.com` for its RUM endpoint). If Web
+Analytics is disabled in the Cloudflare dashboard, those two allowances are
+harmless.
+
 The app still publishes `0.0.0.0:8501`, so the existing Tailscale address keeps
 working. The tunnel is the only intended public path; do not port-forward 8501.
 
