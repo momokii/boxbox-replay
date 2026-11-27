@@ -15,6 +15,13 @@ proxies to the API.
 Production differences are configuration only (`APP_ENV=production`); same image
 shape, no debug ports, no secrets baked in.
 
+## Public Cloudflare Tunnel
+
+Use the existing Cloudflare-connected tunnel for a public hostname. The app-side
+client-IP handling and the dashboard steps are in
+[`docs/CLOUDFLARE_TUNNEL.md`](CLOUDFLARE_TUNNEL.md). The host stays reachable on
+Tailscale; the tunnel is the public path.
+
 ## Reaching it over a private network (e.g. Tailscale)
 
 The stack publishes `${APP_PORT:-8501}` on all interfaces, so any device that can
