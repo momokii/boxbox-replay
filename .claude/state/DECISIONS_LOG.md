@@ -673,3 +673,12 @@
 **Alternatives Rejected:** Queueing/sleeping (thread/cost abuse); no per-client limit (monopoly); body trimming after parse (memory pressure).
 **Security Implications:** Cost protection and request-size hardening; no key exposure. Per-IP limits are best-effort against IP rotation.
 **Impact:** `ai.py`, `ratelimit.py`, `api/main.py`, `nginx.conf`, tests, docs.
+
+---
+**Decision:** D59 — Cloudflare Tunnel client-IP trust and analytics CSP.
+**Date:** 2026-11-28
+**Context:** The public hostname runs through the existing host-network Cloudflare connector. Before this change nginx trusted `$remote_addr`, so every tunnel visitor reached the API as the Docker bridge gateway and shared one AI bucket. Cloudflare also injects its Web Analytics beacon, which the strict CSP blocked.
+**Rationale:** Trust `CF-Connecting-IP` only from the exact compose bridge gateway (`172.23.0.1`) or loopback, set both `X-Real-IP` and `X-Forwarded-For` to that resolved client IP, and never append a client-supplied forwarded chain. Keep the CSP narrow: allow only `static.cloudflareinsights.com` for the script and `cloudflareinsights.com` for RUM. LAN and Tailscale keep their real source addresses.
+**Alternatives Rejected:** Trusting all of `172.16.0.0/12` (too broad); trusting `CF-Connecting-IP` from every source (spoofable); disabling Cloudflare Web Analytics (loses useful edge telemetry); weakening CSP broadly.
+**Security Implications:** Per-client AI limiting now works through Cloudflare; direct LAN/Tailscale callers cannot spoof the Cloudflare header. The gateway is tied to the compose network and covered by a config test; changing the Docker network requires updating nginx and the test.
+**Impact:** `web/nginx.conf`, `web/security-headers.conf`, `tests/test_cloudflare_config.py`, `docs/CLOUDFLARE_TUNNEL.md`.

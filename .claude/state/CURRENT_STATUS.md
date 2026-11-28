@@ -10,6 +10,7 @@ portraits and themes scrollbars; v4.7.5 memoizes the feed and clears incident
 decoration at the flag; v4.7.6 adds AI shared/per-client rate limits and bounded
 chat bodies.
 DEPLOYED prod, healthy at http://localhost:8501.
+Public Cloudflare route **https://boxbox.kelanach.xyz** is live (301 HTTP→HTTPS, HSTS 1 month, nginx client-IP trust scoped to the compose gateway); Tailscale remains healthy.
 
 ## Completed
 - [x] v4.0.0: true-scale 3D + cameras + minimap, exit clocks + pit guide + race-control rail, BoxBox Grid

@@ -4,20 +4,23 @@ This host already has a Cloudflare-connected, remotely managed tunnel:
 
 - connector container: `cloudflared-ssh-tunnel`
 - network mode: `host`
-- tunnel ID: `62eac503-f5aa-463a-93a1-7e6a9590897b`
+- tunnel: select the existing `cloudflared-ssh-tunnel` connector in Zero Trust
 - current SSH hostname: `ssh-homelab.kelanach.xyz`
 - BoxBox local health: `http://127.0.0.1:8501/api/healthz`
-- Tailscale health: `http://100.124.184.116:8501/api/healthz`
+- Tailscale health: `http://<tailscale-ip>:8501/api/healthz`
 
 The connector can reach the published port on `localhost`; no new tunnel token is
-needed for the existing tunnel. The only required Cloudflare change is a public
-hostname routed to `HTTP://localhost:8501`.
+needed for the existing tunnel. The public hostname `boxbox.kelanach.xyz` is
+already routed to `HTTP://localhost:8501`. Use the dashboard steps below only
+to verify it or recreate it after a deliberate reset.
 
 ## App-side change already made
 
 `web/nginx.conf` now trusts `CF-Connecting-IP` **only** when nginx sees the
-request from Docker's bridge gateway (`172.16.0.0/12`) or loopback. A direct LAN
-or Tailscale request keeps its real source address.
+request from this compose network's exact bridge gateway (`172.23.0.1`) or
+loopback. A direct LAN or Tailscale request keeps its real source address. The
+value is covered by `tests/test_cloudflare_config.py`; if Docker recreates the
+network with a different gateway, update both together.
 
 This matters because the API's per-client AI limiter keys on `X-Real-IP`. Without
 this, every Cloudflare visitor reaches nginx as `172.23.0.1` and shares one
@@ -34,8 +37,7 @@ working. The tunnel is the only intended public path; do not port-forward 8501.
 ## Cloudflare dashboard steps
 
 1. Open **Cloudflare Zero Trust → Networks → Tunnels**.
-2. Select the tunnel with ID `62eac503-f5aa-463a-93a1-7e6a9590897b`
-   (the connector is `cloudflared-ssh-tunnel`).
+2. Select the existing tunnel whose connector is `cloudflared-ssh-tunnel`.
 3. Open **Public Hostname → Add a public hostname**.
 4. Fill:
    - **Subdomain:** `boxbox`
@@ -99,7 +101,7 @@ Tailscale is **not** removed by the tunnel setup. The app remains published on
 the host, so this keeps working after the nginx deploy:
 
 ```bash
-curl -fsS http://100.124.184.116:8501/api/healthz
+curl -fsS http://<tailscale-ip>:8501/api/healthz
 ```
 
 If you later decide to bind only to localhost, Tailscale access will stop. Do not
